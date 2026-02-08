@@ -1,16 +1,58 @@
-# React + Vite
+# Kalak | Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web-based game application built with React and Vite.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+| Technology       | Version  |
+|------------------|----------|
+| React            | 19.2.0   |
+| Vite             | 6.3.5    |
+| Tailwind CSS     | 4.1.18   |
+| ESLint           | 9.39.1   |
+| Node.js          | 18+      |
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
 
-## Expanding the ESLint configuration
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- npm (comes with Node.js)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# Install dependencies
+npm install
+```
+
+### Development
+
+```bash
+# Start the development server
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+### Build for Production
+
+```bash
+# Create a production build
+npm run build
+
+## Project Structure
+
+```
+new-ui/
+├── public/              # Static assets (favicon)
+├── src/
+│   ├── components/      # Reusable components (Logo, etc.)
+│   ├── pages/           # Page components (LoginPage, etc.)
+│   ├── assets/          # Images and other assets
+│   ├── App.jsx          # Root component
+│   ├── App.css          # App styles
+│   ├── index.css        # Global styles (Tailwind)
+│   └── main.jsx         # Entry point
+├── index.html           # HTML template
+├── vite.config.js       # Vite configuration
+├── eslint.config.js     # ESLint configuration
+└── package.json
+```

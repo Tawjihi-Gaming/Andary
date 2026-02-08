@@ -19,6 +19,10 @@ A web-based game application built with React and Vite.
 - [Node.js](https://nodejs.org/) (v18 or higher)
 - npm (comes with Node.js)
 
+### Installation
+
+```bash
+
 # Install dependencies
 npm install
 ```
@@ -37,6 +41,16 @@ The app will be available at `http://localhost:5173`.
 ```bash
 # Create a production build
 npm run build
+
+# Preview the production build
+npm run preview
+```
+
+### Linting
+
+```bash
+npm run lint
+```
 
 ## Project Structure
 

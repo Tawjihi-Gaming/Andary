@@ -1,0 +1,57 @@
+
+services:
+
+  # backend:
+  #   container_name: dotnet_backend
+  #   image: backend:andari
+  #   build: ./backend
+  #   netwroks:
+  #     - web-net
+  #     - db-net
+  #   env_file:
+  #     - .env
+
+  # frontend:
+  #   container_name: react_frontend
+  #   image: frontend:andari
+  #   build: ./frontend
+  #   netwroks:
+  #     - web-net
+  #   env_file:
+  #     - .env
+
+  nginx:
+    container_name: nginx
+    image: nginx:andari
+    build: ./ngnix
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - web-net
+
+  db:
+    container_name: db
+    image: db:andari
+    build: ./database
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 5s
+    networks:
+      - db-net
+    env_file:
+      - .env
+
+volumes:
+  pgdata:
+
+networks:
+  web-net:
+    driver: bridge
+  db-net:
+    driver: bridge

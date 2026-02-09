@@ -4,7 +4,7 @@ const Logo = () => {
       {/* Beautiful graduation icon */}
       <div className="relative">
         {/* Vibrant glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-game-cyan via-game-blue to-game-purple opacity-50 blur-3xl rounded-full scale-150 animate-pulse"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-game-cyan via-game-blue to-game-purple opacity-50 blur-3xl rounded-full scale-150 animate-pulse"></div>
         
         {/* Custom graduation cap design */}
         <div className="relative z-10 w-32 h-32 flex items-center justify-center">

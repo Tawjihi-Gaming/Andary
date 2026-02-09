@@ -1,16 +1,15 @@
-# Kalak | Game
+# Andary | Trivia Game
 
-A web-based game application built with React and Vite.
+A web-based multiplayer trivia game built with React and Vite (frontend), with a planned ASP.NET C# backend and PostgreSQL database.
 
 ## Tech Stack
 
-| Technology       | Version  |
-|------------------|----------|
-| React            | 19.2.0   |
-| Vite             | 6.3.5    |
-| Tailwind CSS     | 4.1.18   |
-| ESLint           | 9.39.1   |
-| Node.js          | 18+      |
+| Technology       | Version  | Role             |
+|------------------|----------|------------------|
+| React            | 19.2.0   | Frontend UI      |
+| Vite             | 6.3.5    | Build tool       |
+| Tailwind CSS     | 4.1.18   | Styling          |
+| ESLint           | 9.39.1   | Linting          |
 
 ## Getting Started
 
@@ -22,15 +21,14 @@ A web-based game application built with React and Vite.
 ### Installation
 
 ```bash
-
-# Install dependencies
+cd frontend
 npm install
 ```
 
 ### Development
 
 ```bash
-# Start the development server
+cd frontend
 npm run dev
 ```
 
@@ -39,6 +37,8 @@ The app will be available at `http://localhost:5173`.
 ### Build for Production
 
 ```bash
+cd frontend
+
 # Create a production build
 npm run build
 
@@ -49,24 +49,31 @@ npm run preview
 ### Linting
 
 ```bash
+cd frontend
 npm run lint
 ```
 
 ## Project Structure
 
 ```
-new-ui/
-├── public/              # Static assets (favicon)
-├── src/
-│   ├── components/      # Reusable components (Logo, etc.)
-│   ├── pages/           # Page components (LoginPage, etc.)
-│   ├── assets/          # Images and other assets
-│   ├── App.jsx          # Root component
-│   ├── App.css          # App styles
-│   ├── index.css        # Global styles (Tailwind)
-│   └── main.jsx         # Entry point
-├── index.html           # HTML template
-├── vite.config.js       # Vite configuration
-├── eslint.config.js     # ESLint configuration
-└── package.json
+FactFool/
+├── documentation/           # Project documentation
+│   ├── API_Documentation.md
+│   ├── Game_Session_Flow.md
+│   └── Technical_Design.md
+├── frontend/                # React frontend
+│   ├── public/              # Static assets (favicon)
+│   ├── src/
+│   │   ├── components/      # Reusable components (Auth, Logo)
+│   │   ├── pages/           # Page components (LoginPage)
+│   │   ├── App.jsx          # Root component
+│   │   ├── index.css        # Global styles (Tailwind)
+│   │   └── main.jsx         # Entry point
+│   ├── index.html           # HTML template
+│   ├── vite.config.js       # Vite configuration
+│   ├── eslint.config.js     # ESLint configuration
+│   └── package.json
+├── .gitignore
+├── LICENSE
+└── README.md
 ```

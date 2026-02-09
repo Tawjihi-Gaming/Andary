@@ -16,13 +16,13 @@ function LoginPage() {
         </div>
       
         <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 w-full max-w-6xl z-10">
-          {/* Auth and Login - Right Side */}
-          <Auth/>
-
-          {/* Logo - Left Side */}
+          {/* Logo - Right Side */}
           <div className="flex flex-col items-center gap-8">
             <Logo/>
           </div>
+
+          {/* Auth and Login - Left Side */}
+          <Auth/>
         </div>
       </div>
     </>

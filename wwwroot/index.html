@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+</head>
+<body>
+<h1>SignalR Connection Test</h1>
+<button onclick="connect()">Connect to Server</button>
+
+<script>
+let connection;
+
+function connect() {
+    connection = new signalR.HubConnectionBuilder()
+        .withUrl("/quiz")
+        .build();
+
+    connection.start()
+        .then(() => console.log("Connected to server!"))
+        .catch(err => console.error(err));
+}
+</script>
+</body>
+</html>

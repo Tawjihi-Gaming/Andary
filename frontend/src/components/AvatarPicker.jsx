@@ -25,10 +25,10 @@ const AvatarPicker = ({ selected, onSelect }) => {
             key={avatar.id}
             type="button"
             onClick={() => onSelect(avatar)}
-            className={`avatar-option w-12 h-12 rounded-full bg-linear-to-br ${avatar.bg} flex items-center justify-center text-2xl transition-all duration-200 border-3 ${
+            className={`avatar-option w-12 h-12 rounded-full bg-linear-to-br ${avatar.bg} flex items-center justify-center text-2xl transition-all duration-200 border-0 ${
               selected?.id === avatar.id
-                ? 'border-game-yellow scale-110 shadow-[0_0_15px_rgba(251,191,36,0.6)]'
-                : 'border-transparent hover:border-white/50 hover:scale-105'
+                ? 'border-3 border-game-yellow scale-110 shadow-[0_0_15px_rgba(251,191,36,0.6)]'
+                : 'hover:border-3 hover:border-white/50 hover:scale-105'
             }`}
             title={avatar.id}
           >

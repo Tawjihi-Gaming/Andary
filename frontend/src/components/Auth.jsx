@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AvatarPicker from './AvatarPicker'
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState('guest')
@@ -7,6 +8,7 @@ const Auth = () => {
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
+  const [selectedAvatar, setSelectedAvatar] = useState(null)
 
   const handleGuestPlay = (e) => {
     e.preventDefault()
@@ -43,14 +45,26 @@ const Auth = () => {
       {/* Guest Tab Content */}
       {activeTab === 'guest' && (
         <form onSubmit={handleGuestPlay} className="space-y-4">
-          <div className="text-center mb-6">
-            <div className="w-20 h-20 mx-auto bg-game-blue rounded-full flex items-center justify-center mb-3 border-4 border-white/30 shadow-lg">
-              <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
+          <div className="text-center mb-4">
+            {/* Selected avatar preview */}
+            <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 border-4 shadow-lg transition-all duration-300 ${
+              selectedAvatar
+                ? `bg-linear-to-br ${selectedAvatar.bg} border-game-yellow`
+                : 'bg-game-blue border-white/30'
+            }`}>
+              {selectedAvatar ? (
+                <span className="text-4xl">{selectedAvatar.emoji}</span>
+              ) : (
+                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              )}
             </div>
-            <p className="text-white/80 text-sm">ادخل اسمك للعب بدون تسجيل</p>
+            <p className="text-white/80 text-sm">ادخل اسمك واختر صورتك</p>
           </div>
+
+          {/* Avatar Picker */}
+          <AvatarPicker selected={selectedAvatar} onSelect={setSelectedAvatar} />
 
           <div className="relative">
             <input
@@ -128,21 +142,26 @@ const Auth = () => {
             </svg>
           </div>
 
-          {/* Display Name - Only shown for sign up */}
+          {/* Display Name & Avatar - Only shown for sign up */}
           {isSignUp && (
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="اسم العرض (مطلوب)"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pr-12 border-2 border-white/20 focus:border-game-green focus:bg-white/20 transition-all duration-200"
-                dir="rtl"
-              />
-              <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-green" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-              </svg>
-            </div>
+            <>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="اسم العرض (مطلوب)"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pr-12 border-2 border-white/20 focus:border-game-green focus:bg-white/20 transition-all duration-200"
+                  dir="rtl"
+                />
+                <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-green" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                </svg>
+              </div>
+
+              {/* Avatar Picker for Sign Up */}
+              <AvatarPicker selected={selectedAvatar} onSelect={setSelectedAvatar} />
+            </>
           )}
 
           <button
@@ -152,6 +171,12 @@ const Auth = () => {
             {isSignUp ? '📝 انشاء حساب' : '🔐 دخول'}
           </button>
 
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-2">
+            <div className="flex-1 h-px bg-white/20"></div>
+            <span className="text-white/50 text-sm font-medium">أو</span>
+            <div className="flex-1 h-px bg-white/20"></div>
+          </div>
 
           {/* Social Login */}
           <div className="flex gap-3">

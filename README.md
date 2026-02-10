@@ -65,7 +65,7 @@ FactFool/
 │   ├── public/              # Static assets (favicon)
 │   ├── src/
 │   │   ├── components/      # Reusable components (Auth, Logo)
-│   │   ├── pages/           # Page components (LoginPage)
+│   │   ├── pages/           # Page components (LogginPage)
 │   │   ├── App.jsx          # Root component
 │   │   ├── index.css        # Global styles (Tailwind)
 │   │   └── main.jsx         # Entry point

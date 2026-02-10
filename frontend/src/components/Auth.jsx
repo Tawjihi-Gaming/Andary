@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import AvatarPicker from './AvatarPicker'
+import api from '../api/axios'
+import AvatarPicker, { AVATARS } from './AvatarPicker'
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState('guest')
@@ -8,20 +9,78 @@ const Auth = () => {
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
-  const [selectedAvatar, setSelectedAvatar] = useState(null)
+  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0])
+  const [message, setMessage] = useState(null) // { text, type: 'success' | 'error' }
+
+  const showMessage = (text, type = 'success') => {
+    setMessage({ text, type })
+    setTimeout(() => setMessage(null), 4000)
+  }
 
   const handleGuestPlay = (e) => {
     e.preventDefault()
     // Frontend only - no auth logic
+    // selectedAvatar.emoji is always available
   }
 
-  const handleAuth = (e) => {
+  // handle sign in
+  const handleAuth = async (e) => {
     e.preventDefault()
-    // Frontend only - no auth logic
+
+    try
+    {
+      if (isSignUp)
+      {
+        // Sign Up // localhost:port/api/auth/signup 
+        await api.post('/auth/signup',
+        {
+          username: displayName,
+          email,
+          password,
+          avatar: selectedAvatar.emoji,
+        })
+        showMessage('✅ تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.', 'success')
+      }
+      else
+      {
+        // Sign In // localhost:port/api/auth/login
+        await api.post('/auth/login',
+        {
+          email,
+          password
+        })
+        showMessage('✅ تم تسجيل الدخول بنجاح!', 'success')
+      }
+    }
+    catch (error)
+    {
+      console.error('Auth error:', error)
+      showMessage('❌ حدث خطأ أثناء العملية. يرجى المحاولة مرة أخرى.', 'error')
+    }
   }
 
   return (
     <div className="auth-card bg-white/10 backdrop-blur-xl rounded-3xl p-6 w-full max-w-md shadow-2xl border-2 border-white/20">
+      {/* Toast Message */}
+      {message && (
+        <div
+          className={`mb-4 px-4 py-3 rounded-xl text-center text-sm font-medium animate-fade-in transition-all duration-300 ${
+            message.type === 'success'
+              ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+              : 'bg-red-500/20 text-red-300 border border-red-500/30'
+          }`}
+          dir="rtl"
+        >
+          {message.text}
+          <button
+            onClick={() => setMessage(null)}
+            className="mr-2 text-white/60 hover:text-white transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Tabs (Guest or Loggin)*/}
       <div className="flex rounded-xl overflow-hidden mb-5 bg-white/10 p-1">
         <button
@@ -45,7 +104,7 @@ const Auth = () => {
       {/* Guest Tab Content */}
       {activeTab === 'guest' && (
         <form onSubmit={handleGuestPlay} className="space-y-4">
-          <div className="text-center mb-4">
+          <div className="selected-avatar mb-4">
             {/* Selected avatar preview */}
             <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 border-4 shadow-lg transition-all duration-300 ${
               selectedAvatar
@@ -60,7 +119,7 @@ const Auth = () => {
                 </svg>
               )}
             </div>
-            <p className="text-white/80 text-sm">ادخل اسمك واختر صورتك</p>
+            <p className="text-white/80 text-center text-sm">ادخل اسمك واختر صورتك</p>
           </div>
 
           {/* Avatar Picker */}
@@ -71,6 +130,7 @@ const Auth = () => {
               type="text"
               placeholder="اسم اللاعب"
               value={guestName}
+              required
               onChange={(e) => setGuestName(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pr-12 border-2 border-white/20 focus:border-game-yellow focus:bg-white/20 transition-all duration-200"
               dir="rtl"
@@ -119,6 +179,7 @@ const Auth = () => {
               type="email"
               placeholder="البريد الإلكتروني"
               value={email}
+              required
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pr-12 border-2 border-white/20 focus:border-game-cyan focus:bg-white/20 transition-all duration-200"
               dir="rtl"
@@ -133,6 +194,7 @@ const Auth = () => {
               type="password"
               placeholder="كلمة المرور"
               value={password}
+              required
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pr-12 border-2 border-white/20 focus:border-game-blue focus:bg-white/20 transition-all duration-200"
               dir="rtl"
@@ -150,6 +212,7 @@ const Auth = () => {
                   type="text"
                   placeholder="اسم العرض (مطلوب)"
                   value={displayName}
+                  required
                   onChange={(e) => setDisplayName(e.target.value)}
                   className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pr-12 border-2 border-white/20 focus:border-game-green focus:bg-white/20 transition-all duration-200"
                   dir="rtl"
@@ -182,6 +245,18 @@ const Auth = () => {
           <div className="flex gap-3">
             <button
               type="button"
+              // onClick={async () => {
+              //   try
+              //   {
+              //     const res = await api.get('/auth/google')
+              //     window.location.href = res.data.url
+              //   }
+              //   catch (error)
+              //   {
+              //     console.error('Google login error:', error)
+              //     showMessage('❌ حدث خطأ أثناء تسجيل الدخول بجوجل.', 'error')
+              //   }
+              // }}
               className="flex-1 bg-white hover:bg-gray-300 text-gray-800 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 font-medium shadow-lg"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

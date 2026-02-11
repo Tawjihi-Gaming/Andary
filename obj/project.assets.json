@@ -1,41 +1,11 @@
 {
   "version": 3,
   "targets": {
-    "net10.0": {
-      "Microsoft.AspNetCore.SignalR/1.2.9": {
-        "type": "package",
-        "compile": {
-          "lib/netstandard2.0/_._": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/netstandard2.0/_._": {
-            "related": ".xml"
-          }
-        }
-      }
-    }
+    "net10.0": {}
   },
-  "libraries": {
-    "Microsoft.AspNetCore.SignalR/1.2.9": {
-      "sha512": "stJwCxfcXqY982p+4dRzlK1Qv2ISrpJrVRzUWvr9PximZXBMSYFVCtOPy9LI2WsjHH/zEL4jSh3Qn2fYZomyKg==",
-      "type": "package",
-      "path": "microsoft.aspnetcore.signalr/1.2.9",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netstandard2.0/Microsoft.AspNetCore.SignalR.dll",
-        "lib/netstandard2.0/Microsoft.AspNetCore.SignalR.xml",
-        "microsoft.aspnetcore.signalr.1.2.9.nupkg.sha512",
-        "microsoft.aspnetcore.signalr.nuspec"
-      ]
-    }
-  },
+  "libraries": {},
   "projectFileDependencyGroups": {
-    "net10.0": [
-      "Microsoft.AspNetCore.SignalR >= 1.2.9"
-    ]
+    "net10.0": []
   },
   "packageFolders": {
     "/home/rsham/.nuget/packages/": {}
@@ -43,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/rsham/core/Tawjihi-Game/Tawjihi-Game.csproj",
+      "projectUniqueName": "/sgoinfre/rsham/Andary/Tawjihi-Game.csproj",
       "projectName": "Tawjihi-Game",
-      "projectPath": "/home/rsham/core/Tawjihi-Game/Tawjihi-Game.csproj",
+      "projectPath": "/sgoinfre/rsham/Andary/Tawjihi-Game.csproj",
       "packagesPath": "/home/rsham/.nuget/packages/",
-      "outputPath": "/home/rsham/core/Tawjihi-Game/obj/",
+      "outputPath": "/sgoinfre/rsham/Andary/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/rsham/.nuget/NuGet/NuGet.Config"
@@ -56,7 +26,6 @@
         "net10.0"
       ],
       "sources": {
-        "/usr/lib/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -80,12 +49,6 @@
     "frameworks": {
       "net10.0": {
         "targetAlias": "net10.0",
-        "dependencies": {
-          "Microsoft.AspNetCore.SignalR": {
-            "target": "Package",
-            "version": "[1.2.9, )"
-          }
-        },
         "imports": [
           "net461",
           "net462",
@@ -105,7 +68,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "/goinfre/rsham/dotnet/sdk/10.0.103/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
@@ -522,17 +485,5 @@
         }
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1510",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "PackageReference Microsoft.AspNetCore.SignalR will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
-      "libraryId": "Microsoft.AspNetCore.SignalR",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    }
-  ]
+  }
 }

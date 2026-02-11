@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tawjihi-Game")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b0b37836cd5cd87fd65c9f65168ae56a6417934b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+68fba562ea353d2ef3706313e5fa6ee34808d0fc")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tawjihi-Game")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tawjihi-Game")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

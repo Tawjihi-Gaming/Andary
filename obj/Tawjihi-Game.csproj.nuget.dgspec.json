@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/rsham/core/Tawjihi-Game/Tawjihi-Game.csproj": {}
+    "/sgoinfre/rsham/Andary/Tawjihi-Game.csproj": {}
   },
   "projects": {
-    "/home/rsham/core/Tawjihi-Game/Tawjihi-Game.csproj": {
+    "/sgoinfre/rsham/Andary/Tawjihi-Game.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/rsham/core/Tawjihi-Game/Tawjihi-Game.csproj",
+        "projectUniqueName": "/sgoinfre/rsham/Andary/Tawjihi-Game.csproj",
         "projectName": "Tawjihi-Game",
-        "projectPath": "/home/rsham/core/Tawjihi-Game/Tawjihi-Game.csproj",
+        "projectPath": "/sgoinfre/rsham/Andary/Tawjihi-Game.csproj",
         "packagesPath": "/home/rsham/.nuget/packages/",
-        "outputPath": "/home/rsham/core/Tawjihi-Game/obj/",
+        "outputPath": "/sgoinfre/rsham/Andary/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/rsham/.nuget/NuGet/NuGet.Config"
@@ -20,7 +20,6 @@
           "net10.0"
         ],
         "sources": {
-          "/usr/lib/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -44,12 +43,6 @@
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
-          "dependencies": {
-            "Microsoft.AspNetCore.SignalR": {
-              "target": "Package",
-              "version": "[1.2.9, )"
-            }
-          },
           "imports": [
             "net461",
             "net462",
@@ -69,7 +62,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/goinfre/rsham/dotnet/sdk/10.0.103/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

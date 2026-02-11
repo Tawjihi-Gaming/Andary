@@ -7,8 +7,4 @@
     <RootNamespace>Tawjihi_Game</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.9" />
-  </ItemGroup>
-
 </Project>

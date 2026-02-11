@@ -1,35 +1,45 @@
-//This brings in the SignalR library.
-//It abstracts the transport layer: it will try WebSockets first,
-//then fallback to Server-Sent Events (SSE) or
-//long-polling if WebSockets aren’t available.
-//It provides the Hub abstraction, so you don’t need to manage
-//raw WebSocket connections manually.
-using Microsoft.AspNetCore.SignalR;
-
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSignalR(); // enable SignalR
+builder.Services.AddSignalR();
 var app = builder.Build();
 
-app.UseDefaultFiles();  // serve index.html by default
-app.UseStaticFiles();   // serve front-end files
+// Enable serving static files from wwwroot
+app.UseStaticFiles();
 
-// Map SignalR hub endpoint
-app.MapHub<QuizHub>("/quiz");
+// Serve index.html at the root URL
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+//This does not open WebSockets.
+//It does not accept connections yet.
+//It just says:
+//“If someone wants a SignalR connection at
+//gamehub, use GameHub.”
+
+//Imagine the browser says:
+//“Hello server, I want to open a SignalR connection.”
+//The server must answer two questions:
+// 1. At what URL?
+// 2. Which hub handles it?
+
+//“If a request comes to /gamehub
+//and it is a SignalR negotiation / connection
+//then use GameHub to handle it.”
+
+//This is NOT a normal HTTP endpoint
+//This is not like:
+//app.MapGet("/gamehub", () => "Hello");
+//Key difference:
+// 1. MapGet → one request → one response → done
+// 2. MapHub → negotiate → connect → stay open → exchange messages
+
+//MapHub<>()
+//MapHub<T> is a generic method provided by SignalR.
+//T is the hub class you want to expose.
+//what this function do?
+//app.MapHub<GameHub>("/gamehub") tells your server:
+//“Here is a hub class GameHub. If anyone connects to /gamehub,
+//create a hub instance and let clients call its allowed methods
+//and receive messages.”
+app.MapHub<GameHub>("/gamehub");
 
 app.Run();
-
-public class QuizHub : Hub
-{
-    // Minimal hub to enable connection
-    public override async Task OnConnectedAsync()
-    {
-        Console.WriteLine($"Client connected: {Context.ConnectionId}");
-        await base.OnConnectedAsync();
-    }
-
-    public override async Task OnDisconnectedAsync(Exception? exception)
-    {
-        Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
-        await base.OnDisconnectedAsync(exception);
-    }
-}

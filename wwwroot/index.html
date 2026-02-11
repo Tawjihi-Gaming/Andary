@@ -1,25 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SignalR Test</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 </head>
 <body>
-<h1>SignalR Connection Test</h1>
-<button onclick="connect()">Connect to Server</button>
+    <button onclick="ping()">Ping Server</button>
 
-<script>
-let connection;
+    <script>
+        // 1️⃣ Build a SignalR connection
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/gamehub")  // URL must match MapHub
+            .build();
 
-function connect() {
-    connection = new signalR.HubConnectionBuilder()
-        .withUrl("/quiz")
-        .build();
+        // 2️⃣ Handle messages from server
+        connection.on("Pong", () => {
+            console.log("Pong received from server");
+        });
 
-    connection.start()
-        .then(() => console.log("Connected to server!"))
-        .catch(err => console.error(err));
-}
-</script>
+        // 3️⃣ Start the connection
+        async function start() {
+            await connection.start();
+            console.log("Connected to GameHub");
+        }
+
+        start();
+
+        // 4️⃣ Call server method
+        async function ping() {
+            await connection.invoke("Ping");
+        }
+    </script>
 </body>
 </html>
+

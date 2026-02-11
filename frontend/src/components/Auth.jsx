@@ -40,8 +40,13 @@ const Auth = ({ onLogin }) => {
 
   const handleGuestPlay = (e) => {
     e.preventDefault()
-    // Frontend only - no auth logic
-    // selectedAvatar.emoji is always available
+    // Pass guest user data
+    const userData = {
+      username: guestName,
+      avatar: selectedAvatar.emoji,
+      isGuest: true
+    }
+    onLogin?.(userData)
   }
 
   // handle sign in
@@ -67,12 +72,19 @@ const Auth = ({ onLogin }) => {
       }
       else
       {
-        await api.post('/auth/login', {
+        const response = await api.post('/auth/login', {
           email,
           password
         })
         showMessage('✅ تم تسجيل الدخول بنجاح!', 'success')
-        setTimeout(() => onLogin?.(), 1000)
+        // Pass authenticated user data
+        const userData = {
+          username: response.data.user?.username || email.split('@')[0],
+          email: email,
+          avatar: response.data.user?.avatar || '👤',
+          isGuest: false
+        }
+        setTimeout(() => onLogin?.(userData), 1000)
       }
     }
     catch (error)

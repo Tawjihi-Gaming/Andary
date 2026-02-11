@@ -36,7 +36,7 @@ api.interceptors.request.use((config) => {
       Promise.resolve({
         data: {
           message: 'Login successful!',
-          user: { username: 'TestUser', email: data.email }
+          user: { username: data.email.split('@')[0], email: data.email, avatar: '🎮' }
         },
         status: 200,
         statusText: 'OK',
@@ -50,7 +50,7 @@ api.interceptors.request.use((config) => {
     console.log('🧪 MOCK: Google login initiated')
     config.adapter = () =>
       Promise.resolve({
-        data: { url: 'https://accounts.google.com/mock-oauth' },
+        data: { url: 'https://accounts.google.com/mock-oauth' }, // hahhah
         status: 200,
         statusText: 'OK',
         headers: {},

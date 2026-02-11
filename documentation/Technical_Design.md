@@ -106,26 +106,15 @@ This document describes the architecture, components, and flow of a trivia onlin
 * Events:
 
   * `player_joined` / `player_left`
-  * `game_config_update`
-  * `question_submitted`
-  * `answer_selected`
-  * `round_results`
+  * `player_ready` / `player_not_ready`
+  * `update_game_config` / `game_config_updated`
+  * `start_game`
+  * `selecting_topic` / `select_topic` / `topic_selcted`
+  * `start_question_round`
+  * `submit_fake_answer` / `answers_submitted`
+  * `select_answer` / `answer_selected`
+  * `results`
   * `game_finished`
-
-### Example Event Flow
-
-```
-Player -> Server: join_lobby
-Server -> All: player_joined
-Owner -> Server: update_game_config
-Server -> All: game_config_updated
-Server -> All: start_question_round
-Player -> Server: submit_incorrect_answer
-Server -> All: round_answers_submitted
-Server -> All: show_question_with_answers
-Player -> Server: select_answer
-Server -> All: round_results
-```
 
 ## Directory Structure Suggestion
 
@@ -178,7 +167,7 @@ docker compose up
 
 ## Authentication
 
-**Oauth2.0** will be the only authentication supported.
+Players will be able to use **email and password** or **Oauth2.0** to login/register.
 
 Authentication is used only to establish player identity at lobby entry; during gameplay all participants are treated uniformly using session-scoped player identifiers.
 

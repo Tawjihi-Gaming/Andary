@@ -23,7 +23,7 @@ services:
   nginx:
     container_name: nginx
     image: nginx:andari
-    build: ./ngnix
+    build: ./nginx
     ports:
       - "80:80"
       - "443:443"

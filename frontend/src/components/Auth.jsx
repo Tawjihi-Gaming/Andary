@@ -2,7 +2,7 @@ import { useState } from 'react'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from './AvatarPicker'
 
-const Auth = () => {
+const Auth = ({ onLogin }) => {
   const [activeTab, setActiveTab] = useState('guest')
   const [guestName, setGuestName] = useState('')
   const [email, setEmail] = useState('')
@@ -72,6 +72,7 @@ const Auth = () => {
           password
         })
         showMessage('✅ تم تسجيل الدخول بنجاح!', 'success')
+        setTimeout(() => onLogin?.(), 1000)
       }
     }
     catch (error)

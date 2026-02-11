@@ -1,7 +1,7 @@
 import Logo from '../components/Logo.jsx'
 import Auth from '../components/Auth.jsx'
 
-function LoginPage() {
+function LoginPage({ onLogin }) {
   return (
     <>
       <div className="min-h-screen bg-linear-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] flex items-center justify-center p-4 relative overflow-hidden">
@@ -22,7 +22,7 @@ function LoginPage() {
           </div>
 
           {/* Auth and Login - Left Side */}
-          <Auth/>
+          <Auth onLogin={onLogin} />
         </div>
       </div>
     </>

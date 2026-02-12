@@ -19,6 +19,7 @@ namespace Backend.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
+        #region Fields & Constructor
         private readonly AppDbContext _db;
         private readonly IConfiguration _config;
         private readonly GoogleOAuthConfig _googleConfig;
@@ -29,7 +30,9 @@ namespace Backend.Controllers
             _config = config;
             _googleConfig = googleConfig;
         }
+        #endregion
 
+        #region JWT & Refresh Token Helpers
         private string GenerateJwtToken(Player player)
         {
             var key = _config["Jwt:Key"]!;
@@ -56,7 +59,7 @@ namespace Backend.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
+       
         private string GenerateRefreshToken()
         {
             var randomBytes = new byte[32];
@@ -64,6 +67,17 @@ namespace Backend.Controllers
             rng.GetBytes(randomBytes);
             return Convert.ToBase64String(randomBytes);
         }
+       
+        private string HashToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+            return Convert.ToBase64String(bytes);
+        }
+
+        #endregion
+        
+        #region Cookie Helpers
 
         private CookieOptions BuildAuthCookieOptions(DateTime expires)
         {
@@ -82,24 +96,20 @@ namespace Backend.Controllers
                 return;
             Response.Cookies.Append("jwt", token, BuildAuthCookieOptions(DateTime.UtcNow.AddHours(1)));
         }
-
+        
         private void SetRefreshToken(Player player)
         {
             if (player == null) return;
-            player.RefreshToken = GenerateRefreshToken();
+
+            var refreshToken = GenerateRefreshToken();
+
+            player.RefreshToken = HashToken(refreshToken);
             player.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+            Response.Cookies.Append("refreshToken", refreshToken,
+                BuildAuthCookieOptions(player.RefreshTokenExpiryTime.Value));
         }
-
-        private void SetRefreshTokenCookie(Player player)
-        {
-            if (player == null) return;
-            if (string.IsNullOrEmpty(player.RefreshToken) || !player.RefreshTokenExpiryTime.HasValue)
-                return;
-
-            Response.Cookies.Append("refreshToken", player.RefreshToken, 
-                    BuildAuthCookieOptions(player.RefreshTokenExpiryTime.Value));
-        }
-
+        
         private async Task<IActionResult> SetAuthCookiesAsync(Player player)
         {
             if (player == null)
@@ -111,18 +121,21 @@ namespace Backend.Controllers
             SetRefreshToken(player);
             await _db.SaveChangesAsync();
 
-            SetRefreshTokenCookie(player);
             return Ok(new { msg = "Authentication successful" });
         }
+        
+        #endregion
+        
+        #region Google OAuth Helpers
 
-        private Dictionary<string, string> BuildGoogleTokenRequestBody(string code)
+         private Dictionary<string, string> BuildGoogleTokenRequestBody(string code)
         {
-            if (_googleConfig?.web == null)
+            if (_googleConfig?.web == null || string.IsNullOrEmpty(code))
                 return new Dictionary<string, string>();
 
             return new Dictionary<string, string>
             {
-                { "code", code ?? "" },
+                { "code", code},
                 { "client_id", _googleConfig.web.client_id ?? "" },
                 { "client_secret", _googleConfig.web.client_secret ?? "" },
                 { "redirect_uri", _googleConfig.web.redirect_uris?.FirstOrDefault() ?? "" },
@@ -133,7 +146,7 @@ namespace Backend.Controllers
         private async Task<GoogleTokenResponse?> ExchangeCodeForGoogleTokenAsync(string code)
         {
             var body = BuildGoogleTokenRequestBody(code);
-            if (!body.Any()) return null;
+            if (body.Count == 0) return null;
 
             using var httpClient = new HttpClient();
             var requestContent = new FormUrlEncodedContent(body);
@@ -145,7 +158,45 @@ namespace Backend.Controllers
             return JsonSerializer.Deserialize<GoogleTokenResponse>(responseContent);
         }
 
-        private (string? Email, string? Name, string? GoogleId) ParseGoogleIdToken(string idToken)
+        private async Task<IEnumerable<SecurityKey>> GetGoogleSigningKeysAsync()
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync("https://www.googleapis.com/oauth2/v3/certs");
+            if (!response.IsSuccessStatusCode)
+                return Enumerable.Empty<SecurityKey>();
+            
+            var jwks = JsonSerializer.Deserialize<JsonWebKeySet>(response);
+            return jwks?.Keys ?? Enumerable.Empty<SecurityKey>();
+        }
+
+        private async Task<bool> IsGoogleIdTokenValid(JwtSecurityToken jwtToken)
+        {
+            var signingKeys = await GetGoogleSigningKeysAsync();
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = "https://accounts.google.com",
+                ValidAudience = _googleConfig.web?.client_id,
+                IssuerSigningKeys = signingKeys, 
+                ClockSkew = TimeSpan.Zero
+            };
+            try
+            {
+                tokenHandler.ValidateToken(jwtToken.RawData, validationParameters, out _);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+
+        }
+
+        private async Task<(string? Email, string? Name, string? GoogleId)> ParseGoogleIdToken(string idToken)
         {
             if (string.IsNullOrEmpty(idToken))
                 return (null, null, null);
@@ -153,6 +204,12 @@ namespace Backend.Controllers
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(idToken);
 
+            var exp = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
+            if (!long.TryParse(exp, out var expSeconds) 
+                || DateTimeOffset.FromUnixTimeSeconds(expSeconds) < DateTimeOffset.UtcNow
+                || !await IsGoogleIdTokenValid(jwtToken))
+                return (null, null, null);
+            
             var email = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
             var name = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
             var googleId = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
@@ -178,6 +235,10 @@ namespace Backend.Controllers
             return player;
         }
 
+        #endregion
+        
+        #region Refresh Token Endpoint
+
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {
@@ -185,7 +246,9 @@ namespace Backend.Controllers
             if (string.IsNullOrEmpty(refreshToken))
                 return BadRequest(new { msg = "No refresh token provided" });
 
-            var player = await _db.Players.FirstOrDefaultAsync(p => p.RefreshToken == refreshToken);
+            var hashedToken = HashToken(refreshToken);
+            var player = await _db.Players
+                .FirstOrDefaultAsync(p => p.RefreshToken == hashedToken);
             if (player == null || player.RefreshTokenExpiryTime <= DateTime.UtcNow)
                 return BadRequest(new { msg = "Invalid or expired refresh token" });
 
@@ -195,10 +258,13 @@ namespace Backend.Controllers
             {
                 SetRefreshToken(player);
                 await _db.SaveChangesAsync();
-                SetRefreshTokenCookie(player);
             }
             return Ok(new { msg = "Token refreshed" });
         }
+
+        #endregion
+
+        #region Local Auth Endpoints
 
         [HttpPost("signup")]
         public async Task<IActionResult> SignUp(PlayerSignupDto dto)
@@ -251,6 +317,10 @@ namespace Backend.Controllers
             return await SetAuthCookiesAsync(player);
         }
 
+        #endregion
+
+        #region Google Endpoints
+
         [HttpGet("google-login")]
         public IActionResult GoogleLogin()
         {
@@ -285,5 +355,6 @@ namespace Backend.Controllers
             }
             return Redirect("https://localhost:3000/lobby");
         }
+        #endregion
     }
 }

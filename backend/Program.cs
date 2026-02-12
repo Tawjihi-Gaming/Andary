@@ -8,10 +8,13 @@ using System.Text.Json;
 
 try
 {
+    #region App Builder
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Services.AddControllers();
+    #endregion
 
+    #region JWT Authentication
     var jwtKey = builder.Configuration["Jwt:Key"];
     var jwtIssuer = builder.Configuration["Jwt:Issuer"];
     var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -31,6 +34,7 @@ try
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = jwtIssuer,
                 ValidAudience = jwtAudience,
+                ClockSkew = TimeSpan.Zero,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
             };
             options.Events = new JwtBearerEvents
@@ -46,19 +50,24 @@ try
                 }
             };
         });
+    #endregion
 
+    #region Google OAuth Configuration
     var googleOAuthJson = File.ReadAllText("Config/google.json");
+
     var googleOAuthConfig = JsonSerializer.Deserialize<GoogleOAuthConfig>(googleOAuthJson)
         ?? throw new InvalidOperationException("Google OAuth configuration is missing or invalid.");
     builder.Services.AddSingleton(googleOAuthConfig);
+    #endregion
 
+    #region Database
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
     );
+    #endregion
 
+    #region App Pipeline
     var app = builder.Build();
-
-
 
     app.UseExceptionHandler(errorApp =>
     {
@@ -74,8 +83,11 @@ try
     app.UseAuthorization();
     app.UseHttpsRedirection();
     app.MapControllers();
+    #endregion
 
+    #region Run
     app.Run();
+    #endregion
 }
 catch (Exception ex)
 {

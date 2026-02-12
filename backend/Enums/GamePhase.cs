@@ -1,0 +1,12 @@
+//Prevent bugs caused by magic strings.
+
+namespace backend.Enums;
+
+public enum GamePhase
+{
+    Lobby,
+    CollectingAns,
+    ChoosingAns,
+    ShowingRanking,
+    GameEnded
+}

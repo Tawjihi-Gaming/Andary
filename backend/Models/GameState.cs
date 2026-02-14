@@ -16,9 +16,10 @@ namespace backend.Models
         public GamePhase Phase { get; set; }
         public int CurrentQuestionIndex { get; set; }
         public int TotalQuestions { get; set; }
-        public Question CurrentQuestion { get; set; }
+        public Question? CurrentQuestion { get; set; }
         public List<Player> Players { get; set; } = new();
         public List<string> Choices { get; set; } = new();
         public string? RoomCode { get; set; } // for private rooms
+        public string? SelectedTopic { get; set; }
     }
 }

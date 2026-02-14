@@ -18,55 +18,62 @@ public class GameHub : Hub
         _questionsService = questionsService;
     }
 
-    // Start game after players joined
+    // Called by each player after joining a room (via REST API) to register
+    // their SignalR connection with the room's group.
+    // This is the entry point into real-time communication.
+    public async Task ConnectToRoom(string roomId, string playerName)
+    {
+        var room = _game.GetRoom(roomId);
+
+        // Link the SignalR connectionId to the player who joined via API
+        var player = room.Players.FirstOrDefault(p => p.Name == playerName);
+        if (player == null)
+            return;
+
+        player.ConnectionId = Context.ConnectionId;
+
+        // Add this connection to the SignalR group for real-time updates
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        await Clients.Group(roomId).SendAsync("PlayerConnected", playerName);
+    }
+
+    // Player selects a topic for the room.
+    // Frontend shows topic options → player picks one → this method is called.
+    // Backend stores the choice, then broadcasts it + available topics to all players.
+    public async Task SelectTopic(string roomId, string topic)
+    {
+        var room = _game.GetRoom(roomId);
+
+        if (!_game.SelectTopic(room, topic))
+            return;
+
+        // Tell all players in the room which topic was chosen
+        await Clients.Group(roomId).SendAsync("TopicSelected", topic);
+    }
+
+    // Returns the list of available topics to the caller
+    public async Task GetTopics(string roomId)
+    {
+        var topics = _questionsService.GetTopics();
+        await Clients.Caller.SendAsync("AvailableTopics", topics);
+    }
+
+    // Start game — uses the topic the player already selected
     public async Task StartGame(string roomId)
     {
         var room = _game.GetRoom(roomId);
 
-        var questions = _questionsService.GetQuestions(room.TotalQuestions);
+        // A topic must be selected before starting
+        if (room.SelectedTopic == null)
+            return;
+
+        // Fetch questions filtered by the chosen topic
+        var questions = _questionsService.GetQuestions(room.TotalQuestions, room.SelectedTopic);
 
         _game.StartGame(room, questions);
 
         var gameState = _game.GetGameState(room);
         await Clients.Group(roomId).SendAsync("GameStarted", gameState);
-    }
-
-    //Task is a type in .NET used for asynchronous operations.
-    //Task represents a promise that some work will complete in the future.
-    public async Task CreateRoom(bool isPrivate, int questions)
-    {
-        RoomType type;
-        if (isPrivate)
-            type = RoomType.Private;
-        else
-            type = RoomType.Public;
-
-        var room = _game.CreateRoom(type, questions);
-        //await
-        // - Pauses the method without blocking the thread until the awaited Task finishes.
-        //Adds this player to a SignalR group for the room.
-        await Groups.AddToGroupAsync(Context.ConnectionId, room.RoomId);
-
-        //Sends confirmation to the player who created the room, including room ID and code.
-        await Clients.Caller.SendAsync("RoomCreated", room.RoomId, room.Code);
-    }
-
-    public async Task JoinRoom(string roomId, string name)
-    {
-        var player = new Player
-        {
-            ConnectionId = Context.ConnectionId,
-            Name = name
-        };
-
-        if (!_game.JoinRoom(roomId, player))
-        {
-            await Clients.Caller.SendAsync("JoinFailed");
-            return;
-        }
-
-        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Group(roomId).SendAsync("PlayerJoined", name);
     }
 
     public async Task SubmitFakeAnswer(string roomId, string fake)

@@ -5,6 +5,7 @@ namespace backend.Enums;
 public enum GamePhase
 {
     Lobby,
+    ChoosingTopic,
     CollectingAns,
     ChoosingAns,
     ShowingRanking,

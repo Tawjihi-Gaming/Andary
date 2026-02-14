@@ -5,23 +5,21 @@ namespace backend.Services
 {
     public class QuestionsService
     {
-        private List<Question> _allQuestions = new()
-        {
-            new Question { Text = "What is 2+2?", CorrectAnswer = "4" },
-            new Question { Text = "Capital of France?", CorrectAnswer = "Paris" },
-            new Question { Text = "Color of the sky?", CorrectAnswer = "Blue" },
-            new Question { Text = "Fastest land animal?", CorrectAnswer = "Cheetah" },
-            new Question { Text = "Largest planet?", CorrectAnswer = "Jupiter" },
-            new Question { Text = "Water freezes at?", CorrectAnswer = "0°C" },
-            new Question { Text = "How many continents?", CorrectAnswer = "7" },
-            new Question { Text = "Primary color?", CorrectAnswer = "Red" },
-            new Question { Text = "Hottest planet?", CorrectAnswer = "Venus" },
-            new Question { Text = "Deepest ocean?", CorrectAnswer = "Pacific" }
-        };
+        // TODO: Replace with database queries once DbContext is set up.
+        // These methods define the contract that the rest of the app uses.
 
-        public List<Question> GetQuestions(int total)
+        // Get all available topic names from the database
+        public List<string> GetTopics()
         {
-            return _allQuestions.Take(total).ToList();
+            // Will query the database for distinct topics
+            return new List<string>();
+        }
+
+        // Get questions filtered by topic from the database
+        public List<Question> GetQuestions(int total, string topic)
+        {
+            // Will query the database for questions matching the topic
+            return new List<Question>();
         }
     }
 }

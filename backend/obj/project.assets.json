@@ -3069,11 +3069,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/sgoinfre/rsham/Andary/backend/backend.csproj",
+      "projectUniqueName": "/home/rsham/sgoinfre/Andary/backend/backend.csproj",
       "projectName": "backend",
-      "projectPath": "/sgoinfre/rsham/Andary/backend/backend.csproj",
+      "projectPath": "/home/rsham/sgoinfre/Andary/backend/backend.csproj",
       "packagesPath": "/home/rsham/.nuget/packages/",
-      "outputPath": "/sgoinfre/rsham/Andary/backend/obj/",
+      "outputPath": "/home/rsham/sgoinfre/Andary/backend/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/rsham/.nuget/NuGet/NuGet.Config"
@@ -3160,7 +3160,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/sgoinfre/rsham/dotnet/sdk/10.0.103/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "/goinfre/rsham/dotnet10/sdk/10.0.102/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

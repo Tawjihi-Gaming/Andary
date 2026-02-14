@@ -19,7 +19,7 @@ public class GameManager
         room.Type = type;
 
         if (type == RoomType.Private)
-        //6 digits
+            //6 digits
             room.Code = new Random().Next(100000, 999999).ToString();
         else
             room.Code = null;
@@ -55,7 +55,19 @@ public class GameManager
         return _rooms[roomId];
     }
 
-    //start game
+    // Set the topic chosen by the player and move to ChoosingTopic phase
+    public bool SelectTopic(Room room, string topic)
+    {
+        //Topic can only be selected during the Lobby phase
+        if (room.Phase != GamePhase.Lobby)
+            return false;
+
+        room.SelectedTopic = topic;
+        room.Phase = GamePhase.ChoosingTopic;
+        return true;
+    }
+
+    //start game — now uses the selected topic to filter questions
     public void StartGame(Room room, List<Question> questions)
     {
         room.Questions = questions;
@@ -168,6 +180,7 @@ public class GameManager
         state.CurrentQuestion = room.CurrentQuestion!;
         state.Players = room.Players;
         state.RoomCode = room.Code;
+        state.SelectedTopic = room.SelectedTopic;
 
         if (room.Phase == GamePhase.ChoosingAns)
             state.Choices = BuildAnswerChoices(room);

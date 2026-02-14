@@ -3,8 +3,12 @@ using backend.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//enable SignalR
+//enable SignalR (used only during gameplay)
 builder.Services.AddSignalR();
+
+//enable REST API controllers (used for pre-game: create/join room)
+builder.Services.AddControllers();
+
 builder.Services.AddSingleton<GameManager>();
 builder.Services.AddSingleton<QuestionsService>();
 
@@ -64,6 +68,10 @@ app.UseStaticFiles();
 //and receive messages.”
 
 
+// REST API endpoints (pre-game: create room, join room)
+app.MapControllers();
+
+// SignalR hub (in-game real-time communication only)
 app.MapHub<GameHub>("/gamehub");
 
 app.Run();

@@ -20,6 +20,9 @@ public class Room
 
     public GamePhase Phase { get; set; } = GamePhase.Lobby;
 
+    //The topic chosen by the room host (e.g. "Science", "History")
+    public string? SelectedTopic { get; set; }
+
     public int TotalQuestions { get; set; }
     public int CurrentQuestionIndex { get; set; }
 

@@ -132,3 +132,4 @@
 /sgoinfre/rsham/Andary/backend/obj/Debug/net10.0/backend.pdb
 /sgoinfre/rsham/Andary/backend/obj/Debug/net10.0/backend.genruntimeconfig.cache
 /sgoinfre/rsham/Andary/backend/obj/Debug/net10.0/ref/backend.dll
+/sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.InMemory.dll

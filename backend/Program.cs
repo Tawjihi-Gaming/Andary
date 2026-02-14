@@ -10,9 +10,23 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // DbContext
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+// var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// builder.Services.AddDbContext<AppDbContext>(options =>
+//     options.UseNpgsql(connectionString));
+
+// DbContext — In-Memory for development, PostgreSQL for production
+//remove it when database get ready
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("AndaryDevDb"));
+}
+else
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
 
 // SignalR
 builder.Services.AddSignalR();
@@ -37,6 +51,34 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Seed test data for development (in-memory DB)
+//remove it when database get ready
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+
+    if (!db.Players.Any())
+    {
+        db.Players.Add(new backend.Models.Player
+        {
+            Id = 1,
+            Username = "TestPlayer",
+            AvatarImageName = "avatar1.png",
+            XP = 0
+        });
+        db.Players.Add(new backend.Models.Player
+        {
+            Id = 2,
+            Username = "TestPlayer2",
+            AvatarImageName = "avatar2.png",
+            XP = 0
+        });
+        db.SaveChanges();
+    }
+}
 
 // Pipeline
 if (app.Environment.IsDevelopment())

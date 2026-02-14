@@ -36,6 +36,26 @@ public class RoomController : ControllerBase
     [HttpPost("join")]
     public IActionResult JoinRoom([FromBody] JoinRoomRequest request)
     {
+        // Check if room exists
+        Room room;
+        try
+        {
+            room = _game.GetRoom(request.RoomId);
+        }
+        catch
+        {
+            return BadRequest(new { error = "Room not found." });
+        }
+
+        // If private room, verify the code
+        if (room.Type == RoomType.Private)
+        {
+            if (string.IsNullOrEmpty(request.Code) || request.Code != room.Code)
+            {
+                return BadRequest(new { error = "Invalid room code." });
+            }
+        }
+
         // Get player from database using playerId
         var player = _context.Players.FirstOrDefault(p => p.Id == request.PlayerId);
         if (player == null)
@@ -95,4 +115,5 @@ public class JoinRoomRequest
 {
     public string RoomId { get; set; } = "";
     public int PlayerId { get; set; } // Use Player ID from database instead of name
+    public string? Code { get; set; } // Required for private rooms
 }

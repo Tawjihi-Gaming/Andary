@@ -10,11 +10,11 @@ namespace backend.Services;
 public class GameManager
 {
     private readonly Dictionary<string, Room> _rooms = new();
-    private readonly AppDbContext _context;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public GameManager(AppDbContext context)
+    public GameManager(IServiceScopeFactory scopeFactory)
     {
-        _context = context;
+        _scopeFactory = scopeFactory;
     }
 
     public Room CreateRoom(RoomType type, int totalQuestions)
@@ -198,6 +198,9 @@ public class GameManager
     // Save game session and participants to database
     public async Task SaveGameSession(Room room)
     {
+        using var scope = _scopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
         // Create game session
         var gameSession = new GameSession
         {
@@ -206,8 +209,8 @@ public class GameManager
             GameConfigSnapshot = JsonSerializer.Serialize(new { Topic = room.SelectedTopic })
         };
 
-        _context.GameSessions.Add(gameSession);
-        await _context.SaveChangesAsync();
+        context.GameSessions.Add(gameSession);
+        await context.SaveChangesAsync();
 
         // Create game participants with final scores and ranks
         var rankedPlayers = room.Players
@@ -224,10 +227,10 @@ public class GameManager
                 FinalScore = rankedPlayer.Player.XP,
                 FinalRank = rankedPlayer.Rank
             };
-            _context.GameParticipants.Add(participant);
+            context.GameParticipants.Add(participant);
         }
 
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
     }
 
 }

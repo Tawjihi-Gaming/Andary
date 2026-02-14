@@ -18,7 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddSignalR();
 
 // Game services
-builder.Services.AddScoped<GameManager>();
+builder.Services.AddSingleton<GameManager>();
 builder.Services.AddScoped<QuestionsService>();
 
 // CORS
@@ -26,7 +26,10 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8080")
+        policy.WithOrigins(
+                  "http://localhost:3000", "https://localhost:3000",
+                  "http://127.0.0.1:3000", "https://127.0.0.1:3000",
+                  "http://localhost:8080", "https://localhost:8080")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

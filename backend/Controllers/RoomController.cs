@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using backend.Services;
 using backend.Models;
 using backend.Enums;
+using backend.Data;
 
 namespace backend.Controllers;
 
@@ -12,10 +13,12 @@ namespace backend.Controllers;
 public class RoomController : ControllerBase
 {
     private readonly GameManager _game;
+    private readonly AppDbContext _context;
 
-    public RoomController(GameManager game)
+    public RoomController(GameManager game, AppDbContext context)
     {
         _game = game;
+        _context = context;
     }
 
     // POST api/room/create
@@ -33,18 +36,29 @@ public class RoomController : ControllerBase
     [HttpPost("join")]
     public IActionResult JoinRoom([FromBody] JoinRoomRequest request)
     {
-        var player = new Player
+        // Get player from database using playerId
+        var player = _context.Players.FirstOrDefault(p => p.Id == request.PlayerId);
+        if (player == null)
         {
-            ConnectionId = "", // Will be set when the player connects via SignalR
-            Name = request.Name
+            return BadRequest(new { error = "Player not found." });
+        }
+
+        // Create a runtime player object (with ConnectionId set later via SignalR)
+        var gamePlayer = new Player
+        {
+            Id = player.Id,
+            Username = player.Username,
+            AvatarImageName = player.AvatarImageName,
+            XP = player.XP,
+            ConnectionId = "" // Will be set when the player connects via SignalR
         };
 
-        if (!_game.JoinRoom(request.RoomId, player))
+        if (!_game.JoinRoom(request.RoomId, gamePlayer))
         {
             return BadRequest(new { error = "Unable to join room." });
         }
 
-        return Ok(new { roomId = request.RoomId, playerName = request.Name });
+        return Ok(new { roomId = request.RoomId, playerId = player.Id, playerName = player.Username });
     }
 
     // GET api/room/{roomId}
@@ -59,7 +73,7 @@ public class RoomController : ControllerBase
                 roomId = room.RoomId,
                 code = room.Code,
                 phase = room.Phase.ToString(),
-                players = room.Players.Select(p => p.Name),
+                players = room.Players.Select(p => new { id = p.Id, name = p.Username, xp = p.XP }),
                 totalQuestions = room.TotalQuestions
             });
         }
@@ -80,5 +94,5 @@ public class CreateRoomRequest
 public class JoinRoomRequest
 {
     public string RoomId { get; set; } = "";
-    public string Name { get; set; } = "";
+    public int PlayerId { get; set; } // Use Player ID from database instead of name
 }

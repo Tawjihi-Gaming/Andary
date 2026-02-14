@@ -1,25 +1,37 @@
 using backend.Models;
-using System.Collections.Generic;
+using backend.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services
 {
     public class QuestionsService
     {
-        // TODO: Replace with database queries once DbContext is set up.
-        // These methods define the contract that the rest of the app uses.
+        private readonly AppDbContext _context;
+
+        public QuestionsService(AppDbContext context)
+        {
+            _context = context;
+        }
 
         // Get all available topic names from the database
         public List<string> GetTopics()
         {
-            // Will query the database for distinct topics
-            return new List<string>();
+            return _context.Topics
+                .Select(t => t.Name)
+                .ToList();
         }
 
         // Get questions filtered by topic from the database
-        public List<Question> GetQuestions(int total, string topic)
+        public List<Question> GetQuestions(int total, string topicName)
         {
-            // Will query the database for questions matching the topic
-            return new List<Question>();
+            var topic = _context.Topics.FirstOrDefault(t => t.Name == topicName);
+            if (topic == null)
+                return new List<Question>();
+
+            return _context.Questions
+                .Where(q => q.TopicId == topic.Id)
+                .Take(total)
+                .ToList();
         }
     }
 }

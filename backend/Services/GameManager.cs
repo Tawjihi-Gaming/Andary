@@ -1,16 +1,21 @@
 //The game brain.
 
-//GameManager skeleton
 using backend.Enums;
 using backend.Models;
+using backend.Data;
+using System.Text.Json;
 
 namespace backend.Services;
 
 public class GameManager
 {
-    //readonly:
-    // - _rooms cannot be reassigned after the constructor or initialization.
     private readonly Dictionary<string, Room> _rooms = new();
+    private readonly AppDbContext _context;
+
+    public GameManager(AppDbContext context)
+    {
+        _context = context;
+    }
 
     public Room CreateRoom(RoomType type, int totalQuestions)
     {
@@ -188,6 +193,41 @@ public class GameManager
             state.Choices = new List<string>();
 
         return state;
+    }
+
+    // Save game session and participants to database
+    public async Task SaveGameSession(Room room)
+    {
+        // Create game session
+        var gameSession = new GameSession
+        {
+            TotalRounds = room.TotalQuestions,
+            FinishedAt = DateTime.UtcNow,
+            GameConfigSnapshot = JsonSerializer.Serialize(new { Topic = room.SelectedTopic })
+        };
+
+        _context.GameSessions.Add(gameSession);
+        await _context.SaveChangesAsync();
+
+        // Create game participants with final scores and ranks
+        var rankedPlayers = room.Players
+            .OrderByDescending(p => p.XP)
+            .Select((p, index) => new { Player = p, Rank = index + 1 })
+            .ToList();
+
+        foreach (var rankedPlayer in rankedPlayers)
+        {
+            var participant = new GameParticipant
+            {
+                GameSessionId = gameSession.Id,
+                PlayerId = rankedPlayer.Player.Id,
+                FinalScore = rankedPlayer.Player.XP,
+                FinalRank = rankedPlayer.Rank
+            };
+            _context.GameParticipants.Add(participant);
+        }
+
+        await _context.SaveChangesAsync();
     }
 
 }

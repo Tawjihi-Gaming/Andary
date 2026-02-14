@@ -1,7 +1,14 @@
 using backend.Services;
 using backend.Hubs;
+using backend.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add DbContext with connection string from appsettings
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 //enable SignalR (used only during gameplay)
 builder.Services.AddSignalR();
@@ -9,8 +16,8 @@ builder.Services.AddSignalR();
 //enable REST API controllers (used for pre-game: create/join room)
 builder.Services.AddControllers();
 
-builder.Services.AddSingleton<GameManager>();
-builder.Services.AddSingleton<QuestionsService>();
+builder.Services.AddScoped<GameManager>();
+builder.Services.AddScoped<QuestionsService>();
 
 // CORS for frontend dev server
 builder.Services.AddCors(options =>
@@ -27,13 +34,6 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseCors();
-
-// Enable serving static files from wwwroot
-app.UseStaticFiles();
-
-// Serve index.html at the root URL
-app.UseDefaultFiles();
-app.UseStaticFiles();
 
 //This does not open WebSockets.
 //It does not accept connections yet.

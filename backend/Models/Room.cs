@@ -6,7 +6,7 @@ namespace backend.Models;
 
 public class Room
 {
-    public string RoomId { get; set; }
+    public string RoomId { get; set; } = "";
 
     //this value can be only public or private
     //the enum i defined earlier

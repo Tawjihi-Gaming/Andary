@@ -34,19 +34,6 @@
           "Microsoft.AspNetCore.App"
         ]
       },
-      "Microsoft.AspNetCore.Http.Connections.Client/10.0.3": {
-        "type": "package",
-        "compile": {
-          "lib/net10.0/Microsoft.AspNetCore.Http.Connections.Client.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net10.0/Microsoft.AspNetCore.Http.Connections.Client.dll": {
-            "related": ".xml"
-          }
-        }
-      },
       "Microsoft.AspNetCore.OpenApi/10.0.3": {
         "type": "package",
         "dependencies": {
@@ -67,49 +54,6 @@
         ],
         "build": {
           "build/Microsoft.AspNetCore.OpenApi.targets": {}
-        }
-      },
-      "Microsoft.AspNetCore.SignalR/1.2.9": {
-        "type": "package",
-        "compile": {
-          "lib/netstandard2.0/_._": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/netstandard2.0/_._": {
-            "related": ".xml"
-          }
-        }
-      },
-      "Microsoft.AspNetCore.SignalR.Client/10.0.3": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.AspNetCore.Http.Connections.Client": "10.0.3",
-          "Microsoft.AspNetCore.SignalR.Client.Core": "10.0.3"
-        },
-        "compile": {
-          "lib/net10.0/Microsoft.AspNetCore.SignalR.Client.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net10.0/Microsoft.AspNetCore.SignalR.Client.dll": {
-            "related": ".xml"
-          }
-        }
-      },
-      "Microsoft.AspNetCore.SignalR.Client.Core/10.0.3": {
-        "type": "package",
-        "compile": {
-          "lib/net10.0/Microsoft.AspNetCore.SignalR.Client.Core.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net10.0/Microsoft.AspNetCore.SignalR.Client.Core.dll": {
-            "related": ".xml"
-          }
         }
       },
       "Microsoft.Build.Framework/18.0.2": {
@@ -969,27 +913,6 @@
         "microsoft.aspnetcore.authentication.jwtbearer.nuspec"
       ]
     },
-    "Microsoft.AspNetCore.Http.Connections.Client/10.0.3": {
-      "sha512": "xE5+Uq/XU/8zZjhv0fF30dlKpyg91Een9H1qtrYHETByDVDWN1Njw87K26zUnMsFbAVMlWNmLj0I6psnwy+4SA==",
-      "type": "package",
-      "path": "microsoft.aspnetcore.http.connections.client/10.0.3",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "Icon.png",
-        "THIRD-PARTY-NOTICES.TXT",
-        "lib/net10.0/Microsoft.AspNetCore.Http.Connections.Client.dll",
-        "lib/net10.0/Microsoft.AspNetCore.Http.Connections.Client.xml",
-        "lib/net462/Microsoft.AspNetCore.Http.Connections.Client.dll",
-        "lib/net462/Microsoft.AspNetCore.Http.Connections.Client.xml",
-        "lib/netstandard2.0/Microsoft.AspNetCore.Http.Connections.Client.dll",
-        "lib/netstandard2.0/Microsoft.AspNetCore.Http.Connections.Client.xml",
-        "lib/netstandard2.1/Microsoft.AspNetCore.Http.Connections.Client.dll",
-        "lib/netstandard2.1/Microsoft.AspNetCore.Http.Connections.Client.xml",
-        "microsoft.aspnetcore.http.connections.client.10.0.3.nupkg.sha512",
-        "microsoft.aspnetcore.http.connections.client.nuspec"
-      ]
-    },
     "Microsoft.AspNetCore.OpenApi/10.0.3": {
       "sha512": "SAvSrKDgnY5GDjDAngOXxPhUvEKlTU/0zIq8zidqHvh/xnZBPs0Vc4LqwyvnmnafNnyUaivtRABz4K4wodXfSg==",
       "type": "package",
@@ -1006,61 +929,6 @@
         "lib/net10.0/Microsoft.AspNetCore.OpenApi.xml",
         "microsoft.aspnetcore.openapi.10.0.3.nupkg.sha512",
         "microsoft.aspnetcore.openapi.nuspec"
-      ]
-    },
-    "Microsoft.AspNetCore.SignalR/1.2.9": {
-      "sha512": "stJwCxfcXqY982p+4dRzlK1Qv2ISrpJrVRzUWvr9PximZXBMSYFVCtOPy9LI2WsjHH/zEL4jSh3Qn2fYZomyKg==",
-      "type": "package",
-      "path": "microsoft.aspnetcore.signalr/1.2.9",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netstandard2.0/Microsoft.AspNetCore.SignalR.dll",
-        "lib/netstandard2.0/Microsoft.AspNetCore.SignalR.xml",
-        "microsoft.aspnetcore.signalr.1.2.9.nupkg.sha512",
-        "microsoft.aspnetcore.signalr.nuspec"
-      ]
-    },
-    "Microsoft.AspNetCore.SignalR.Client/10.0.3": {
-      "sha512": "EkcYRB1MXM7PFN4TGjpL8K3X4O5rDu1Ch79TEedNpVusloU/KC/yzocVuG99D0BTkkt+snQdijRejaT7Z4MCcA==",
-      "type": "package",
-      "path": "microsoft.aspnetcore.signalr.client/10.0.3",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "Icon.png",
-        "PACKAGE.md",
-        "THIRD-PARTY-NOTICES.TXT",
-        "lib/net10.0/Microsoft.AspNetCore.SignalR.Client.dll",
-        "lib/net10.0/Microsoft.AspNetCore.SignalR.Client.xml",
-        "lib/net462/Microsoft.AspNetCore.SignalR.Client.dll",
-        "lib/net462/Microsoft.AspNetCore.SignalR.Client.xml",
-        "lib/netstandard2.0/Microsoft.AspNetCore.SignalR.Client.dll",
-        "lib/netstandard2.0/Microsoft.AspNetCore.SignalR.Client.xml",
-        "microsoft.aspnetcore.signalr.client.10.0.3.nupkg.sha512",
-        "microsoft.aspnetcore.signalr.client.nuspec"
-      ]
-    },
-    "Microsoft.AspNetCore.SignalR.Client.Core/10.0.3": {
-      "sha512": "RjMCajDn7pbgumVGZbxDe5z2TxvE+CSuP8Os5Rm9k9crt3X5xGJqZxBujDPdvYFtr4LJzOwmv2TxUjWQCKmy9g==",
-      "type": "package",
-      "path": "microsoft.aspnetcore.signalr.client.core/10.0.3",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "Icon.png",
-        "PACKAGE.md",
-        "THIRD-PARTY-NOTICES.TXT",
-        "lib/net10.0/Microsoft.AspNetCore.SignalR.Client.Core.dll",
-        "lib/net10.0/Microsoft.AspNetCore.SignalR.Client.Core.xml",
-        "lib/net462/Microsoft.AspNetCore.SignalR.Client.Core.dll",
-        "lib/net462/Microsoft.AspNetCore.SignalR.Client.Core.xml",
-        "lib/netstandard2.0/Microsoft.AspNetCore.SignalR.Client.Core.dll",
-        "lib/netstandard2.0/Microsoft.AspNetCore.SignalR.Client.Core.xml",
-        "lib/netstandard2.1/Microsoft.AspNetCore.SignalR.Client.Core.dll",
-        "lib/netstandard2.1/Microsoft.AspNetCore.SignalR.Client.Core.xml",
-        "microsoft.aspnetcore.signalr.client.core.10.0.3.nupkg.sha512",
-        "microsoft.aspnetcore.signalr.client.core.nuspec"
       ]
     },
     "Microsoft.Build.Framework/18.0.2": {
@@ -3055,8 +2923,6 @@
     "net10.0": [
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 10.0.3",
       "Microsoft.AspNetCore.OpenApi >= 10.0.3",
-      "Microsoft.AspNetCore.SignalR >= 1.2.9",
-      "Microsoft.AspNetCore.SignalR.Client >= 10.0.3",
       "Microsoft.EntityFrameworkCore >= 10.0.3",
       "Microsoft.EntityFrameworkCore.Design >= 10.0.3",
       "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.0",
@@ -3069,11 +2935,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/rsham/sgoinfre/Andary/backend/backend.csproj",
+      "projectUniqueName": "/sgoinfre/rsham/Andary/backend/backend.csproj",
       "projectName": "backend",
-      "projectPath": "/home/rsham/sgoinfre/Andary/backend/backend.csproj",
+      "projectPath": "/sgoinfre/rsham/Andary/backend/backend.csproj",
       "packagesPath": "/home/rsham/.nuget/packages/",
-      "outputPath": "/home/rsham/sgoinfre/Andary/backend/obj/",
+      "outputPath": "/sgoinfre/rsham/Andary/backend/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/rsham/.nuget/NuGet/NuGet.Config"
@@ -3111,14 +2977,6 @@
             "version": "[10.0.3, )"
           },
           "Microsoft.AspNetCore.OpenApi": {
-            "target": "Package",
-            "version": "[10.0.3, )"
-          },
-          "Microsoft.AspNetCore.SignalR": {
-            "target": "Package",
-            "version": "[1.2.9, )"
-          },
-          "Microsoft.AspNetCore.SignalR.Client": {
             "target": "Package",
             "version": "[10.0.3, )"
           },
@@ -3160,7 +3018,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/goinfre/rsham/dotnet10/sdk/10.0.102/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "/sgoinfre/rsham/dotnet/sdk/10.0.103/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
@@ -3577,17 +3435,5 @@
         }
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1510",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "PackageReference Microsoft.AspNetCore.SignalR will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
-      "libraryId": "Microsoft.AspNetCore.SignalR",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    }
-  ]
+  }
 }

@@ -26,7 +26,7 @@ public class GameHub : Hub
         var room = _game.GetRoom(roomId);
 
         // Link the SignalR connectionId to the player who joined via API
-        var player = room.Players.FirstOrDefault(p => p.Name == playerName);
+        var player = room.Players.FirstOrDefault(p => p.Username == playerName);
         if (player == null)
             return;
 
@@ -119,6 +119,9 @@ public class GameHub : Hub
         {
             var gameState = _game.GetGameState(room);
             await Clients.Group(roomId).SendAsync("GameEnded", gameState);
+
+            // Save game session to database when game ends
+            await _game.SaveGameSession(room);
         }
     }
 

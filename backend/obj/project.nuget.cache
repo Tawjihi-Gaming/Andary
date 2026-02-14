@@ -1,16 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "eTzxKC0Kt+k=",
+  "dgSpecHash": "2flMdmbG+M4=",
   "success": true,
-  "projectFilePath": "/home/rsham/sgoinfre/Andary/backend/backend.csproj",
+  "projectFilePath": "/sgoinfre/rsham/Andary/backend/backend.csproj",
   "expectedPackageFiles": [
     "/home/rsham/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
     "/home/rsham/.nuget/packages/microsoft.aspnetcore.authentication.jwtbearer/10.0.3/microsoft.aspnetcore.authentication.jwtbearer.10.0.3.nupkg.sha512",
-    "/home/rsham/.nuget/packages/microsoft.aspnetcore.http.connections.client/10.0.3/microsoft.aspnetcore.http.connections.client.10.0.3.nupkg.sha512",
     "/home/rsham/.nuget/packages/microsoft.aspnetcore.openapi/10.0.3/microsoft.aspnetcore.openapi.10.0.3.nupkg.sha512",
-    "/home/rsham/.nuget/packages/microsoft.aspnetcore.signalr/1.2.9/microsoft.aspnetcore.signalr.1.2.9.nupkg.sha512",
-    "/home/rsham/.nuget/packages/microsoft.aspnetcore.signalr.client/10.0.3/microsoft.aspnetcore.signalr.client.10.0.3.nupkg.sha512",
-    "/home/rsham/.nuget/packages/microsoft.aspnetcore.signalr.client.core/10.0.3/microsoft.aspnetcore.signalr.client.core.10.0.3.nupkg.sha512",
     "/home/rsham/.nuget/packages/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg.sha512",
     "/home/rsham/.nuget/packages/microsoft.codeanalysis.analyzers/3.11.0/microsoft.codeanalysis.analyzers.3.11.0.nupkg.sha512",
     "/home/rsham/.nuget/packages/microsoft.codeanalysis.common/5.0.0/microsoft.codeanalysis.common.5.0.0.nupkg.sha512",
@@ -50,18 +46,5 @@
     "/home/rsham/.nuget/packages/system.composition.typedparts/9.0.0/system.composition.typedparts.9.0.0.nupkg.sha512",
     "/home/rsham/.nuget/packages/system.identitymodel.tokens.jwt/8.0.1/system.identitymodel.tokens.jwt.8.0.1.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1510",
-      "level": "Warning",
-      "message": "PackageReference Microsoft.AspNetCore.SignalR will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
-      "projectPath": "/home/rsham/sgoinfre/Andary/backend/backend.csproj",
-      "warningLevel": 1,
-      "filePath": "/home/rsham/sgoinfre/Andary/backend/backend.csproj",
-      "libraryId": "Microsoft.AspNetCore.SignalR",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    }
-  ]
+  "logs": []
 }

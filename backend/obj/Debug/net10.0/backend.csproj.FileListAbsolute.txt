@@ -8,10 +8,7 @@
 /sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/backend.pdb
 /sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Humanizer.dll
 /sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
-/sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.AspNetCore.Http.Connections.Client.dll
 /sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.AspNetCore.OpenApi.dll
-/sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.AspNetCore.SignalR.Client.dll
-/sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.AspNetCore.SignalR.Client.Core.dll
 /sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.Build.Framework.dll
 /sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.CodeAnalysis.dll
 /sgoinfre/rsham/Andary/backend/bin/Debug/net10.0/Microsoft.CodeAnalysis.CSharp.dll

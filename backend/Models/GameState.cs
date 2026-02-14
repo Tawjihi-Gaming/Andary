@@ -12,7 +12,7 @@ namespace backend.Models
 {
     public class GameState
     {
-        public string RoomId { get; set; }
+        public string RoomId { get; set; } = "";
         public GamePhase Phase { get; set; }
         public int CurrentQuestionIndex { get; set; }
         public int TotalQuestions { get; set; }

@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom'
+import { BrowserRouter, useNavigate, Route } from 'react-router-dom'
 import { useState } from 'react'
+import CreateRoom from './Create-room'
 
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
@@ -20,8 +21,7 @@ const Lobby = ({ user, onLogout }) => {
   }
 
   const handleCreateRoom = () => {
-    console.log('Creating new room')
-    // implement create room logic
+    navigate('/create-room')
   }
 
   const handleJoinByCode = () => {

@@ -3,15 +3,14 @@ import { useState, useEffect } from 'react'
 import LoginPage from './pages/LogginPage.jsx'
 import Lobby from './pages/Lobby.jsx'
 import Profile from './pages/Profile.jsx'
+import CreateRoom from './pages/Create-room.jsx'  // Add this import
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // check if user is already logged in (for mock)
     return localStorage.getItem('isAuthenticated') === 'true'
   })
 
   const [user, setUser] = useState(() => {
-    // Load user data from localStorage
     const savedUser = localStorage.getItem('userData')
     return savedUser ? JSON.parse(savedUser) : null
   })
@@ -54,6 +53,14 @@ function App() {
           element={
             isAuthenticated ? 
               <Profile user={user} onLogout={handleLogout} /> : 
+              <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/create-room" 
+          element={
+            isAuthenticated ? 
+              <CreateRoom user={user} onLogout={handleLogout} /> : 
               <Navigate to="/" replace />
           } 
         />

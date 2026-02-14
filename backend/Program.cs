@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using Backend.Data;
 using Backend.Models.Configs;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,8 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Services.AddControllers();
+    builder.Services.AddOpenApi();
+
     #endregion
 
     #region JWT Authentication
@@ -78,6 +81,11 @@ try
             await context.Response.WriteAsJsonAsync(new { msg = "Server error" });
         });
     });
+    // Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+    }
 
     app.UseAuthentication();
     app.UseAuthorization();

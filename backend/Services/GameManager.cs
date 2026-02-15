@@ -4,6 +4,7 @@ using backend.Enums;
 using backend.Models;
 using backend.Data;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace backend.Services;
 
@@ -58,6 +59,12 @@ public class GameManager
     public Room GetRoom(string roomId)
     {
         return _rooms[roomId];
+    }
+
+    // Get room by its code (used for private room join-by-code)
+    public Room? GetRoomByCode(string code)
+    {
+        return _rooms.Values.FirstOrDefault(r => r.Code == code);
     }
 
     // Set the topic chosen by the player and move to ChoosingTopic phase
@@ -198,39 +205,48 @@ public class GameManager
     // Save game session and participants to database
     public async Task SaveGameSession(Room room)
     {
-        using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        AppDbContext context;
+        IServiceScope? scope = null;
 
-        // Create game session
-        var gameSession = new GameSession
+        scope = _scopeFactory.CreateScope();
+        context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        try
         {
-            TotalRounds = room.TotalQuestions,
-            FinishedAt = DateTime.UtcNow,
-            GameConfigSnapshot = JsonSerializer.Serialize(new { Topic = room.SelectedTopic })
-        };
-
-        context.GameSessions.Add(gameSession);
-        await context.SaveChangesAsync();
-
-        // Create game participants with final scores and ranks
-        var rankedPlayers = room.Players
-            .OrderByDescending(p => p.XP)
-            .Select((p, index) => new { Player = p, Rank = index + 1 })
-            .ToList();
-
-        foreach (var rankedPlayer in rankedPlayers)
-        {
-            var participant = new GameParticipant
+            var gameSession = new GameSession
             {
-                GameSessionId = gameSession.Id,
-                PlayerId = rankedPlayer.Player.Id,
-                FinalScore = rankedPlayer.Player.XP,
-                FinalRank = rankedPlayer.Rank
+                TotalRounds = room.TotalQuestions,
+                FinishedAt = DateTime.UtcNow,
+                GameConfigSnapshot = JsonSerializer.Serialize(new { Topic = room.SelectedTopic })
             };
-            context.GameParticipants.Add(participant);
-        }
 
-        await context.SaveChangesAsync();
+            context.GameSessions.Add(gameSession);
+            await context.SaveChangesAsync();
+
+            // Create game participants with final scores and ranks
+            var rankedPlayers = room.Players
+                .OrderByDescending(p => p.XP)
+                .Select((p, index) => new { Player = p, Rank = index + 1 })
+                .ToList();
+
+            foreach (var rankedPlayer in rankedPlayers)
+            {
+                var participant = new GameParticipant
+                {
+                    GameSessionId = gameSession.Id,
+                    PlayerId = rankedPlayer.Player.Id,
+                    FinalScore = rankedPlayer.Player.XP,
+                    FinalRank = rankedPlayer.Rank
+                };
+                context.GameParticipants.Add(participant);
+            }
+
+            await context.SaveChangesAsync();
+        }
+        finally
+        {
+            scope?.Dispose();
+        }
     }
 
 }

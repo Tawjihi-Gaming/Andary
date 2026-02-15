@@ -36,24 +36,30 @@ public class RoomController : ControllerBase
     [HttpPost("join")]
     public IActionResult JoinRoom([FromBody] JoinRoomRequest request)
     {
-        // Check if room exists
-        Room room;
-        try
-        {
-            room = _game.GetRoom(request.RoomId);
-        }
-        catch
-        {
-            return BadRequest(new { error = "Room not found." });
-        }
+        Room? room = null;
 
-        // If private room, verify the code
-        if (room.Type == RoomType.Private)
+        // If a code is provided, look up the room by code (join-by-code)
+        if (!string.IsNullOrEmpty(request.Code))
         {
-            if (string.IsNullOrEmpty(request.Code) || request.Code != room.Code)
-            {
+            room = _game.GetRoomByCode(request.Code);
+            if (room == null)
                 return BadRequest(new { error = "Invalid room code." });
+        }
+        // Otherwise, look up by RoomId (public rooms)
+        else if (!string.IsNullOrEmpty(request.RoomId))
+        {
+            try
+            {
+                room = _game.GetRoom(request.RoomId);
             }
+            catch
+            {
+                return BadRequest(new { error = "Room not found." });
+            }
+        }
+        else
+        {
+            return BadRequest(new { error = "Provide a room code or room ID." });
         }
 
         // Get player from database using playerId
@@ -73,12 +79,12 @@ public class RoomController : ControllerBase
             ConnectionId = "" // Will be set when the player connects via SignalR
         };
 
-        if (!_game.JoinRoom(request.RoomId, gamePlayer))
+        if (!_game.JoinRoom(room.RoomId, gamePlayer))
         {
             return BadRequest(new { error = "Unable to join room." });
         }
 
-        return Ok(new { roomId = request.RoomId, playerId = player.Id, playerName = player.Username });
+        return Ok(new { roomId = room.RoomId, playerId = player.Id, playerName = player.Username });
     }
 
     // GET api/room/{roomId}
@@ -113,7 +119,7 @@ public class CreateRoomRequest
 
 public class JoinRoomRequest
 {
-    public string RoomId { get; set; } = "";
+    public string? RoomId { get; set; } // Optional when joining by code
     public int PlayerId { get; set; } // Use Player ID from database instead of name
-    public string? Code { get; set; } // Required for private rooms
+    public string? Code { get; set; } // Provide this to join a private room by code
 }

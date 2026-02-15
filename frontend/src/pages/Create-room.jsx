@@ -2,7 +2,7 @@ import {useState, useEffect} from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios' 
 
-const CreateRoom = () => {
+const CreateRoom = (isPrivate, questions) => {
   const [roomName, setRoomName] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
@@ -11,8 +11,8 @@ const CreateRoom = () => {
     e.preventDefault()
     try {
       const response = await api.post('/room/create', { 
-        isPrivate: true, 
-        questions: 10 
+        isPrivate: isPrivate, 
+        questions: questions 
       })
       console.log('Room created:', response.data)
       const { roomId, code } = response.data

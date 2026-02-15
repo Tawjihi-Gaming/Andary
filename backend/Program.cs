@@ -18,9 +18,10 @@ try
     #endregion
 
     #region JWT Authentication
-    var jwtKey = builder.Configuration["Jwt:Key"];
-    var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-    var jwtAudience = builder.Configuration["Jwt:Audience"];
+    var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY");
+    var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+    var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+
     if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
     {
         throw new InvalidOperationException("JWT configuration is missing (Jwt:Key, Jwt:Issuer, Jwt:Audience).");
@@ -60,13 +61,40 @@ try
 
     var googleOAuthConfig = JsonSerializer.Deserialize<GoogleOAuthConfig>(googleOAuthJson)
         ?? throw new InvalidOperationException("Google OAuth configuration is missing or invalid.");
+
+    var envClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+    var envClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+    var envRedirectUri = Environment.GetEnvironmentVariable("GOOGLE_REDIRECT_URI");
+    var envJsOrigins = Environment.GetEnvironmentVariable("GOOGLE_JAVASCRIPT_ORIGINS");
+
+    if (string.IsNullOrWhiteSpace(envClientId)
+        || string.IsNullOrWhiteSpace(envClientSecret)
+        || string.IsNullOrWhiteSpace(envRedirectUri)
+        || string.IsNullOrWhiteSpace(envJsOrigins))
+    {
+        throw new InvalidOperationException("Google OAuth env vars are missing. Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, GOOGLE_JAVASCRIPT_ORIGINS.");
+    }
+
+    googleOAuthConfig.web.client_id = envClientId;
+    googleOAuthConfig.web.client_secret = envClientSecret;
+    googleOAuthConfig.web.redirect_uris = new[] { envRedirectUri };
+    googleOAuthConfig.web.javascript_origins = new[] { envJsOrigins };
     builder.Services.AddSingleton(googleOAuthConfig);
     #endregion
 
     #region Database
+
+    var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
+
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException("Database connection is missing. Set DB_CONNECTION env var.");
+    }
+
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+        options.UseNpgsql(connectionString)
     );
+
     #endregion
 
     #region App Pipeline

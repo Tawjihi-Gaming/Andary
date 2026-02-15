@@ -165,7 +165,8 @@ namespace Backend.Controllers
             if (!response.IsSuccessStatusCode)
                 return Enumerable.Empty<SecurityKey>();
             
-            var jwks = JsonSerializer.Deserialize<JsonWebKeySet>(response);
+            var jwksJson = await response.Content.ReadAsStringAsync();
+            var jwks = JsonSerializer.Deserialize<JsonWebKeySet>(jwksJson);
             return jwks?.Keys ?? Enumerable.Empty<SecurityKey>();
         }
 
@@ -344,7 +345,7 @@ namespace Backend.Controllers
             if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.id_token))
                 return Redirect("https://localhost:3000/login?error=token-failed");
 
-            var (email, name, googleId) = ParseGoogleIdToken(tokenResponse.id_token);
+            var (email, name, googleId) = await ParseGoogleIdToken(tokenResponse.id_token);
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
                 return Redirect("https://localhost:3000/login?error=invalid-token");
             var player = await GetOrCreateGooglePlayerAsync(googleId, name);

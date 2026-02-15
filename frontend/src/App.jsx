@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import LoginPage from './pages/LogginPage.jsx'
 import Lobby from './pages/Lobby.jsx'
 import Profile from './pages/Profile.jsx'
-import CreateRoom from './pages/Create-room.jsx'  // Add this import
+import CreateRoom from './pages/Create-room.jsx'
+import GameRoom from './pages/room/[roomId].jsx'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -61,6 +62,14 @@ function App() {
           element={
             isAuthenticated ? 
               <CreateRoom user={user} onLogout={handleLogout} /> : 
+              <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/room/:roomId" 
+          element={
+            isAuthenticated ? 
+              <GameRoom user={user} /> :  // ✅ Change Room to GameRoom
               <Navigate to="/" replace />
           } 
         />

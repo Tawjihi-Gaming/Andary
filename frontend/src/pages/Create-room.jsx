@@ -8,6 +8,8 @@ const CreateRoom = ({ user }) => {
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
+  console.log("user data", user)
+
   const handleCreateRoom = async (e) => {
     e.preventDefault()
     try {
@@ -17,7 +19,10 @@ const CreateRoom = ({ user }) => {
       })
       console.log('Room created:', response.data)
       const { roomId, code } = response.data
-      
+      console.log('user room with ID:', user.Id, 'to room:', roomId)
+      await api.post(`room/join`, { RoomId: roomId, PlayerId: user.Id })
+
+
       navigate(`/room/${roomId}`, {
         state: { 
           user: user,

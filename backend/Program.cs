@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 using Backend.Data;
 using Backend.Models.Configs;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +13,7 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
+    DotNetEnv.Env.Load();
 
     #endregion
 

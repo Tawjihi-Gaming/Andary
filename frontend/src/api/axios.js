@@ -59,6 +59,23 @@ api.interceptors.request.use((config) => {
       })
   }
 
+  // Mock GET /api/lobby — list all available lobbies
+  if (config.url === '/lobby' && config.method === 'get') {
+    console.log('🧪 MOCK: Fetching lobbies')
+    config.adapter = () =>
+      Promise.resolve({
+        data: {
+          'lobby1': [{ id: '1', owner_id: '123', status: 'waiting' }],
+          'lobby2': [{ id: '2', owner_id: '456', status: 'waiting' }],
+          'lobby3': [{ id: '3', owner_id: '789', status: 'playing' }],
+        },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config
+      })
+  }
+
   return config
 }, (error) => Promise.reject(error))
 

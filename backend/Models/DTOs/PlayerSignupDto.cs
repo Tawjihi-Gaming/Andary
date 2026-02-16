@@ -15,5 +15,9 @@ namespace Backend.Models.DTOs
         [Required]
         [MinLength(6)]
         public string Password { get; set; } = string.Empty;
-    }
+
+		[Required]
+        [MaxLength(100)]
+        public string AvatarImageName { get; set; } = string.Empty;
+	}
 }

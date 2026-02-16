@@ -21,13 +21,11 @@ namespace Backend.Controllers
     {
         #region Fields & Constructor
         private readonly AppDbContext _db;
-        private readonly IConfiguration _config;
         private readonly GoogleOAuthConfig _googleConfig;
 
-        public AuthController(AppDbContext db, IConfiguration config, GoogleOAuthConfig googleConfig)
+        public AuthController(AppDbContext db, GoogleOAuthConfig googleConfig)
         {
             _db = db;
-            _config = config;
             _googleConfig = googleConfig;
         }
         #endregion
@@ -35,9 +33,9 @@ namespace Backend.Controllers
         #region JWT & Refresh Token Helpers
         private string GenerateJwtToken(Player player)
         {
-            var key = _config["Jwt:Key"]!;
-            var issuer = _config["Jwt:Issuer"]!;
-            var audience = _config["Jwt:Audience"]!;
+            var key = Environment.GetEnvironmentVariable("JWT_KEY")!;
+			var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")!;
+			var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")!;
 
             var keyBytes = Encoding.UTF8.GetBytes(key);
             var securityKey = new SymmetricSecurityKey(keyBytes);
@@ -59,7 +57,7 @@ namespace Backend.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-       
+
         private string GenerateRefreshToken()
         {
             var randomBytes = new byte[32];
@@ -67,7 +65,7 @@ namespace Backend.Controllers
             rng.GetBytes(randomBytes);
             return Convert.ToBase64String(randomBytes);
         }
-       
+
         private string HashToken(string token)
         {
             using var sha256 = SHA256.Create();
@@ -76,7 +74,7 @@ namespace Backend.Controllers
         }
 
         #endregion
-        
+
         #region Cookie Helpers
 
         private CookieOptions BuildAuthCookieOptions(DateTime expires)
@@ -96,7 +94,7 @@ namespace Backend.Controllers
                 return;
             Response.Cookies.Append("jwt", token, BuildAuthCookieOptions(DateTime.UtcNow.AddHours(1)));
         }
-        
+
         private void SetRefreshToken(Player player)
         {
             if (player == null) return;
@@ -109,7 +107,7 @@ namespace Backend.Controllers
             Response.Cookies.Append("refreshToken", refreshToken,
                 BuildAuthCookieOptions(player.RefreshTokenExpiryTime.Value));
         }
-        
+
         private async Task<IActionResult> SetAuthCookiesAsync(Player player)
         {
             if (player == null)
@@ -121,11 +119,11 @@ namespace Backend.Controllers
             SetRefreshToken(player);
             await _db.SaveChangesAsync();
 
-            return Ok(new { msg = "Authentication successful" });
+            return Ok(new { msg = "Authentication successful" , Id = player.Id, Username = player.Username});
         }
-        
+
         #endregion
-        
+
         #region Google OAuth Helpers
 
          private Dictionary<string, string> BuildGoogleTokenRequestBody(string code)
@@ -161,10 +159,10 @@ namespace Backend.Controllers
         private async Task<IEnumerable<SecurityKey>> GetGoogleSigningKeysAsync()
         {
             using var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync("https://www.googleapis.com/oauth2/v3/certs");
+			var response = await httpClient.GetAsync(_googleConfig.web.auth_provider_x509_cert_url);
             if (!response.IsSuccessStatusCode)
                 return Enumerable.Empty<SecurityKey>();
-            
+
             var jwksJson = await response.Content.ReadAsStringAsync();
             var jwks = JsonSerializer.Deserialize<JsonWebKeySet>(jwksJson);
             return jwks?.Keys ?? Enumerable.Empty<SecurityKey>();
@@ -182,7 +180,7 @@ namespace Backend.Controllers
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = "https://accounts.google.com",
                 ValidAudience = _googleConfig.web?.client_id,
-                IssuerSigningKeys = signingKeys, 
+                IssuerSigningKeys = signingKeys,
                 ClockSkew = TimeSpan.Zero
             };
             try
@@ -206,11 +204,11 @@ namespace Backend.Controllers
             var jwtToken = handler.ReadJwtToken(idToken);
 
             var exp = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
-            if (!long.TryParse(exp, out var expSeconds) 
+            if (!long.TryParse(exp, out var expSeconds)
                 || DateTimeOffset.FromUnixTimeSeconds(expSeconds) < DateTimeOffset.UtcNow
                 || !await IsGoogleIdTokenValid(jwtToken))
                 return (null, null, null);
-            
+
             var email = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
             var name = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
             var googleId = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
@@ -222,7 +220,7 @@ namespace Backend.Controllers
         {
             var player = await _db.Players
                 .Include(p => p.AuthOAuths)
-                .FirstOrDefaultAsync(p => p.AuthOAuths.Any(a => a.Provider == "Google" 
+                .FirstOrDefaultAsync(p => p.AuthOAuths.Any(a => a.Provider == "Google"
                                      && a.ProviderUserId == googleId));
 
             if (player != null)
@@ -237,7 +235,7 @@ namespace Backend.Controllers
         }
 
         #endregion
-        
+
         #region Refresh Token Endpoint
 
         [HttpPost("refresh-token")]
@@ -270,9 +268,10 @@ namespace Backend.Controllers
         [HttpPost("signup")]
         public async Task<IActionResult> SignUp(PlayerSignupDto dto)
         {
-            if (dto == null || string.IsNullOrEmpty(dto.Email) 
-                || string.IsNullOrEmpty(dto.Username) 
-                || string.IsNullOrEmpty(dto.Password))
+            if (dto == null || string.IsNullOrEmpty(dto.Email)
+                || string.IsNullOrEmpty(dto.Username)
+                || string.IsNullOrEmpty(dto.Password)
+				|| string.IsNullOrEmpty(dto.AvatarImageName))
                 return BadRequest(new { msg = "Invalid signup data" });
 
             var existingPlayer = await _db.Players.Include(p => p.AuthLocal)
@@ -280,16 +279,20 @@ namespace Backend.Controllers
             if (existingPlayer != null)
                 return BadRequest(new { msg = "Email already used" });
 
-            var player = new Player
-            {
-                Username = dto.Username,
-                AuthLocal = new AuthLocal
-                {
-                    Email = dto.Email,
-                    PasswordHash = new PasswordHasher<AuthLocal>()
-                        .HashPassword(new AuthLocal(), dto.Password)
-                }
-            };
+            var authLocal = new AuthLocal
+			{
+				Email = dto.Email
+			};
+
+			var hasher = new PasswordHasher<AuthLocal>();
+			authLocal.PasswordHash = hasher.HashPassword(authLocal, dto.Password);
+
+			var player = new Player
+			{
+				Username = dto.Username,
+				AuthLocal = authLocal,
+				AvatarImageName = dto.AvatarImageName
+			};
 
             _db.Players.Add(player);
             await _db.SaveChangesAsync();

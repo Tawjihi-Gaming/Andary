@@ -11,15 +11,15 @@ namespace Backend.Models
         [Required]
         [MaxLength(50)]
         public string Username { get; set; } = string.Empty;
+        public int Xp { get; set; } = 0;
+		[Required]
         [MaxLength(100)]
-        public int? Xp { get; set; } = 0;
-        [MaxLength(100)]
-        public string? AvatarImageName { get; set; }
+        public string AvatarImageName { get; set; } = string.Empty;
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string? RefreshToken { get; set; } = string.Empty;
+        public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
-        public AuthLocal AuthLocal { get; set; } = null!;
+        public AuthLocal? AuthLocal { get; set; } = null;
         public ICollection<AuthOAuth> AuthOAuths { get; set; } = new List<AuthOAuth>();
         public ICollection<GameParticipant> GameParticipants { get; set; } = new List<GameParticipant>();
     }

@@ -1,6 +1,6 @@
 
 # SSL certificate paths
-SSL_DIR = ngnix
+SSL_DIR = nginx
 SSL_CERT = $(SSL_DIR)/cert.pem
 SSL_KEY = $(SSL_DIR)/key.pem
 SSL_DAYS = 365

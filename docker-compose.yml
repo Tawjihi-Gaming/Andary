@@ -5,17 +5,7 @@ services:
   #   container_name: dotnet_backend
   #   image: backend:andari
   #   build: ./backend
-  #   netwroks:
-  #     - web-net
-  #     - db-net
-  #   env_file:
-  #     - .env
-
-  # frontend:
-  #   container_name: react_frontend
-  #   image: frontend:andari
-  #   build: ./frontend
-  #   netwroks:
+  #   networks:
   #     - web-net
   #   env_file:
   #     - .env
@@ -23,7 +13,9 @@ services:
   nginx:
     container_name: nginx
     image: nginx:andari
-    build: ./nginx
+    build: 
+      context: .
+      dockerfile: nginx/Dockerfile
     ports:
       - "80:80"
       - "443:443"
@@ -43,7 +35,7 @@ services:
       retries: 5
       start_period: 5s
     networks:
-      - db-net
+      - web-net
     env_file:
       - .env
 
@@ -52,6 +44,4 @@ volumes:
 
 networks:
   web-net:
-    driver: bridge
-  db-net:
     driver: bridge

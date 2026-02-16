@@ -44,6 +44,7 @@ const Auth = ({ onLogin }) => {
     const userData = {
       username: guestName,
       avatar: selectedAvatar.emoji,
+      xp: 0,
       isGuest: true
     }
     onLogin?.(userData)
@@ -86,6 +87,7 @@ const Auth = ({ onLogin }) => {
           username: response.data.user?.displayName || email.split('@')[0],
           email: email,
           avatar: response.data.user?.avatar || '👤',
+          xp: response.data.user?.xp || 0,
           isGuest: false
         }
         setTimeout(() => onLogin?.(userData), 1000)

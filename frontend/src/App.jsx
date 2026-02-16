@@ -30,6 +30,12 @@ function App() {
     setIsAuthenticated(false)
   }
 
+  // Update user data in state and localStorage (used by Profile page edits)
+  const handleUpdateUser = (updatedUser) => {
+    localStorage.setItem('userData', JSON.stringify(updatedUser))
+    setUser(updatedUser)
+  }
+
   return (
     <BrowserRouter>
       <Routes>
@@ -53,7 +59,7 @@ function App() {
           path="/profile" 
           element={
             isAuthenticated ? 
-              <Profile user={user} onLogout={handleLogout} /> : 
+              <Profile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : 
               <Navigate to="/" replace />
           } 
         />

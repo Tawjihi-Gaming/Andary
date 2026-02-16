@@ -30,13 +30,14 @@ api.interceptors.request.use((config) => {
   }
 
   // Mock login
+  // Backend should return: { message, user: { id, displayName, avatar } }
   if (config.url === '/auth/login' && config.method === 'post') {
     console.log('🧪 MOCK: Login successful', data)
     config.adapter = () =>
       Promise.resolve({
         data: {
           message: 'Login successful!',
-          user: { username: data.email.split('@')[0], email: data.email, avatar: '🎮' }
+          user: { id: 1, displayName: data.email.split('@')[0], avatar: '🎮' }
         },
         status: 200,
         statusText: 'OK',

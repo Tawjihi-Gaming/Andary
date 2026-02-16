@@ -72,14 +72,18 @@ const Auth = ({ onLogin }) => {
       }
       else
       {
+        /*
+        Login API
+        */
         const response = await api.post('/auth/login', {
           email,
           password
         })
         showMessage('✅ تم تسجيل الدخول بنجاح!', 'success')
-        // Pass authenticated user data
+        // Build user object from the backend response to pass to Lobby
         const userData = {
-          username: response.data.user?.username || email.split('@')[0],
+          id: response.data.user?.id,
+          username: response.data.user?.displayName || email.split('@')[0],
           email: email,
           avatar: response.data.user?.avatar || '👤',
           isGuest: false

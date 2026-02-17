@@ -1,21 +1,30 @@
-//Pure data. Maps to questions table in database.
-
-namespace backend.Models;
-
-public class Question
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+namespace Backend.Models
 {
-    public int Id { get; set; }
-    public int TopicId { get; set; }
-    public string Text { get; set; } = "";
-    public string CorrectAnswer { get; set; } = "";
-    public string Explanation { get; set; } = "";
-    public string Modifier { get; set; } = "";
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public class Question
+    {
+        [Key]
+        public int Id { get; set; }
+        [Required]
+        public int TopicId { get; set; }
+        [Required]
+        public Topic Topic { get; set; } = null!;
+        [Required]
+        [MaxLength(500)]
+        public string QuestionText { get; set; } = string.Empty;
+        [Required]
+        [MaxLength(500)]
+        public string CorrectAnswer { get; set; } = string.Empty;
+        [MaxLength(1000)]
+        public string? Explanation { get; set; }
+        [MaxLength(500)]
+        public string? Modifier { get; set; }
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Topic name — populated at runtime when questions are loaded for a game session
-    // Not stored in DB, just carried in memory for convenience
-    public string TopicName { get; set; } = "";
-
-    // Navigation property for Entity Framework
-    public Topic Topic { get; set; } = null!;
+        [NotMapped]
+        public string? TopicName { get; set; }
+    }
 }

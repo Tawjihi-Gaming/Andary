@@ -1,8 +1,8 @@
-using backend.Models;
-using backend.Data;
+using Backend.Models;
+using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.Services
+namespace Backend.Services
 {
     public class QuestionsService
     {
@@ -35,7 +35,7 @@ namespace backend.Services
                 {
                     Id = q.Id,
                     TopicId = q.TopicId,
-                    Text = q.Text,
+                    QuestionText = q.QuestionText,
                     CorrectAnswer = q.CorrectAnswer,
                     Explanation = q.Explanation,
                     Modifier = q.Modifier,

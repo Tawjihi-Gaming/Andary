@@ -4,7 +4,7 @@
 // If the player is logged in (has a DB account), PlayerId links them
 // so stats can be saved after the game.
 
-namespace backend.Models;
+namespace Backend.Models;
 
 public class SessionPlayer
 {

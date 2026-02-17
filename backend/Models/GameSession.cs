@@ -1,10 +1,21 @@
-namespace backend.Models;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
-public class GameSession
+namespace Backend.Models
 {
-    public int Id { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? FinishedAt { get; set; }
-    public int TotalRounds { get; set; }
-    public string GameConfigSnapshot { get; set; } = ""; // JSON snapshot of game config
+    public class GameSession
+    {
+        [Key]
+        public int Id { get; set; }
+        public DateTime? FinishedAt { get; set; }
+        [Required]
+        public int TotalRounds { get; set; } = 0;
+        [Required]
+        public string GameConfigSnapshot { get; set; } = string.Empty;
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public ICollection<GameParticipant> GameParticipants { get; set; } = new List<GameParticipant>();
+    }  
 }

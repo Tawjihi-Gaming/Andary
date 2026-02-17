@@ -1,8 +1,8 @@
 //Real-time communication only.
 
 using Microsoft.AspNetCore.SignalR;
-using backend.Services;
-using backend.Models;
+using Backend.Services;
+using Backend.Models;
 using backend.Enums;
 
 namespace backend.Hubs;

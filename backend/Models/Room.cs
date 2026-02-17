@@ -2,7 +2,7 @@
 
 using backend.Enums;
 
-namespace backend.Models;
+namespace Backend.Models;
 
 public class Room
 {

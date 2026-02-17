@@ -268,3 +268,6 @@
 /home/rsham/core/Andary/backend/obj/Debug/net10.0/backend.pdb
 /home/rsham/core/Andary/backend/obj/Debug/net10.0/backend.genruntimeconfig.cache
 /home/rsham/core/Andary/backend/obj/Debug/net10.0/ref/backend.dll
+/home/rsham/core/Andary/backend/bin/Debug/net10.0/Config/google.json
+/home/rsham/core/Andary/backend/bin/Debug/net10.0/DotNetEnv.dll
+/home/rsham/core/Andary/backend/bin/Debug/net10.0/Sprache.dll

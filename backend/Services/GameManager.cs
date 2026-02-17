@@ -1,12 +1,12 @@
 //The game brain.
 
 using backend.Enums;
-using backend.Models;
-using backend.Data;
+using Backend.Models;
+using Backend.Data;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace backend.Services;
+namespace Backend.Services;
 
 public class GameManager
 {
@@ -384,7 +384,7 @@ public class GameManager
                 var dbPlayer = await context.Players.FindAsync(rankedPlayer.SessionPlayer.PlayerId.Value);
                 if (dbPlayer != null)
                 {
-                    dbPlayer.TotalXP += rankedPlayer.SessionPlayer.Score;
+                    dbPlayer.Xp += rankedPlayer.SessionPlayer.Score;
                 }
             }
 

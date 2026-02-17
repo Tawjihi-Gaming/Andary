@@ -5,10 +5,10 @@
 // - Or showing ranking
 
 using backend.Enums;
-using backend.Models;
+using Backend.Models;
 using System.Collections.Generic;
 
-namespace backend.Models
+namespace Backend.Models
 {
     public class GameState
     {

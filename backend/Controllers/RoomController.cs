@@ -1,10 +1,10 @@
 // REST API for pre-game actions (before WebSocket/SignalR is needed).
 
 using Microsoft.AspNetCore.Mvc;
-using backend.Services;
-using backend.Models;
+using Backend.Services;
+using Backend.Models;
 using backend.Enums;
-using backend.Data;
+using Backend.Data;
 
 namespace backend.Controllers;
 

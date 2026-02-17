@@ -1,14 +1,26 @@
-// Database-only model. Maps to Players table.
-// This is the long-term account for logged-in users.
-// Runtime game state lives in SessionPlayer (in-memory only).
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
-namespace backend.Models;
-
-public class Player
+namespace Backend.Models
 {
-    public int Id { get; set; }
-    public string Username { get; set; } = "";
-    public string AvatarImageName { get; set; } = "";
-    public int TotalXP { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public class Player
+    {
+        [Key]
+        public int Id { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public string Username { get; set; } = string.Empty;
+        public int Xp { get; set; } = 0;
+		[Required]
+        [MaxLength(100)]
+        public string AvatarImageName { get; set; } = string.Empty;
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
+        public AuthLocal? AuthLocal { get; set; } = null;
+        public ICollection<AuthOAuth> AuthOAuths { get; set; } = new List<AuthOAuth>();
+        public ICollection<GameParticipant> GameParticipants { get; set; } = new List<GameParticipant>();
+    }
 }

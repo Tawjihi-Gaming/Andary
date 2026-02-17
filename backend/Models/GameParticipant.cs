@@ -1,10 +1,27 @@
-namespace backend.Models;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
-public class GameParticipant
+namespace Backend.Models
 {
-    public int Id { get; set; }
-    public int GameSessionId { get; set; }
-    public int PlayerId { get; set; }
-    public int FinalScore { get; set; }
-    public int FinalRank { get; set; }
+    public class GameParticipant
+    {
+        [Key]
+        public int Id { get; set; }
+        [Required]
+        [ForeignKey("GameSession")]
+        public int GameSessionId { get; set; }
+        public GameSession GameSession { get; set; } = null!;
+
+        [Required]
+        [ForeignKey("Player")]
+        public int PlayerId { get; set; }
+        public Player Player { get; set; } = null!;
+
+        [Required]
+        public int FinalScore { get; set; } = 0;
+        [Required]
+        public int FinalRank { get; set; } = 0;
+    }
 }

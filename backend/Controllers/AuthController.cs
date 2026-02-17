@@ -275,7 +275,7 @@ namespace Backend.Controllers
                 return BadRequest(new { msg = "Invalid signup data" });
 
             var existingPlayer = await _db.Players.Include(p => p.AuthLocal)
-                .FirstOrDefaultAsync(p => p.AuthLocal.Email == dto.Email);
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
             if (existingPlayer != null)
                 return BadRequest(new { msg = "Email already used" });
 
@@ -307,13 +307,13 @@ namespace Backend.Controllers
                 return BadRequest(new { msg = "Invalid login data" });
 
             var player = await _db.Players.Include(p => p.AuthLocal)
-                .FirstOrDefaultAsync(p => p.AuthLocal.Email == dto.Email);
-            if (player == null)
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
+            if (player == null || player.AuthLocal == null)
                 return BadRequest(new { msg = "Invalid email" });
 
             var passwordHasher = new PasswordHasher<AuthLocal>();
             var result = passwordHasher.VerifyHashedPassword(
-                    player.AuthLocal, player.AuthLocal.PasswordHash, dto.Password);
+                    player.AuthLocal, player.AuthLocal.PasswordHash!, dto.Password);
 
             if (result == PasswordVerificationResult.Failed)
                 return BadRequest(new { msg = "Invalid password" });
@@ -341,23 +341,24 @@ namespace Backend.Controllers
         [HttpGet("google/callback")]
         public async Task<IActionResult> GoogleCallback(string code)
         {
+            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "https://localhost:3000";
             if (string.IsNullOrEmpty(code))
-                return Redirect("https://localhost:3000/login?error=no-code");
+                return Redirect($"{frontendUrl}/login?error=no-code");
 
             var tokenResponse = await ExchangeCodeForGoogleTokenAsync(code);
             if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.id_token))
-                return Redirect("https://localhost:3000/login?error=token-failed");
+                return Redirect($"{frontendUrl}/login?error=token-failed");
 
             var (email, name, googleId) = await ParseGoogleIdToken(tokenResponse.id_token);
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
-                return Redirect("https://localhost:3000/login?error=invalid-token");
+                return Redirect($"{frontendUrl}/login?error=invalid-token");
             var player = await GetOrCreateGooglePlayerAsync(googleId, name);
             var authResul = await SetAuthCookiesAsync(player);
             if ((authResul as ObjectResult)?.StatusCode >= 400)
             {
-                return Redirect("https://localhost:3000/login?error=auth-failed");
+                return Redirect($"{frontendUrl}/login?error=auth-failed");
             }
-            return Redirect("https://localhost:3000/lobby");
+            return Redirect($"{frontendUrl}/lobby");
         }
         #endregion
     }

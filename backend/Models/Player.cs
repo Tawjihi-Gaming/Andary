@@ -19,7 +19,7 @@ namespace Backend.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
-        public AuthLocal? AuthLocal { get; set; } = null;
+        public AuthLocal? AuthLocal { get; set; } 
         public ICollection<AuthOAuth> AuthOAuths { get; set; } = new List<AuthOAuth>();
         public ICollection<GameParticipant> GameParticipants { get; set; } = new List<GameParticipant>();
     }

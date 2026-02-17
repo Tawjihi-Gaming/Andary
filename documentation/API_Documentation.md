@@ -16,35 +16,28 @@ Players can optionally sign in using OAuth or play anonymously by providing a na
 
 ## Endpoints
 
-### Players
+### Auth
 
-#### GET /players/{id}
+#### POST /api/auth/register
 
-Retrieve a specific player's info.
+Register a new player.
 
-**Parameters:**
-
-* `id` (required): Player ID
-
-**Response:**
+**Request:**
 
 ```json
 {
-  "id": "123",
+  "method": "local",
+  "email": "123@gmail.com",
+  "password": "123pass",
   "username": "Player1",
-  "avatar_image_name": "avatar.png",
-  "created_at": "2026-02-04T18:00:00Z"
+  "avatar_image_name": "avatar.png"
 }
 ```
-
-#### POST /players
-
-Create or update a player profile (for sign-in).
-
-**Request Body:**
-
 ```json
 {
+  "method": "oauth",
+  "provider": "google",
+  "oauth_token": "toekn",
   "username": "Player1",
   "avatar_image_name": "avatar.png"
 }
@@ -61,32 +54,63 @@ Create or update a player profile (for sign-in).
 }
 ```
 
-### Lobbies
+#### POST /api/auth/login
 
-#### GET /lobbies
+sign-in an existing player.
 
-List all available lobbies.
+**Request:**
+
+```json
+{
+  "method": "local",
+  "email": "123@gmail.com",
+  "password": "123pass"
+}
+```
+```json
+{
+  "method": "oauth",
+  "provider": "google",
+  "oauth_token": "toekn"
+}
+```
 
 **Response:**
 
 ```json
 {
-  "lobbies": [
-    {"id": "1", "owner_id": "123", "status": "waiting"}
-  ]
+  "id": "123",
+  "username": "Player1",
+  "avatar_image_name": "avatar.png"
 }
 ```
 
-#### POST /lobbies
+### lobby
+
+#### GET /api/lobby
+
+List all available lobby.
+
+**Response:**
+
+```json
+{
+  "lobby1": [
+    {"id": "1", "owner_id": "123", "status": "waiting"}
+  ], "lobby2": [...]
+}
+```
+
+#### POST /api/lobby
 
 Create a new lobby.
 
-**Request Body:**
+**Request:**
 
 ```json
 {
   "owner_id": "123",
-  "config": {"topics": ["Science", "History"], "timer": 30}
+  "visablity": "public"
 }
 ```
 
@@ -102,19 +126,21 @@ Create a new lobby.
 }
 ```
 
-#### GET /lobbies/{id}
+#### GET /api/lobby/{id}
 
 Get info about a specific lobby, including players and current config.
 
-#### POST /lobbies/{id}/join
+#### POST /api/lobby/{id}/join
 
 Join a specific lobby.
 
-**Request Body:**
+**Request:**
 
 ```json
 {
-  "player_id": "124"
+  "player_id": "123", // if the player is logged in
+  "username": "player name",
+  "avatar_image_name": "avatar.png"
 }
 ```
 
@@ -124,74 +150,13 @@ Join a specific lobby.
 {
   "message": "Player joined lobby",
   "lobby_id": "1",
-  "player_id": "124"
-}
-```
-
-#### POST /lobbies/{id}/leave
-
-Leave a lobby.
-
-**Request Body:**
-
-```json
-{
-  "player_id": "124"
-}
-```
-
-**Response:**
-
-```json
-{
-  "message": "Player left lobby",
-  "lobby_id": "1",
-  "player_id": "124"
-}
-```
-
-### Game Configuration
-
-#### GET /lobbies/{id}/config
-
-Retrieve the current configuration for the lobby.
-
-#### PUT /lobbies/{id}/config
-
-Update game configuration (room owner only).
-
-**Request Body:**
-
-```json
-{
-  "topics": ["Science", "History"],
-  "timer": 30
-}
-```
-
-**Response:**
-
-```json
-{
-  "message": "Game configuration updated",
-  "lobby_id": "1",
-  "config": {"topics": ["Science", "History"], "timer": 30}
+  "player_session_id": "124"
 }
 ```
 
 ### Game Loop / Questions
 
-Most live game events (questions, answer submissions, rankings) are handled via WebSocket messages:
-
-* `player_joined` / `player_left`
-* `start_game`
-* `select_topic`
-* `start_question_round`
-* `submit_fake_answer`
-* `select_answer`
-* `answer_selected`
-* `round_results`
-* `game_finished`
+Most live game events (questions, answer submissions, rankings) are handled via WebSocket messages.
 
 ## Error Handling
 

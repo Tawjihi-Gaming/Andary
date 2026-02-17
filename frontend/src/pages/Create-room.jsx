@@ -6,22 +6,70 @@ const CreateRoom = ({ user }) => {
   const [roomName, setRoomName] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
   const [error, setError] = useState('')
+  const [selectedTopics, setSelectedTopics] = useState([])
+  const [rounds, setRounds] = useState(0)
   const navigate = useNavigate()
+
+  // Mock topics data
+  const availableTopics = [
+    'Technology',
+    'Science',
+    'History',
+    'Geography',
+    'Sports',
+    'Entertainment',
+    'Literature',
+    'Art',
+    'Music',
+    'Movies',
+    'Gaming',
+    'Nature',
+  ]
 
   console.log("user data", user)
 
+  const toggleTopicSelection = (topic) => {
+    setSelectedTopics(prev => {
+      if (prev.includes(topic)) {
+        return prev.filter(t => t !== topic)
+      } else {
+        return [...prev, topic]
+      }
+    })
+  }
+
+  const roundOptions = [5, 10, 15]
+
   const handleCreateRoom = async (e) => {
     e.preventDefault()
+    
+    // Validate topic selection
+    if (selectedTopics.length < 5) {
+      setError('يجب اختيار 5 مواضيع على الأقل (Please select at least 5 topics)')
+      return
+    }
+
+    if (selectedTopics.length > 8) {
+      setError('يجب اختيار 8 مواضيع كحد أقصى (Please select no more than 8 topics)')
+      return
+    }
+
     try {
       const response = await api.post('/room/create', { 
         isPrivate: isPrivate,
-        questions: 10, 
+        questions: rounds || 10, 
+        topics: selectedTopics,
       })
       console.log('Room created:', response.data)
       const { roomId, code } = response.data
-      console.log('user room with ID:', user.Id, 'to room:', roomId)
-      await api.post(`room/join`, { RoomId: roomId, PlayerId: user.Id })
-
+      console.log('user room with ID:', user?.id, 'to room:', roomId)
+      
+      // Join the room (use -1 for guest players)
+      await api.post(`/room/join`, { 
+        RoomId: roomId, 
+        PlayerId: user?.id || -1 
+      })
+      console.log('User joined room successfully')
 
       navigate(`/room/${roomId}`, {
         state: { 
@@ -124,6 +172,61 @@ const CreateRoom = ({ user }) => {
               </button>
 
             </div>
+          </div>
+
+          {/* Topics Selection */}
+          <div>
+            <label className="block text-white/70 font-semibold mb-3">
+              اختر المواضيع (اختر 5 على الأقل)
+              <span className="text-xs block text-white/50 mt-1">
+                Select topics ({selectedTopics.length}/5 minimum, maximum 8 topics)
+              </span>
+            </label>
+            
+            <div className="bg-white/5 rounded-2xl p-4 max-h-60 overflow-y-auto border border-white/10">
+              <div className="grid grid-cols-2 gap-2">
+                {availableTopics.map((topic, index) => (
+                  <div
+                    key={index}
+                    onClick={() => toggleTopicSelection(topic)}
+                    className={`relative p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                      selectedTopics.includes(topic)
+                        ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <span className={`font-medium text-center block ${
+                      selectedTopics.includes(topic) ? 'text-game-yellow' : 'text-white/70'
+                    }`}>
+                      {topic}
+                    </span>
+                    {selectedTopics.includes(topic) && (
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-game-yellow rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex space-x-4 mt-2">
+            {roundOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setRounds(option)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  rounds === option
+                    ? 'bg-game-yellow text-white'
+                    : 'bg-white/5 text-white/70 hover:bg-white/10'
+                }`}
+              >
+                {option} جولات
+              </button>
+            ))}
           </div>
 
           {error && (

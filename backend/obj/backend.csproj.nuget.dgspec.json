@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/mohammad-boom/Andary/backend/backend.csproj": {}
+    "/home/mohammad-boom/cc/backend/backend.csproj": {}
   },
   "projects": {
-    "/home/mohammad-boom/Andary/backend/backend.csproj": {
+    "/home/mohammad-boom/cc/backend/backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/mohammad-boom/Andary/backend/backend.csproj",
+        "projectUniqueName": "/home/mohammad-boom/cc/backend/backend.csproj",
         "projectName": "backend",
-        "projectPath": "/home/mohammad-boom/Andary/backend/backend.csproj",
+        "projectPath": "/home/mohammad-boom/cc/backend/backend.csproj",
         "packagesPath": "/home/mohammad-boom/.nuget/packages/",
-        "outputPath": "/home/mohammad-boom/Andary/backend/obj/",
+        "outputPath": "/home/mohammad-boom/cc/backend/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/mohammad-boom/.nuget/NuGet/NuGet.Config"

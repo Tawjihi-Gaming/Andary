@@ -42,6 +42,7 @@ const Auth = ({ onLogin }) => {
     e.preventDefault()
     // Pass guest user data
     const userData = {
+      id: null, // No real ID for guests
       username: guestName,
       avatar: selectedAvatar.emoji,
       xp: 0,

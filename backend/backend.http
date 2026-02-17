@@ -1,4 +1,64 @@
+@backend_HostAddress = https://localhost:5242
 
-@backend_HostAddress = http://localhost:5049
+### =============================================
+### 1. Create a Room (creator auto-joins as owner)
+### =============================================
+POST {{backend_HostAddress}}/api/room/create
+Content-Type: application/json
 
-###
+{
+  "isPrivate": true,
+  "questions": 3,
+  "name": "Test Room",
+  "playerName": "Ali",
+  "avatarImageName": "avatar1.png",
+  "playerId": 1
+}
+
+### =============================================
+### 2. Create a Room (anonymous / guest creator)
+### =============================================
+POST {{backend_HostAddress}}/api/room/create
+Content-Type: application/json
+
+{
+  "isPrivate": false,
+  "questions": 5,
+  "name": "Guest Room",
+  "playerName": "GuestPlayer"
+}
+
+### =============================================
+### 3. Join a Room by RoomId (logged-in player)
+### =============================================
+POST {{backend_HostAddress}}/api/room/join
+Content-Type: application/json
+
+{
+  "roomId": "PASTE_ROOM_ID_HERE",
+  "playerName": "Player2",
+  "avatarImageName": "avatar2.png",
+  "playerId": 2
+}
+
+### =============================================
+### 4. Join a Room by Code (anonymous guest)
+### =============================================
+POST {{backend_HostAddress}}/api/room/join
+Content-Type: application/json
+
+{
+  "code": "PASTE_CODE_HERE",
+  "playerName": "GuestJoiner",
+  "avatarImageName": "avatar3.png"
+}
+
+### =============================================
+### 5. Get Room State
+### =============================================
+GET {{backend_HostAddress}}/api/room/PASTE_ROOM_ID_HERE
+
+### =============================================
+### 6. Get All Public Rooms
+### =============================================
+GET {{backend_HostAddress}}/api/room/public

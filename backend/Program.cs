@@ -1,5 +1,8 @@
-using Backend.Data;
-using Backend.Models.Configs;
+using Backend.Services;
+using backend.Hubs;
+using Backend.Data; // Removed because 'backend.Data' does not exist or is not needed
+using Backend.Models.Configs; // Update this line if GoogleOAuthConfig is in a different namespace
+using Backend.Models; // Or use the correct namespace where GoogleOAuthConfig is defined
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -11,10 +14,10 @@ try
     #region App Builder
     var builder = WebApplication.CreateBuilder(args);
 
+    // Controllers & OpenAPI
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
     DotNetEnv.Env.Load();
-
     #endregion
 
     #region JWT Authentication
@@ -58,7 +61,6 @@ try
 
     #region Google OAuth Configuration
     var googleOAuthJson = File.ReadAllText("Config/google.json");
-
     var googleOAuthConfig = JsonSerializer.Deserialize<GoogleOAuthConfig>(googleOAuthJson)
         ?? throw new InvalidOperationException("Google OAuth configuration is missing or invalid.");
 
@@ -84,7 +86,12 @@ try
 
     #region Database
 
-    var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
+    // Use in-memory DB for development/testing
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("AndaryDevDb"));
+    
+    /*var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION")
+                           ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
     if (string.IsNullOrWhiteSpace(connectionString))
     {
@@ -92,14 +99,67 @@ try
     }
 
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(connectionString)
-    );
+        options.UseNpgsql(connectionString));
+    */
+    #endregion
 
+    #region Custom Services
+    // SignalR
+    builder.Services.AddSignalR();
+
+    // Game services
+    builder.Services.AddSingleton<GameManager>();
+    builder.Services.AddScoped<QuestionsService>();
+
+    // CORS
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.WithOrigins(
+                      "http://localhost:3000", "https://localhost:3000",
+                      "http://127.0.0.1:3000", "https://127.0.0.1:3000",
+                      "http://localhost:8080", "https://localhost:8080")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+    });
     #endregion
 
     #region App Pipeline
     var app = builder.Build();
 
+    // ✅ Seed test players in memory DB for development
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+
+    if (!db.Players.Any())
+    {
+        db.Players.AddRange(
+            new Player
+            {
+                Id = 1,
+                Username = "rama",
+                AvatarImageName = "avatar1.png",
+                Xp = 0
+            },
+            new Player
+            {
+                Id = 2,
+                Username = "TestPlayer2",
+                AvatarImageName = "avatar2.png",
+                Xp = 0
+            }
+        );
+        db.SaveChanges();
+    }
+}
+
+    // Exception handler
     app.UseExceptionHandler(errorApp =>
     {
         errorApp.Run(async context =>
@@ -109,16 +169,23 @@ try
             await context.Response.WriteAsJsonAsync(new { msg = "Server error" });
         });
     });
-    // Configure the HTTP request pipeline.
+
+    // Development tools
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
     }
 
+    // Middleware
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseHttpsRedirection();
+    app.UseCors();
+
+    // Endpoints
     app.MapControllers();
+    app.MapHub<GameHub>("/gamehub");
+
     #endregion
 
     #region Database Seeding

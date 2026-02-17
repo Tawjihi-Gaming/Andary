@@ -275,7 +275,7 @@ namespace Backend.Controllers
                 return BadRequest(new { msg = "Invalid signup data" });
 
             var existingPlayer = await _db.Players.Include(p => p.AuthLocal)
-                .FirstOrDefaultAsync(p => p.AuthLocal.Email == dto.Email);
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
             if (existingPlayer != null)
                 return BadRequest(new { msg = "Email already used" });
 
@@ -307,13 +307,13 @@ namespace Backend.Controllers
                 return BadRequest(new { msg = "Invalid login data" });
 
             var player = await _db.Players.Include(p => p.AuthLocal)
-                .FirstOrDefaultAsync(p => p.AuthLocal.Email == dto.Email);
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
             if (player == null)
                 return BadRequest(new { msg = "Invalid email" });
 
             var passwordHasher = new PasswordHasher<AuthLocal>();
             var result = passwordHasher.VerifyHashedPassword(
-                    player.AuthLocal, player.AuthLocal.PasswordHash, dto.Password);
+                    player.AuthLocal!, player.AuthLocal!.PasswordHash!, dto.Password);
 
             if (result == PasswordVerificationResult.Failed)
                 return BadRequest(new { msg = "Invalid password" });

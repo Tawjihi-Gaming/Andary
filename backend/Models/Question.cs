@@ -1,6 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-
+using System.ComponentModel.DataAnnotations.Schema;
 namespace Backend.Models
 {
     public class Question
@@ -23,5 +23,8 @@ namespace Backend.Models
         public string? Modifier { get; set; }
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [NotMapped]
+        public string? TopicName { get; set; }
     }
 }

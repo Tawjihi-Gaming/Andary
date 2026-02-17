@@ -7,6 +7,7 @@ const GameRoom = ({ user }) => {
     const location = useLocation()
     const navigate = useNavigate()
     const code = location.state?.code
+    const roomName = location.state?.roomName
     
     const [connectionStatus, setConnectionStatus] = useState('connecting')
     const [players, setPlayers] = useState([])
@@ -14,7 +15,22 @@ const GameRoom = ({ user }) => {
     const [roomOwnerId, setRoomOwnerId] = useState(location.state?.ownerId)
     const [roomOwnerName, setRoomOwnerName] = useState(location.state?.ownerName)
     const [isReady, setIsReady] = useState(false)
+    const [isCopied, setIsCopied] = useState(false)
+     const roomMockOwnerId = null// Mock owner ID for testing
 
+
+    const handleCopyCode = async () => {
+        try {
+            await navigator.clipboard.writeText(code)
+            setIsCopied(true)
+            // Reset after 2 seconds
+            setTimeout(() => setIsCopied(false), 2000)
+        } catch (error) {
+            console.error('Error copying code:', error)
+        }
+    }
+
+    
 
     const handleReadyUp = async () => {
         try {
@@ -74,9 +90,16 @@ const GameRoom = ({ user }) => {
                 setConnectionStatus('connected')
 
                 // Register event handlers
-                connection.on('PlayerConnected', (playerName) => {
-                    console.log('Player joined:', playerName)
-                    // You can update players list here
+                connection.on('PlayerConnected', (playerData) => {
+                    console.log('Player joined:', playerData)
+                    // Add new player to the list
+                    setPlayers(prev => {
+                        // Avoid duplicates
+                        if (prev.some(p => p.id === playerData.id)) {
+                            return prev
+                        }
+                        return [...prev, playerData]
+                    })
                 })
 
                 connection.on('TopicSelected', (topic) => {
@@ -114,18 +137,23 @@ const GameRoom = ({ user }) => {
 
                 connection.on('PlayerLeft', (data) => {
                     console.log('Player left:', data)
-                    // Update players count or list
-                    // You can show a notification that a player left
+                    // Remove player from the list
+                    setPlayers(prev => prev.filter(p => p.id !== data.playerId))
                 })
 
                 connection.on('PlayerDisconnected', (data) => {
                     console.log('Player disconnected:', data)
-                    // Handle unexpected disconnection
+                    // Remove disconnected player
+                    setPlayers(prev => prev.filter(p => p.id !== data.playerId))
                 })
 
                 connection.on('RoomState', (state) => {
                     console.log('Room state received:', state)
                     setGameState(state)
+                    // Update players list from room state if available
+                    if (state.players) {
+                        setPlayers(state.players)
+                    }
                 })
 
                 connection.on('RoomClosed', (data) => {
@@ -138,12 +166,27 @@ const GameRoom = ({ user }) => {
 
                 connection.on('PlayerReady', (data) => {
                     console.log('Player ready:', data)
-                    // Update players list or show notification
+                    // Update player's ready status
+                    setPlayers(prev => prev.map(p => 
+                        p.id === data.playerId 
+                            ? { ...p, isReady: true } 
+                            : p
+                    ))
                 })
 
                 // Connect to the room
                // await connection.invoke('ConnectToRoom', roomId, user?.id || -1)
                 console.log('✅ Connected to room:', roomId)
+                
+                // Add current user to players list initially
+                if (user) {
+                    setPlayers([{ 
+                        id: user.id, 
+                        username: user.username, 
+                        avatar: user.avatar,
+                        isReady: false 
+                    }])
+                }
 
             } catch (err) {
                 console.error('SignalR connection failed:', err)
@@ -160,11 +203,11 @@ const GameRoom = ({ user }) => {
             }
         }
     }, [roomId, user])
-
+   
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] relative overflow-hidden flex items-center justify-center p-6">
-            <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/15">
-                <h1 className="text-3xl font-extrabold text-white mb-2 text-center">غرفة اللعب</h1>
+            <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-3/4 max-w-6xl shadow-2xl border border-white/15">
+                <h1 className="text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
                 <p className="text-white/50 text-center mb-4">
                     Room ID: {roomId} | Code: {code || 'N/A'}
                 </p>
@@ -185,13 +228,55 @@ const GameRoom = ({ user }) => {
                     </span>
                 </div>
 
-                <div className="flex flex-col items-center gap-4">
-                    <span className="text-5xl">{user?.avatar}</span>
-                    <h2 className="text-xl font-bold text-white">{user?.username}</h2>
+                {/* Players List */}
+                <div className="mb-6">
+                    <h3 className="text-2xl font-bold text-white mb-4 text-center">اللاعبون ({players.length})</h3>
+                    <div className="grid grid-cols-4 gap-4 max-h-64 overflow-y-auto">
+                        {players.map((player) => (
+                            <div 
+                                key={player.id}
+                                className={`bg-white/10 backdrop-blur-sm rounded-2xl p-5 border-2 ${
+                                    player.id === roomMockOwnerId 
+                                        ? 'border-yellow-400/50 bg-yellow-500/10' 
+                                        : player.isReady 
+                                        ? 'border-green-400/50 bg-green-500/10'
+                                        : 'border-white/20'
+                                } transition-all duration-300`}
+                            >
+                                <div className="flex flex-col items-center gap-3">
+                                    <span className="text-6xl">{player.avatar}</span>
+                                    <p className="text-white text-base font-semibold truncate w-full text-center">
+                                        {player.username}
+                                        {player.id === roomMockOwnerId && ' 👑'}
+                                    </p>
+                                    {player.isReady && player.id !== roomOwnerId && (
+                                        <span className="text-green-400 text-sm font-bold">✓ جاهز</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+
                 {
-                    roomOwnerId === user?.id && (
+                    roomMockOwnerId === user?.id && (
                         <>
+                            <button
+                                onClick={handleCopyCode}
+                                className="mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                            >
+                                {isCopied ? (
+                                    <>
+                                        <span>✓</span>
+                                        <span>تم النسخ!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>📋</span>
+                                        <span>نسخ كود الغرفة: {code}</span>
+                                    </>
+                                )}
+                            </button>
                             <div className="mt-6 p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
                                 <p className="text-blue-400 font-bold">أنت صاحب الغرفة</p>
                                 <p className="text-blue-300 text-sm">يمكنك بدء اللعبة عندما يكون الجميع جاهزًا!</p>
@@ -206,7 +291,7 @@ const GameRoom = ({ user }) => {
                     )
                 }
                 {
-                    roomOwnerId !== user?.id && (
+                    roomMockOwnerId !== user?.id && (
                         <>
                             {!isReady ? (
                                 <button

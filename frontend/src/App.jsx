@@ -5,6 +5,7 @@ import Lobby from './pages/Lobby.jsx'
 import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
+import TestRoom from './pages/room/TestRoom.jsx'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -78,6 +79,10 @@ function App() {
               <GameRoom user={user} /> :  // ✅ Change Room to GameRoom
               <Navigate to="/" replace />
           } 
+        />
+        <Route 
+          path="/test-room" 
+          element={<TestRoom />} 
         />
       </Routes>
     </BrowserRouter>

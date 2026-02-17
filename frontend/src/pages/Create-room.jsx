@@ -7,7 +7,9 @@ const CreateRoom = ({ user }) => {
   const [isPrivate, setIsPrivate] = useState(false)
   const [error, setError] = useState('')
   const [selectedTopics, setSelectedTopics] = useState([])
-  const [rounds, setRounds] = useState(0)
+  const [timer, setTimer] = useState(30)
+  const [calcTimer, setCalcTimer] = useState(20)
+  const [rounds, setRounds] = useState(5)
   const navigate = useNavigate()
 
   // Mock topics data
@@ -53,10 +55,12 @@ const CreateRoom = ({ user }) => {
       setError('يجب اختيار 8 مواضيع كحد أقصى (Please select no more than 8 topics)')
       return
     }
+
     const roomId = Math.floor(Math.random() * 1000000) // Mock room ID generation
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase() // Mock room code generation
+    const code = '12345'// Mock room code generation
     const roomOwnerId = user?.id || -1
     const roomOwnerName = user?.username || 'Guest'
+    const finalRoomName = roomName || `Room ${roomId}`
     // try {
     //   const response = await api.post('/room/create', { 
     //     name: roomName,
@@ -84,7 +88,12 @@ const CreateRoom = ({ user }) => {
           roomId: roomId, 
           code: code,
           ownerId: roomOwnerId,
-          ownerName: roomOwnerName
+          ownerName: roomOwnerName,
+          roomName: finalRoomName,
+          timer: timer,
+          calcTimer: calcTimer,
+          rounds: rounds,
+          topics: selectedTopics
         }
       })
     // } catch (err) {
@@ -96,50 +105,50 @@ const CreateRoom = ({ user }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] relative overflow-hidden flex items-center justify-center p-6">
       
-      <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/15">
-        <div className="w-16 h-16 bg-gradient-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-game-yellow/20">
-          <span className="text-3xl">➕</span>
+      <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-3/4 max-w-4xl shadow-2xl border border-white/15">
+        <div className="w-20 h-20 bg-gradient-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-game-yellow/20">
+          <span className="text-4xl">➕</span>
         </div>
         
-        <h1 className="text-3xl font-extrabold text-white mb-2 text-center">إنشاء غرفة</h1>
-        <p className="text-white/50 text-center mb-6">Create a new game room</p>
+        <h1 className="text-4xl font-extrabold text-white mb-2 text-center">إنشاء غرفة</h1>
+        <p className="text-white/50 text-center mb-8 text-lg">Create a new game room</p>
         
         <form onSubmit={handleCreateRoom} className="space-y-5">
           
           {/* Room Name Input */}
           <div>
-            <label className="block text-white/70 font-semibold mb-2">اسم الغرفة</label>
+            <label className="block text-white/70 font-semibold mb-2 text-lg">اسم الغرفة</label>
             <input
               type="text"
               placeholder="Room Name"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              className="w-full bg-white/10 text-white placeholder:text-white/30 rounded-2xl py-3 px-5 border border-white/15 focus:border-game-yellow/50 focus:bg-white/15 focus:shadow-lg focus:shadow-game-yellow/10 transition-all duration-300 focus:outline-none"
+              className="w-full bg-white/10 text-white text-lg placeholder:text-white/30 rounded-2xl py-4 px-6 border border-white/15 focus:border-game-yellow/50 focus:bg-white/15 focus:shadow-lg focus:shadow-game-yellow/10 transition-all duration-300 focus:outline-none"
               required
             />
           </div>
 
           {/* Room Type Buttons */}
           <div>
-            <label className="block text-white/70 font-semibold mb-3">نوع الغرفة</label>
+            <label className="block text-white/70 font-semibold mb-3 text-lg">نوع الغرفة</label>
             <div className="grid grid-cols-2 gap-3">
               
               {/* Public Button */}
               <button
                 type="button"
                 onClick={() => setIsPrivate(false)}
-                className={`group relative p-4 rounded-2xl border transition-all duration-300 ${
+                className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 ${
                   !isPrivate
                     ? 'bg-gradient-to-br from-game-green/30 to-emerald-500/30 border-game-green/50 shadow-lg shadow-game-green/20'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                 }`}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-3xl">🌍</span>
-                  <span className={`font-bold ${!isPrivate ? 'text-game-green' : 'text-white/40'}`}>
+                  <span className="text-4xl">🌍</span>
+                  <span className={`font-bold text-lg ${!isPrivate ? 'text-game-green' : 'text-white/40'}`}>
                     عامة
                   </span>
-                  <span className={`text-xs ${!isPrivate ? 'text-game-green/70' : 'text-white/40'}`}>
+                  <span className={`text-sm ${!isPrivate ? 'text-game-green/70' : 'text-white/40'}`}>
                     Public
                   </span>
                 </div>
@@ -156,18 +165,18 @@ const CreateRoom = ({ user }) => {
               <button
                 type="button"
                 onClick={() => setIsPrivate(true)}
-                className={`group relative p-4 rounded-2xl border transition-all duration-300 ${
+                className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 ${
                   isPrivate
                     ? 'bg-gradient-to-br from-game-orange/30 to-red-500/30 border-game-orange/50 shadow-lg shadow-game-orange/20'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                 }`}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-3xl">🔒</span>
-                  <span className={`font-bold ${isPrivate ? 'text-game-orange' : 'text-white/40'}`}>
+                  <span className="text-4xl">🔒</span>
+                  <span className={`font-bold text-lg ${isPrivate ? 'text-game-orange' : 'text-white/40'}`}>
                     خاصة
                   </span>
-                  <span className={`text-xs ${isPrivate ? 'text-game-orange/70' : 'text-white/40'}`}>
+                  <span className={`text-sm ${isPrivate ? 'text-game-orange/70' : 'text-white/40'}`}>
                     Private
                   </span>
                 </div>
@@ -185,26 +194,26 @@ const CreateRoom = ({ user }) => {
 
           {/* Topics Selection */}
           <div>
-            <label className="block text-white/70 font-semibold mb-3">
+            <label className="block text-white/70 font-semibold mb-3 text-lg">
               اختر المواضيع (اختر 5 على الأقل)
-              <span className="text-xs block text-white/50 mt-1">
+              <span className="text-sm block text-white/50 mt-1">
                 Select topics ({selectedTopics.length}/5 minimum, maximum 8 topics)
               </span>
             </label>
             
             <div className="bg-white/5 rounded-2xl p-4 max-h-60 overflow-y-auto border border-white/10">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-4 gap-3">
                 {availableTopics.map((topic, index) => (
                   <div
                     key={index}
                     onClick={() => toggleTopicSelection(topic)}
-                    className={`relative p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                    className={`relative p-5 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
                       selectedTopics.includes(topic)
                         ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20'
                         : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                     }`}
                   >
-                    <span className={`font-medium text-center block ${
+                    <span className={`font-semibold text-center block text-base ${
                       selectedTopics.includes(topic) ? 'text-game-yellow' : 'text-white/70'
                     }`}>
                       {topic}
@@ -221,22 +230,78 @@ const CreateRoom = ({ user }) => {
               </div>
             </div>
           </div>
-          <div className="flex space-x-4 mt-2">
-            {roundOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setRounds(option)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  rounds === option
-                    ? 'bg-game-yellow text-white'
-                    : 'bg-white/5 text-white/70 hover:bg-white/10'
-                }`}
-              >
-                {option} جولات
-              </button>
-            ))}
+          <div>
+            <label className="block text-white/70 font-semibold mb-3 text-lg">عدد الجولات</label>
+            <div className="flex gap-4">
+              {roundOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setRounds(option)}
+                  className={`flex-1 px-6 py-3 rounded-xl font-bold text-base transition-all duration-200 border-2 ${
+                    rounds === option
+                      ? 'bg-game-yellow/20 border-game-yellow text-game-yellow shadow-lg shadow-game-yellow/20'
+                      : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20'
+                  }`}
+                >
+                  {option} جولات
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Answer Timer Slider */}
+          <div>
+            <label className="block text-white/70 font-semibold mb-3 text-lg">
+              وقت الإجابة على السؤال
+              <span className="text-game-yellow font-bold ml-2">{timer} ثانية</span>
+            </label>
+            <div className="relative">
+              <input
+                type="range"
+                min="10"
+                max="60"
+                step="5"
+                value={timer}
+                onChange={(e) => setTimer(Number(e.target.value))}
+                className="w-full h-3 bg-white/10 rounded-full appearance-none cursor-pointer slider"
+                style={{
+                  background: `linear-gradient(to left, #FACC15 0%, #FACC15 ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) 100%)`
+                }}
+              />
+              <div className="flex justify-between text-white/50 text-sm mt-2">
+                <span>10 ثواني</span>
+                <span>60 ثانية</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Calculation Timer Slider */}
+          <div>
+            <label className="block text-white/70 font-semibold mb-3 text-lg">
+              وقت حساب النتيجة
+              <span className="text-game-orange font-bold ml-2">{calcTimer} ثانية</span>
+            </label>
+            <div className="relative">
+              <input
+                type="range"
+                min="5"
+                max="30"
+                step="5"
+                value={calcTimer}
+                onChange={(e) => setCalcTimer(Number(e.target.value))}
+                className="w-full h-3 bg-white/10 rounded-full appearance-none cursor-pointer slider"
+                style={{
+                  background: `linear-gradient(to left, #F97316 0%, #F97316 ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) 100%)`
+                }}
+              />
+              <div className="flex justify-between text-white/50 text-sm mt-2">
+                <span>5 ثواني</span>
+                <span>30 ثانية</span>
+              </div>
+            </div>
+          </div>
+          
 
           {error && (
             <div className="bg-red-500/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-2xl">
@@ -247,7 +312,7 @@ const CreateRoom = ({ user }) => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-game-yellow to-game-orange hover:from-game-yellow hover:to-game-orange text-white font-bold py-4 rounded-2xl transition-all duration-300 shadow-lg shadow-game-yellow/20 hover:shadow-game-yellow/30 hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full bg-gradient-to-r from-game-yellow to-game-orange hover:from-game-yellow hover:to-game-orange text-white font-bold py-5 text-lg rounded-2xl transition-all duration-300 shadow-lg shadow-game-yellow/20 hover:shadow-game-yellow/30 hover:scale-[1.02] active:scale-[0.98]"
           >
             إنشاء الغرفة
           </button>
@@ -256,7 +321,7 @@ const CreateRoom = ({ user }) => {
           <button
             type="button"
             onClick={() => navigate('/lobby')}
-            className="w-full bg-white/5 hover:bg-white/10 text-white/70 font-bold py-3 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+            className="w-full bg-white/5 hover:bg-white/10 text-white/70 font-bold py-4 text-lg rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
           >
             رجوع
           </button>

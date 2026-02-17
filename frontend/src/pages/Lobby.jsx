@@ -44,9 +44,13 @@ const Lobby = ({ user, onLogout }) => {
     }, [])
   */
 
-  const handleJoinLobby = (lobbyId) => {
-    console.log('Joining lobby:', lobbyId)
-    // implement join lobby logic
+  const handleJoinLobby = (roomId) => {
+    navigate(`/room/${roomId}`, {
+      state: {
+        user: user,
+        roomId: roomId
+      }
+    })
   }
 
   const handleCreateRoom = () => {
@@ -58,20 +62,21 @@ const Lobby = ({ user, onLogout }) => {
   }
 
   const handleJoinSubmit = async () => {
+    const roomId = '12345' // Mock room ID for testing
     if (roomCode.trim()) {
       try {
-        const response = await api.post(`/room/join`,
-          { code: roomCode },
-          {PlayerId: user?.id || -1}
-        )
-        console.log('Joined room:', response.data)
+        // const response = await api.post(`/room/join`,
+        //   { code: roomCode },
+        //   {PlayerId: user?.id || -1}
+        // )
+        // console.log('Joined room:', response.data)
         setShowJoinModal(false)
-        setRoomCode('')
-        navigate(`/room/${response.data.roomId}`, {
+        // setRoomCode('')
+        navigate(`/room/${roomId}`, {
           state: {
             code: roomCode,
-            ownerId: response.data.ownerId,
-            ownerName: response.data.ownerName,
+            ownerId: 12345, // Mock owner ID for testing
+            ownerName: 'Mock Owner', // Mock owner name for testing
             user: user
           }
         })

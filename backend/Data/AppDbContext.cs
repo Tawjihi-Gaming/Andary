@@ -25,7 +25,7 @@ public class AppDbContext : DbContext
         CreatedAt). EF Core will handle creating the actual table in the database.
     */
 
-    public DbSet<Topic> Topics { get; set; } 
+    public DbSet<Topic> Topics { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<Player> Players { get; set; }
 
@@ -62,8 +62,8 @@ public class AppDbContext : DbContext
             .HasOne<Topic>() //each Question belongs to one Topic.
             .WithMany() //a Topic can have many Questions.
             .HasForeignKey("TopicId"); //FK (TopicId) in question table point to topic table
-        
-        // Players
+
+        // Players (DB-only accounts for logged-in users)
         modelBuilder.Entity<Player>()
             .HasKey(p => p.Id);
 

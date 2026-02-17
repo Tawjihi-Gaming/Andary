@@ -67,14 +67,14 @@ if (app.Environment.IsDevelopment())
             Id = 1,
             Username = "TestPlayer",
             AvatarImageName = "avatar1.png",
-            XP = 0
+            TotalXP = 0
         });
         db.Players.Add(new backend.Models.Player
         {
             Id = 2,
             Username = "TestPlayer2",
             AvatarImageName = "avatar2.png",
-            XP = 0
+            TotalXP = 0
         });
         db.SaveChanges();
     }

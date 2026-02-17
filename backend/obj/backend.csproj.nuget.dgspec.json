@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/sgoinfre/rsham/Andary/backend/backend.csproj": {}
+    "/home/rsham/core/Andary/backend/backend.csproj": {}
   },
   "projects": {
-    "/sgoinfre/rsham/Andary/backend/backend.csproj": {
+    "/home/rsham/core/Andary/backend/backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/sgoinfre/rsham/Andary/backend/backend.csproj",
+        "projectUniqueName": "/home/rsham/core/Andary/backend/backend.csproj",
         "projectName": "backend",
-        "projectPath": "/sgoinfre/rsham/Andary/backend/backend.csproj",
+        "projectPath": "/home/rsham/core/Andary/backend/backend.csproj",
         "packagesPath": "/home/rsham/.nuget/packages/",
-        "outputPath": "/sgoinfre/rsham/Andary/backend/obj/",
+        "outputPath": "/home/rsham/core/Andary/backend/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/rsham/.nuget/NuGet/NuGet.Config"
@@ -20,6 +20,7 @@
           "net10.0"
         ],
         "sources": {
+          "/usr/lib/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -94,7 +95,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/sgoinfre/rsham/dotnet/sdk/10.0.103/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

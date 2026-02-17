@@ -20,35 +20,65 @@ public class GameHub : Hub
 
     // Called by each player after joining a room (via REST API) to register
     // their SignalR connection with the room's group.
-    // This is the entry point into real-time communication.
-    public async Task ConnectToRoom(string roomId, string playerName)
+    // Uses sessionId (UUID) instead of playerName to identify the player.
+    public async Task ConnectToRoom(string roomId, string sessionId)
     {
         var room = _game.GetRoom(roomId);
 
-        // Link the SignalR connectionId to the player who joined via API
-        var player = room.Players.FirstOrDefault(p => p.Username == playerName);
-        if (player == null)
+        // Link the SignalR connectionId to the session player who joined via API
+        var sessionPlayer = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (sessionPlayer == null)
             return;
 
-        player.ConnectionId = Context.ConnectionId;
+        sessionPlayer.ConnectionId = Context.ConnectionId;
 
         // Add this connection to the SignalR group for real-time updates
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Group(roomId).SendAsync("PlayerConnected", playerName);
+        await Clients.Group(roomId).SendAsync("PlayerConnected", sessionPlayer.DisplayName);
     }
 
-    // Player selects a topic for the room.
-    // Frontend shows topic options → player picks one → this method is called.
-    // Backend stores the choice, then broadcasts it + available topics to all players.
-    public async Task SelectTopic(string roomId, string topic)
+    // Player toggles their ready status in the lobby.
+    public async Task SetReady(string roomId, string sessionId, bool isReady)
     {
         var room = _game.GetRoom(roomId);
 
-        if (!_game.SelectTopic(room, topic))
+        if (!_game.SetReady(room, sessionId, isReady))
             return;
 
-        // Tell all players in the room which topic was chosen
-        await Clients.Group(roomId).SendAsync("TopicSelected", topic);
+        var lobbyState = room.Players.Select(p => new
+        {
+            sessionId = p.SessionId,
+            name = p.DisplayName,
+            isReady = p.IsReady
+        });
+        await Clients.Group(roomId).SendAsync("LobbyUpdated", lobbyState);
+
+        if (_game.AllPlayersReady(room))
+            await Clients.Group(roomId).SendAsync("AllPlayersReady");
+    }
+
+    // Player adds a topic to the room's selected topics (lobby phase).
+    // Any player can add topics. Max 7 topics, min 1 to start.
+    public async Task AddTopic(string roomId, string topic)
+    {
+        var room = _game.GetRoom(roomId);
+
+        if (!_game.AddTopic(room, topic))
+            return;
+
+        // Broadcast updated topic list to all players
+        await Clients.Group(roomId).SendAsync("TopicsUpdated", room.SelectedTopics);
+    }
+
+    // Player removes a topic from the room's selected topics (lobby phase).
+    public async Task RemoveTopic(string roomId, string topic)
+    {
+        var room = _game.GetRoom(roomId);
+
+        if (!_game.RemoveTopic(room, topic))
+            return;
+
+        await Clients.Group(roomId).SendAsync("TopicsUpdated", room.SelectedTopics);
     }
 
     // Returns the list of available topics to the caller
@@ -58,19 +88,44 @@ public class GameHub : Hub
         await Clients.Caller.SendAsync("AvailableTopics", topics);
     }
 
-    // Start game — uses the topic the player already selected
-    public async Task StartGame(string roomId)
+    // Start game — only the room owner can start, and all players must be ready.
+    public async Task StartGame(string roomId, string sessionId)
     {
         var room = _game.GetRoom(roomId);
 
-        // A topic must be selected before starting
-        if (room.SelectedTopic == null)
+        // Only the room owner can start the game
+        if (!_game.IsRoomOwner(room, sessionId))
             return;
 
-        // Fetch questions filtered by the chosen topic
-        var questions = _questionsService.GetQuestions(room.TotalQuestions, room.SelectedTopic);
+        // All players must be ready before starting
+        if (!_game.AllPlayersReady(room))
+            return;
+
+        // At least 1 topic must be selected
+        if (!_game.CanStartGame(room))
+            return;
+
+        // Fetch questions from all selected topics
+        var questions = _questionsService.GetQuestionsFromTopics(room.TotalQuestions, room.SelectedTopics);
 
         _game.StartGame(room, questions);
+
+        var gameState = _game.GetGameState(room);
+
+        // If multiple topics → tell frontend that a player must choose topic first
+        if (room.Phase == GamePhase.ChoosingRoundTopic)
+            await Clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState);
+        else
+            await Clients.Group(roomId).SendAsync("GameStarted", gameState);
+    }
+
+    // Per-round topic selection — the designated player picks the topic for this round
+    public async Task SelectRoundTopic(string roomId, string topic)
+    {
+        var room = _game.GetRoom(roomId);
+
+        if (!_game.SelectRoundTopic(room, Context.ConnectionId, topic))
+            return;
 
         var gameState = _game.GetGameState(room);
         await Clients.Group(roomId).SendAsync("GameStarted", gameState);
@@ -113,7 +168,12 @@ public class GameHub : Hub
         if (_game.NextRound(room))
         {
             var gameState = _game.GetGameState(room);
-            await Clients.Group(roomId).SendAsync("GameStarted", gameState);
+
+            // If multiple topics → next player chooses topic before round starts
+            if (room.Phase == GamePhase.ChoosingRoundTopic)
+                await Clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState);
+            else
+                await Clients.Group(roomId).SendAsync("GameStarted", gameState);
         }
         else
         {

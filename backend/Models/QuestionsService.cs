@@ -31,7 +31,39 @@ namespace backend.Services
             return _context.Questions
                 .Where(q => q.TopicId == topic.Id)
                 .Take(total)
+                .Select(q => new Question
+                {
+                    Id = q.Id,
+                    TopicId = q.TopicId,
+                    Text = q.Text,
+                    CorrectAnswer = q.CorrectAnswer,
+                    Explanation = q.Explanation,
+                    Modifier = q.Modifier,
+                    CreatedAt = q.CreatedAt,
+                    TopicName = topicName
+                })
                 .ToList();
+        }
+
+        // Get questions from multiple topics, distributed evenly
+        public List<Question> GetQuestionsFromTopics(int total, List<string> topicNames)
+        {
+            var allQuestions = new List<Question>();
+            // Distribute questions evenly across topics
+            int perTopic = total / topicNames.Count;
+            int remainder = total % topicNames.Count;
+
+            foreach (var topicName in topicNames)
+            {
+                int count = perTopic + (remainder > 0 ? 1 : 0);
+                if (remainder > 0) remainder--;
+
+                var questions = GetQuestions(count, topicName);
+                allQuestions.AddRange(questions);
+            }
+
+            // Shuffle so topics are mixed
+            return allQuestions.OrderBy(_ => Guid.NewGuid()).ToList();
         }
     }
 }

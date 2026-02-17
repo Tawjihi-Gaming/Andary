@@ -22,17 +22,48 @@ public class RoomController : ControllerBase
     }
 
     // POST api/room/create
+    // Creates a room and automatically joins the creator as the owner.
     [HttpPost("create")]
     public IActionResult CreateRoom([FromBody] CreateRoomRequest request)
     {
+        if (string.IsNullOrEmpty(request.PlayerName))
+            return BadRequest(new { error = "Player name is required." });
+
         RoomType type = request.IsPrivate ? RoomType.Private : RoomType.Public;
 
-        var room = _game.CreateRoom(type, request.Questions);
+        // Create the owner's SessionPlayer
+        var creator = new SessionPlayer
+        {
+            DisplayName = request.PlayerName,
+            AvatarImageName = request.AvatarImageName ?? ""
+        };
 
-        return Ok(new { roomId = room.RoomId, code = room.Code });
+        // If the creator is logged in, link their DB account
+        if (request.PlayerId.HasValue)
+        {
+            var dbPlayer = _context.Players.FirstOrDefault(p => p.Id == request.PlayerId.Value);
+            if (dbPlayer == null)
+                return BadRequest(new { error = "Player not found." });
+
+            creator.PlayerId = dbPlayer.Id;
+            creator.DisplayName = dbPlayer.Username;
+            creator.AvatarImageName = dbPlayer.AvatarImageName;
+        }
+
+        var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name ?? "Game Room", creator);
+
+        return Ok(new
+        {
+            roomId = room.RoomId,
+            code = room.Code,
+            name = room.Name,
+            sessionId = owner.SessionId,
+            playerName = owner.DisplayName
+        });
     }
 
     // POST api/room/join
+    // Supports both logged-in players (with PlayerId) and anonymous guests.
     [HttpPost("join")]
     public IActionResult JoinRoom([FromBody] JoinRoomRequest request)
     {
@@ -45,7 +76,7 @@ public class RoomController : ControllerBase
             if (room == null)
                 return BadRequest(new { error = "Invalid room code." });
         }
-        // Otherwise, look up by RoomId (public rooms)
+        // Otherwise, look up by RoomId (public rooms only)
         else if (!string.IsNullOrEmpty(request.RoomId))
         {
             try
@@ -56,35 +87,51 @@ public class RoomController : ControllerBase
             {
                 return BadRequest(new { error = "Room not found." });
             }
+
+            // Private rooms can only be joined by code, not by roomId
+            if (room.Type == RoomType.Private)
+                return BadRequest(new { error = "Private rooms can only be joined using the room code." });
         }
         else
         {
             return BadRequest(new { error = "Provide a room code or room ID." });
         }
 
-        // Get player from database using playerId
-        var player = _context.Players.FirstOrDefault(p => p.Id == request.PlayerId);
-        if (player == null)
-        {
-            return BadRequest(new { error = "Player not found." });
-        }
+        // A display name is always required
+        if (string.IsNullOrEmpty(request.PlayerName))
+            return BadRequest(new { error = "Player name is required." });
 
-        // Create a runtime player object (with ConnectionId set later via SignalR)
-        var gamePlayer = new Player
+        // Create a session player (temporary, in-memory only)
+        var sessionPlayer = new SessionPlayer
         {
-            Id = player.Id,
-            Username = player.Username,
-            AvatarImageName = player.AvatarImageName,
-            XP = player.XP,
+            DisplayName = request.PlayerName,
+            AvatarImageName = request.AvatarImageName ?? "",
             ConnectionId = "" // Will be set when the player connects via SignalR
         };
 
-        if (!_game.JoinRoom(room.RoomId, gamePlayer))
+        // If the player is logged in, link their DB account
+        if (request.PlayerId.HasValue)
+        {
+            var dbPlayer = _context.Players.FirstOrDefault(p => p.Id == request.PlayerId.Value);
+            if (dbPlayer == null)
+                return BadRequest(new { error = "Player not found." });
+
+            sessionPlayer.PlayerId = dbPlayer.Id;
+            sessionPlayer.DisplayName = dbPlayer.Username;
+            sessionPlayer.AvatarImageName = dbPlayer.AvatarImageName;
+        }
+
+        if (!_game.JoinRoom(room.RoomId, sessionPlayer))
         {
             return BadRequest(new { error = "Unable to join room." });
         }
 
-        return Ok(new { roomId = room.RoomId, playerId = player.Id, playerName = player.Username });
+        return Ok(new
+        {
+            roomId = room.RoomId,
+            sessionId = sessionPlayer.SessionId,
+            playerName = sessionPlayer.DisplayName
+        });
     }
 
     // GET api/room/{roomId}
@@ -97,10 +144,13 @@ public class RoomController : ControllerBase
             return Ok(new
             {
                 roomId = room.RoomId,
+                name = room.Name,
                 code = room.Code,
+                ownerSessionId = room.OwnerSessionId,
                 phase = room.Phase.ToString(),
-                players = room.Players.Select(p => new { id = p.Id, name = p.Username, xp = p.XP }),
-                totalQuestions = room.TotalQuestions
+                players = room.Players.Select(p => new { sessionId = p.SessionId, name = p.DisplayName, score = p.Score, isReady = p.IsReady }),
+                totalQuestions = room.TotalQuestions,
+                selectedTopics = room.SelectedTopics
             });
         }
         catch
@@ -115,11 +165,17 @@ public class CreateRoomRequest
 {
     public bool IsPrivate { get; set; }
     public int Questions { get; set; }
+    public string? Name { get; set; } // Optional room name (defaults to "Game Room")
+    public string? PlayerName { get; set; } // Creator's display name (required)
+    public string? AvatarImageName { get; set; } // Creator's avatar
+    public int? PlayerId { get; set; } // Optional — set if the creator is logged in
 }
 
 public class JoinRoomRequest
 {
     public string? RoomId { get; set; } // Optional when joining by code
-    public int PlayerId { get; set; } // Use Player ID from database instead of name
+    public int? PlayerId { get; set; } // Optional — set if the player is logged in (DB account)
+    public string? PlayerName { get; set; } // Display name (required for anonymous, optional for logged-in)
+    public string? AvatarImageName { get; set; } // Optional avatar
     public string? Code { get; set; } // Provide this to join a private room by code
 }

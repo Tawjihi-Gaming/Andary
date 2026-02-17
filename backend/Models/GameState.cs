@@ -17,9 +17,12 @@ namespace backend.Models
         public int CurrentQuestionIndex { get; set; }
         public int TotalQuestions { get; set; }
         public Question? CurrentQuestion { get; set; }
-        public List<Player> Players { get; set; } = new();
+        public List<SessionPlayer> Players { get; set; } = new();
         public List<string> Choices { get; set; } = new();
         public string? RoomCode { get; set; } // for private rooms
-        public string? SelectedTopic { get; set; }
+        public List<string> SelectedTopics { get; set; } = new(); // all topics chosen for this game
+        public string? CurrentRoundTopic { get; set; } // topic for the current question
+        public string? TopicChooserName { get; set; } // name of the player choosing the next topic
+        public bool NeedsTopicChoice { get; set; } // true if multiple topics and player must choose
     }
 }

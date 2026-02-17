@@ -18,11 +18,14 @@ public class GameManager
         _scopeFactory = scopeFactory;
     }
 
-    public Room CreateRoom(RoomType type, int totalQuestions)
+    // Creates a room and automatically adds the creator as the owner.
+    public (Room room, SessionPlayer owner) CreateRoom(RoomType type, int totalQuestions, string name, SessionPlayer creator)
     {
         var room = new Room();
         room.RoomId = Guid.NewGuid().ToString();
+        room.Name = name;
         room.Type = type;
+        room.OwnerSessionId = creator.SessionId;
 
         if (type == RoomType.Private)
             //6 digits
@@ -31,27 +34,27 @@ public class GameManager
             room.Code = null;
 
         room.TotalQuestions = totalQuestions;
+
+        // Auto-join the creator into the room
+        // The owner is always ready by default
+        creator.IsReady = true;
+        room.Players.Add(creator);
+
         _rooms[room.RoomId] = room;
 
-        return room;
+        return (room, creator);
     }
 
     //Join an existing room
-    public bool JoinRoom(string roomId, Player player)
+    // Accepts SessionPlayer (in-memory) instead of Player (DB).
+    // Anyone can join — logged-in or anonymous.
+    public bool JoinRoom(string roomId, SessionPlayer sessionPlayer)
     {
-        //_rooms is our dictionary of all rooms.
-        // .TryGetValue(roomId, out var room) tries to look up a room by its ID.
-        // If it exists → room gets assigned the Room object
-        // If it doesn’t → returns false
         if (!_rooms.TryGetValue(roomId, out var room))
             return false;
-        //room.Phase tracks the current game phase.
-        //Lobby = waiting for players before the game starts.
-        //If the room is not in the lobby, the game already started.
-        //return false → the player cannot join mid-game.
         if (room.Phase != GamePhase.Lobby)
             return false;
-        room.Players.Add(player);
+        room.Players.Add(sessionPlayer);
         return true;
     }
 
@@ -67,25 +70,132 @@ public class GameManager
         return _rooms.Values.FirstOrDefault(r => r.Code == code);
     }
 
-    // Set the topic chosen by the player and move to ChoosingTopic phase
-    public bool SelectTopic(Room room, string topic)
+    // Add a topic to the room's selected topics list (lobby phase)
+    // Returns false if at max (7) or topic already selected
+    public bool AddTopic(Room room, string topic)
     {
-        //Topic can only be selected during the Lobby phase
         if (room.Phase != GamePhase.Lobby)
             return false;
+        if (room.SelectedTopics.Count >= 7)
+            return false;
+        if (room.SelectedTopics.Contains(topic))
+            return false;
 
-        room.SelectedTopic = topic;
-        room.Phase = GamePhase.ChoosingTopic;
+        room.SelectedTopics.Add(topic);
         return true;
     }
 
-    //start game — now uses the selected topic to filter questions
+    // Remove a topic from the room's selected topics list (lobby phase)
+    public bool RemoveTopic(Room room, string topic)
+    {
+        if (room.Phase != GamePhase.Lobby)
+            return false;
+
+        return room.SelectedTopics.Remove(topic);
+    }
+
+    //start game — fetches questions from all selected topics
+    // At least 1 topic must be selected before starting
+    public bool CanStartGame(Room room)
+    {
+        return room.SelectedTopics.Count >= 1;
+    }
+
+    // Toggle a player's ready status
+    public bool SetReady(Room room, string sessionId, bool isReady)
+    {
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
+            return false;
+        player.IsReady = isReady;
+        return true;
+    }
+
+    // Check if all players in the room are ready
+    public bool AllPlayersReady(Room room)
+    {
+        return room.Players.Count > 0 && room.Players.All(p => p.IsReady);
+    }
+
+    // Check if a player is the room owner
+    public bool IsRoomOwner(Room room, string sessionId)
+    {
+        return room.OwnerSessionId == sessionId;
+    }
+
+    //start game — now uses all selected topics to filter questions
     public void StartGame(Room room, List<Question> questions)
     {
         room.Questions = questions;
-        room.Phase = GamePhase.CollectingAns;
         room.CurrentQuestionIndex = 0;
-        room.CurrentQuestion = questions[0];
+        room.TopicChooserIndex = 0;
+
+        // If only 1 topic selected → no per-round choice needed, go straight to collecting answers
+        if (room.SelectedTopics.Count == 1)
+        {
+            room.CurrentRoundTopic = room.SelectedTopics[0];
+            room.CurrentQuestion = questions[0];
+            room.Phase = GamePhase.CollectingAns;
+        }
+        // If multiple topics → first player chooses topic for first round
+        else
+        {
+            room.Phase = GamePhase.ChoosingRoundTopic;
+        }
+    }
+
+    // Player selects the topic for the current round (only when multiple topics exist)
+    public bool SelectRoundTopic(Room room, string connectionId, string topic)
+    {
+        if (room.Phase != GamePhase.ChoosingRoundTopic)
+            return false;
+
+        // Only the current topic chooser can select
+        var chooser = room.Players[room.TopicChooserIndex];
+        if (chooser.ConnectionId != connectionId)
+            return false;
+
+        // Must be one of the selected topics
+        if (!room.SelectedTopics.Contains(topic))
+            return false;
+
+        room.CurrentRoundTopic = topic;
+
+        // Find a question for this topic that hasn't been used yet
+        var usedQuestionIds = new HashSet<int>();
+        for (int i = 0; i < room.CurrentQuestionIndex; i++)
+        {
+            if (i < room.Questions.Count)
+                usedQuestionIds.Add(room.Questions[i].Id);
+        }
+
+        var question = room.Questions
+            .Where(q => q.TopicId == GetTopicId(room, topic) && !usedQuestionIds.Contains(q.Id))
+            .FirstOrDefault();
+
+        if (question == null)
+        {
+            // Fallback: pick any unused question
+            question = room.Questions
+                .Where(q => !usedQuestionIds.Contains(q.Id))
+                .FirstOrDefault();
+        }
+
+        if (question == null)
+            return false;
+
+        room.CurrentQuestion = question;
+        room.Phase = GamePhase.CollectingAns;
+        return true;
+    }
+
+    // Helper: find topicId from the questions already loaded
+    private int GetTopicId(Room room, string topicName)
+    {
+        // Look through loaded questions to find the topicId for this topic name
+        // This avoids a DB call during gameplay
+        var q = room.Questions.FirstOrDefault(q => q.TopicName == topicName);
+        return q?.TopicId ?? -1;
     }
 
     //Submit fake answer
@@ -147,7 +257,7 @@ public class GameManager
 
             //check if the player chose the correct answer
             if (chosen == room.CurrentQuestion!.CorrectAnswer)
-                player.XP += 2;
+                player.Score += 2;
 
             //Loops through all fake answers submitted by players.
             foreach (var fake in room.FakeAnswers)
@@ -158,8 +268,8 @@ public class GameManager
                 if (fake.Value == chosen && fake.Key != player.ConnectionId)
                 {
                     //Finds the player who wrote this fake answer.
-                    var owner = room.Players.First(player => player.ConnectionId == fake.Key);
-                    owner.XP += 1;
+                    var owner = room.Players.First(p => p.ConnectionId == fake.Key);
+                    owner.Score += 1;
                 }
             }
         }
@@ -174,10 +284,26 @@ public class GameManager
             room.Phase = GamePhase.GameEnded;
             return false;
         }
-        room.CurrentQuestion = room.Questions[room.CurrentQuestionIndex];
+
         room.FakeAnswers.Clear();
         room.ChosenAnswers.Clear();
-        room.Phase = GamePhase.CollectingAns;
+
+        // Rotate topic chooser to next player
+        room.TopicChooserIndex = (room.TopicChooserIndex + 1) % room.Players.Count;
+
+        // If only 1 topic → auto-pick, go straight to collecting answers
+        if (room.SelectedTopics.Count == 1)
+        {
+            room.CurrentRoundTopic = room.SelectedTopics[0];
+            room.CurrentQuestion = room.Questions[room.CurrentQuestionIndex];
+            room.Phase = GamePhase.CollectingAns;
+        }
+        // If multiple topics → next player chooses the topic
+        else
+        {
+            room.Phase = GamePhase.ChoosingRoundTopic;
+        }
+
         return true;
     }
 
@@ -189,10 +315,16 @@ public class GameManager
         state.Phase = room.Phase;
         state.CurrentQuestionIndex = room.CurrentQuestionIndex;
         state.TotalQuestions = room.TotalQuestions;
-        state.CurrentQuestion = room.CurrentQuestion!;
+        state.CurrentQuestion = room.CurrentQuestion;
         state.Players = room.Players;
         state.RoomCode = room.Code;
-        state.SelectedTopic = room.SelectedTopic;
+        state.SelectedTopics = room.SelectedTopics;
+        state.CurrentRoundTopic = room.CurrentRoundTopic;
+
+        // Tell the frontend who is choosing the topic and whether a choice is needed
+        if (room.Players.Count > 0)
+            state.TopicChooserName = room.Players[room.TopicChooserIndex].DisplayName;
+        state.NeedsTopicChoice = room.SelectedTopics.Count > 1;
 
         if (room.Phase == GamePhase.ChoosingAns)
             state.Choices = BuildAnswerChoices(room);
@@ -202,7 +334,9 @@ public class GameManager
         return state;
     }
 
-    // Save game session and participants to database
+    // Save game session and participants to database.
+    // Only saves GameParticipant records for logged-in players (those with a PlayerId).
+    // Anonymous/guest players' scores are shown in-game but not persisted.
     public async Task SaveGameSession(Room room)
     {
         AppDbContext context;
@@ -217,7 +351,7 @@ public class GameManager
             {
                 TotalRounds = room.TotalQuestions,
                 FinishedAt = DateTime.UtcNow,
-                GameConfigSnapshot = JsonSerializer.Serialize(new { Topic = room.SelectedTopic })
+                GameConfigSnapshot = JsonSerializer.Serialize(new { Topics = room.SelectedTopics })
             };
 
             context.GameSessions.Add(gameSession);
@@ -225,20 +359,31 @@ public class GameManager
 
             // Create game participants with final scores and ranks
             var rankedPlayers = room.Players
-                .OrderByDescending(p => p.XP)
-                .Select((p, index) => new { Player = p, Rank = index + 1 })
+                .OrderByDescending(p => p.Score)
+                .Select((p, index) => new { SessionPlayer = p, Rank = index + 1 })
                 .ToList();
 
             foreach (var rankedPlayer in rankedPlayers)
             {
+                // Only persist stats for logged-in players (those linked to a DB account)
+                if (rankedPlayer.SessionPlayer.PlayerId == null)
+                    continue;
+
                 var participant = new GameParticipant
                 {
                     GameSessionId = gameSession.Id,
-                    PlayerId = rankedPlayer.Player.Id,
-                    FinalScore = rankedPlayer.Player.XP,
+                    PlayerId = rankedPlayer.SessionPlayer.PlayerId.Value,
+                    FinalScore = rankedPlayer.SessionPlayer.Score,
                     FinalRank = rankedPlayer.Rank
                 };
                 context.GameParticipants.Add(participant);
+
+                // Update the player's total XP in the database
+                var dbPlayer = await context.Players.FindAsync(rankedPlayer.SessionPlayer.PlayerId.Value);
+                if (dbPlayer != null)
+                {
+                    dbPlayer.TotalXP += rankedPlayer.SessionPlayer.Score;
+                }
             }
 
             await context.SaveChangesAsync();

@@ -30,4 +30,10 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Data\SeedData\*.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

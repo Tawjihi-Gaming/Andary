@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Backend.Models;
+using Backend.Models.DTOs;
+using System.Text.Json;
 
 namespace Backend.Data
 {
@@ -17,6 +19,16 @@ namespace Backend.Data
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			base.OnModelCreating(modelBuilder);
+
+			// Configure auto-increment for Topics
+			modelBuilder.Entity<Topic>()
+				.Property(t => t.Id)
+				.ValueGeneratedOnAdd();
+
+			// Configure auto-increment for Questions
+			modelBuilder.Entity<Question>()
+				.Property(q => q.Id)
+				.ValueGeneratedOnAdd();
 
 			// Player - AuthLocal (1:1)
 			modelBuilder.Entity<Player>()

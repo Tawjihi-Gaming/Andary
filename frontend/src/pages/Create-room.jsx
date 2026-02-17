@@ -53,35 +53,44 @@ const CreateRoom = ({ user }) => {
       setError('يجب اختيار 8 مواضيع كحد أقصى (Please select no more than 8 topics)')
       return
     }
-
-    try {
-      const response = await api.post('/room/create', { 
-        isPrivate: isPrivate,
-        questions: rounds || 10, 
-        topics: selectedTopics,
-      })
-      console.log('Room created:', response.data)
-      const { roomId, code } = response.data
-      console.log('user room with ID:', user?.id, 'to room:', roomId)
+    const roomId = Math.floor(Math.random() * 1000000) // Mock room ID generation
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase() // Mock room code generation
+    const roomOwnerId = user?.id || -1
+    const roomOwnerName = user?.username || 'Guest'
+    // try {
+    //   const response = await api.post('/room/create', { 
+    //     name: roomName,
+    //     isPrivate: isPrivate,
+    //     questions: rounds || 10, 
+    //     topics: selectedTopics,
+    //     ownerId: roomOwnerId,
+    //     ownerName: roomOwnerName
+    //   })
+    //   console.log('Room created:', response.data)
+    //   const { roomId, code } = response.data
+    //   console.log('user room with ID:', user?.id, 'to room:', roomId)
       
       // Join the room (use -1 for guest players)
-      await api.post(`/room/join`, { 
-        RoomId: roomId, 
-        PlayerId: user?.id || -1 
-      })
+      // await api.post(`/room/join`, { 
+      //   RoomId: roomId, 
+      //   PlayerId: user?.id || -1,
+      // })
+     
       console.log('User joined room successfully')
 
       navigate(`/room/${roomId}`, {
         state: { 
           user: user,
           roomId: roomId, 
-          code: code 
+          code: code,
+          ownerId: roomOwnerId,
+          ownerName: roomOwnerName
         }
       })
-    } catch (err) {
-      console.error('Error creating room:', err)
-      setError('Failed to create room. Please try again.')
-    }
+    // } catch (err) {
+    //   console.error('Error creating room:', err)
+    //   setError('Failed to create room. Please try again.')
+    // }
   }
 
   return (

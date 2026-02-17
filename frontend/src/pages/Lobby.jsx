@@ -1,6 +1,5 @@
 import { BrowserRouter, useNavigate, Route } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import CreateRoom from './Create-room'
 import api from '../api/axios'
 
 const Lobby = ({ user, onLogout }) => {
@@ -61,10 +60,21 @@ const Lobby = ({ user, onLogout }) => {
   const handleJoinSubmit = async () => {
     if (roomCode.trim()) {
       try {
-        const response = await api.get(`room/${roomCode}`)
+        const response = await api.post(`/room/join`,
+          { code: roomCode },
+          {PlayerId: user?.id || -1}
+        )
         console.log('Joined room:', response.data)
         setShowJoinModal(false)
         setRoomCode('')
+        navigate(`/room/${response.data.roomId}`, {
+          state: {
+            code: roomCode,
+            ownerId: response.data.ownerId,
+            ownerName: response.data.ownerName,
+            user: user
+          }
+        })
       } catch (err) {
         console.error('Error joining room:', err)
       }

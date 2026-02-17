@@ -7,14 +7,43 @@ const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
   const [showJoinModal, setShowJoinModal] = useState(false)
   const [roomCode, setRoomCode] = useState('')
-  
-  // mock lobby data, replace with API call later
-  const [lobbies] = useState([
-    { id: 1, name: 'Game 1', players: 3, maxPlayers: 6, topic: '🔬 علوم', status: 'waiting' },
-    { id: 2, name: 'Game 2', players: 2, maxPlayers: 4, topic: '📚 تاريخ', status: 'waiting' },
-    { id: 3, name: 'Game 3', players: 5, maxPlayers: 8, topic: '🌍 جغرافيا', status: 'playing' },
-    { id: 4, name: 'Game 4', players: 1, maxPlayers: 6, topic: '🎭 ثقافة عامة', status: 'waiting' },
+
+  // This is mock data to test front
+  const [lobbies, setLobbies] = useState([
+    { id: 1, name: 'Game 1', players: 3, maxPlayers: 6, topic: '🔬 علوم', status: 'waiting', owner_id: '123' },
+    { id: 2, name: 'Game 2', players: 2, maxPlayers: 4, topic: '📚 تاريخ', status: 'waiting', owner_id: '456' },
+    { id: 3, name: 'Game 3', players: 5, maxPlayers: 8, topic: '🌍 جغرافيا', status: 'playing', owner_id: '789' },
+    { id: 4, name: 'Game 4', players: 1, maxPlayers: 6, topic: '🎭 ثقافة عامة', status: 'waiting', owner_id: '101' },
   ])
+
+  /*
+  This is the API for requesting lobbies from backend
+  
+  GET /lobby
+  
+  Response:
+  {
+    "lobby1": [ { "id": "1", "owner_id": "123", "status": "waiting" } ],
+    "lobby2": [ { "id": "2", "owner_id": "456", "status": "waiting" } ],
+  }
+  
+  // Code:
+    useEffect(() => {
+      const fetchLobbies = async () => {
+        try {
+          const response = await api.get('/lobby')
+          const list = Object.entries(response.data).map(([name, items]) => ({
+            name,
+            ...items[0],
+          }))
+          setLobbies(list)
+        } catch (error) {
+          console.error('Error fetching lobbies:', error)
+        }
+      }
+      fetchLobbies()
+    }, [])
+  */
 
   const handleJoinLobby = (lobbyId) => {
     console.log('Joining lobby:', lobbyId)

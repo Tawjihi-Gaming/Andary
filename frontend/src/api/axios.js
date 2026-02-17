@@ -30,13 +30,14 @@ api.interceptors.request.use((config) => {
   }
 
   // Mock login
+  // Backend should return: { message, user: { id, displayName, avatar } }
   if (config.url === '/auth/login' && config.method === 'post') {
     console.log('🧪 MOCK: Login successful', data)
     config.adapter = () =>
       Promise.resolve({
         data: {
           message: 'Login successful!',
-          user: { username: data.email.split('@')[0], email: data.email, avatar: '🎮' }
+          user: { id: 1, displayName: data.email.split('@')[0], avatar: '🎮' }
         },
         status: 200,
         statusText: 'OK',
@@ -51,6 +52,23 @@ api.interceptors.request.use((config) => {
     config.adapter = () =>
       Promise.resolve({
         data: { url: 'https://accounts.google.com/mock-oauth' }, // hahhah
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config
+      })
+  }
+
+  // Mock GET /api/lobby — list all available lobbies
+  if (config.url === '/lobby' && config.method === 'get') {
+    console.log('🧪 MOCK: Fetching lobbies')
+    config.adapter = () =>
+      Promise.resolve({
+        data: {
+          'lobby1': [{ id: '1', owner_id: '123', status: 'waiting' }],
+          'lobby2': [{ id: '2', owner_id: '456', status: 'waiting' }],
+          'lobby3': [{ id: '3', owner_id: '789', status: 'playing' }],
+        },
         status: 200,
         statusText: 'OK',
         headers: {},

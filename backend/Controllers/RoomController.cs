@@ -29,6 +29,9 @@ public class RoomController : ControllerBase
         if (string.IsNullOrEmpty(request.PlayerName))
             return BadRequest(new { error = "Player name is required." });
 
+        if (string.IsNullOrEmpty(request.Name))
+            return BadRequest(new { error = "Room name is required." });
+
         RoomType type = request.IsPrivate ? RoomType.Private : RoomType.Public;
 
         // Create the owner's SessionPlayer
@@ -50,7 +53,7 @@ public class RoomController : ControllerBase
             creator.AvatarImageName = dbPlayer.AvatarImageName;
         }
 
-        var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name ?? "Game Room", creator);
+        var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name, creator);
 
         return Ok(new
         {
@@ -165,7 +168,7 @@ public class CreateRoomRequest
 {
     public bool IsPrivate { get; set; }
     public int Questions { get; set; }
-    public string? Name { get; set; } // Optional room name (defaults to "Game Room")
+    public string? Name { get; set; } // Required — room display name
     public string? PlayerName { get; set; } // Creator's display name (required)
     public string? AvatarImageName { get; set; } // Creator's avatar
     public int? PlayerId { get; set; } // Optional — set if the creator is logged in

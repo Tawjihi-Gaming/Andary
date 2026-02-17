@@ -126,7 +126,7 @@ public class RoomController : ControllerBase
 
         if (!_game.JoinRoom(room.RoomId, sessionPlayer))
         {
-            return BadRequest(new { error = "Unable to join room." });
+            return BadRequest(new { error = "Unable to join room. The room may be full (max " + Room.MaxPlayers + " players)." });
         }
 
         return Ok(new

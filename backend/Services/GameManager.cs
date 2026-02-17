@@ -54,6 +54,8 @@ public class GameManager
             return false;
         if (room.Phase != GamePhase.Lobby)
             return false;
+        if (room.Players.Count >= Room.MaxPlayers)
+            return false;
         room.Players.Add(sessionPlayer);
         return true;
     }

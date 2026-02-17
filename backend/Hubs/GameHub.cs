@@ -97,6 +97,10 @@ public class GameHub : Hub
         if (!_game.IsRoomOwner(room, sessionId))
             return;
 
+        // Need at least 2 players to start
+        if (room.Players.Count < Room.MinPlayers)
+            return;
+
         // All players must be ready before starting
         if (!_game.AllPlayersReady(room))
             return;

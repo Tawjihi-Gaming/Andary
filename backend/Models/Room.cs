@@ -6,6 +6,9 @@ namespace backend.Models;
 
 public class Room
 {
+    public const int MaxPlayers = 6;
+    public const int MinPlayers = 2;
+
     public string RoomId { get; set; } = "";
 
     // Human-readable room name (e.g. "Ali's Room")

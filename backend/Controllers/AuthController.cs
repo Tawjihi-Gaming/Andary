@@ -121,8 +121,10 @@ namespace Backend.Controllers
             SetRefreshToken(player);
             await _db.SaveChangesAsync();
 
-            return Ok(new { msg = "Authentication successful" , Id = player.Id, Username = player.Username, AvatarImageName = player.AvatarImageName,
-             player.AuthLocal?.Email});
+            var email = player.AuthLocal?.Email
+                ?? player.AuthOAuths?.FirstOrDefault(a => a.Provider == "Google")?.Email;
+
+            return Ok(new { msg = "Authentication successful", Id = player.Id, Username = player.Username, AvatarImageName = player.AvatarImageName, Email = email });
         }
 
         #endregion
@@ -219,7 +221,7 @@ namespace Backend.Controllers
             return (email, name, googleId);
         }
 
-        private async Task<Player> GetOrCreateGooglePlayerAsync(string googleId, string? name)
+        private async Task<Player> GetOrCreateGooglePlayerAsync(string googleId, string? name, string? email)
         {
             var player = await _db.Players
                 .Include(p => p.AuthOAuths)
@@ -230,7 +232,7 @@ namespace Backend.Controllers
                 return player;
 
             player = new Player { Username = name ?? "Unknown", AvatarImageName = "👤" };
-            player.AuthOAuths.Add(new AuthOAuth { Provider = "Google", ProviderUserId = googleId });
+            player.AuthOAuths.Add(new AuthOAuth { Provider = "Google", ProviderUserId = googleId, Email = email });
 
             _db.Players.Add(player);
             await _db.SaveChangesAsync();
@@ -275,15 +277,19 @@ namespace Backend.Controllers
 
             var player = await _db.Players
                 .Include(p => p.AuthLocal)
+                .Include(p => p.AuthOAuths)
                 .FirstOrDefaultAsync(p => p.Id == userId);
             if (player == null)
                 return NotFound(new { msg = "Player not found" });
+
+            var email = player.AuthLocal?.Email
+                ?? player.AuthOAuths?.FirstOrDefault(a => a.Provider == "Google")?.Email;
 
             return Ok(new
             {
                 id = player.Id,
                 username = player.Username,
-                email = player.AuthLocal?.Email,
+                email,
                 avatarImageName = player.AvatarImageName,
                 xp = player.Xp
             });
@@ -387,7 +393,7 @@ namespace Backend.Controllers
                     return Redirect($"{frontendUrl}/login?error=invalid-token");
 
                 Console.WriteLine("Step 3: Getting or creating player...");
-                var player = await GetOrCreateGooglePlayerAsync(googleId, name);
+                var player = await GetOrCreateGooglePlayerAsync(googleId, name, email);
                 Console.WriteLine($"Step 3 result: playerId={player.Id}");
 
                 Console.WriteLine("Step 4: Setting auth cookies...");

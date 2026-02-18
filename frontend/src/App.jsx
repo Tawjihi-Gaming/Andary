@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import LoginPage from './pages/LogginPage.jsx'
 import Lobby from './pages/Lobby.jsx'
@@ -6,6 +6,7 @@ import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
 import TestRoom from './pages/room/TestRoom.jsx'
+import api from './api/axios'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -16,6 +17,36 @@ function App() {
     const savedUser = localStorage.getItem('userData')
     return savedUser ? JSON.parse(savedUser) : null
   })
+
+  const [loading, setLoading] = useState(true)
+
+  // On app load, check if user has a valid session (JWT cookie)
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await api.get('/auth/me')
+        const userData = {
+          id: res.data.id,
+          username: res.data.username,
+          email: res.data.email,
+          avatar: res.data.avatarImageName || '👤',
+          xp: res.data.xp || 0,
+          isGuest: false
+        }
+        handleLogin(userData)
+      } catch {
+        // No valid session, that's fine
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (!isAuthenticated) {
+      checkSession()
+    } else {
+      setLoading(false)
+    }
+  }, [])
 
   const handleLogin = (userData) => {
     localStorage.setItem('isAuthenticated', 'true')
@@ -37,11 +68,27 @@ function App() {
     setUser(updatedUser)
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] flex items-center justify-center">
+        <span className="text-white text-2xl animate-pulse">...جاري التحميل</span>
+      </div>
+    )
+  }
+
   return (
     <BrowserRouter>
       <Routes>
         <Route 
           path="/" 
+          element={
+            isAuthenticated ? 
+              <Navigate to="/lobby" replace /> : 
+              <LoginPage onLogin={handleLogin} />
+          } 
+        />
+        <Route 
+          path="/login" 
           element={
             isAuthenticated ? 
               <Navigate to="/lobby" replace /> : 

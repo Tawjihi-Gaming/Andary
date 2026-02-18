@@ -93,7 +93,7 @@ const Auth = ({ onLogin }) => {
           username: displayName.trim(),
           email,
           password,
-          avatar: selectedAvatar.emoji,
+          avatarImageName: selectedAvatar.emoji,
         })
         showMessage('✅ تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.', 'success')
       }
@@ -107,13 +107,12 @@ const Auth = ({ onLogin }) => {
           password
         })
         showMessage('✅ تم تسجيل الدخول بنجاح!', 'success')
-        // Build user object from the backend response to pass to Lobby
+        // Build user object from the backend response
         const userData = {
-          id: response.data.user?.id,
-          username: response.data.user?.displayName || email.split('@')[0],
-          email: email,
-          avatar: response.data.user?.avatar || '👤',
-          xp: response.data.user?.xp || 0,
+          id: response.data.id,
+          username: response.data.username,
+          email: response.data.email || email,
+          avatar: response.data.avatarImageName || '👤',
           isGuest: false
         }
         setTimeout(() => onLogin?.(userData), 1000)
@@ -122,7 +121,8 @@ const Auth = ({ onLogin }) => {
     catch (error)
     {
       console.error('Auth error:', error)
-      showMessage('❌ حدث خطأ أثناء العملية. يرجى المحاولة مرة أخرى.', 'error')
+      const errorMsg = error.response?.data?.msg || 'حدث خطأ أثناء العملية. يرجى المحاولة مرة أخرى.'
+      showMessage(`❌ ${errorMsg}`, 'error')
     }
     finally
     {

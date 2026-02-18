@@ -79,11 +79,13 @@ namespace Backend.Controllers
 
         private CookieOptions BuildAuthCookieOptions(DateTime expires)
         {
+            var isDev = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
             return new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
+                Secure = !isDev,
+                SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.None,
                 Expires = expires
             };
         }
@@ -119,7 +121,8 @@ namespace Backend.Controllers
             SetRefreshToken(player);
             await _db.SaveChangesAsync();
 
-            return Ok(new { msg = "Authentication successful" , Id = player.Id, Username = player.Username});
+            return Ok(new { msg = "Authentication successful" , Id = player.Id, Username = player.Username, AvatarImageName = player.AvatarImageName,
+             player.AuthLocal?.Email});
         }
 
         #endregion
@@ -159,13 +162,13 @@ namespace Backend.Controllers
         private async Task<IEnumerable<SecurityKey>> GetGoogleSigningKeysAsync()
         {
             using var httpClient = new HttpClient();
-			var response = await httpClient.GetAsync(_googleConfig.web.auth_provider_x509_cert_url);
+			var response = await httpClient.GetAsync("https://www.googleapis.com/oauth2/v3/certs");
             if (!response.IsSuccessStatusCode)
                 return Enumerable.Empty<SecurityKey>();
 
             var jwksJson = await response.Content.ReadAsStringAsync();
-            var jwks = JsonSerializer.Deserialize<JsonWebKeySet>(jwksJson);
-            return jwks?.Keys ?? Enumerable.Empty<SecurityKey>();
+            var jwks = new JsonWebKeySet(jwksJson);
+            return jwks.GetSigningKeys();
         }
 
         private async Task<bool> IsGoogleIdTokenValid(JwtSecurityToken jwtToken)
@@ -226,7 +229,7 @@ namespace Backend.Controllers
             if (player != null)
                 return player;
 
-            player = new Player { Username = name ?? "Unknown" };
+            player = new Player { Username = name ?? "Unknown", AvatarImageName = "👤" };
             player.AuthOAuths.Add(new AuthOAuth { Provider = "Google", ProviderUserId = googleId });
 
             _db.Players.Add(player);
@@ -259,6 +262,31 @@ namespace Backend.Controllers
                 await _db.SaveChangesAsync();
             }
             return Ok(new { msg = "Token refreshed" });
+        }
+
+        [HttpGet("me")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new { msg = "Invalid token" });
+
+            var player = await _db.Players
+                .Include(p => p.AuthLocal)
+                .FirstOrDefaultAsync(p => p.Id == userId);
+            if (player == null)
+                return NotFound(new { msg = "Player not found" });
+
+            return Ok(new
+            {
+                id = player.Id,
+                username = player.Username,
+                email = player.AuthLocal?.Email,
+                avatarImageName = player.AvatarImageName,
+                xp = player.Xp
+            });
         }
 
         #endregion
@@ -341,24 +369,41 @@ namespace Backend.Controllers
         [HttpGet("google/callback")]
         public async Task<IActionResult> GoogleCallback(string code)
         {
-            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "https://localhost:3000";
-            if (string.IsNullOrEmpty(code))
-                return Redirect($"{frontendUrl}/login?error=no-code");
-
-            var tokenResponse = await ExchangeCodeForGoogleTokenAsync(code);
-            if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.id_token))
-                return Redirect($"{frontendUrl}/login?error=token-failed");
-
-            var (email, name, googleId) = await ParseGoogleIdToken(tokenResponse.id_token);
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
-                return Redirect($"{frontendUrl}/login?error=invalid-token");
-            var player = await GetOrCreateGooglePlayerAsync(googleId, name);
-            var authResul = await SetAuthCookiesAsync(player);
-            if ((authResul as ObjectResult)?.StatusCode >= 400)
+            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
+            try
             {
-                return Redirect($"{frontendUrl}/login?error=auth-failed");
+                if (string.IsNullOrEmpty(code))
+                    return Redirect($"{frontendUrl}/login?error=no-code");
+
+                Console.WriteLine("Step 1: Exchanging code for token...");
+                var tokenResponse = await ExchangeCodeForGoogleTokenAsync(code);
+                if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.id_token))
+                    return Redirect($"{frontendUrl}/login?error=token-failed");
+
+                Console.WriteLine("Step 2: Parsing ID token...");
+                var (email, name, googleId) = await ParseGoogleIdToken(tokenResponse.id_token);
+                Console.WriteLine($"Step 2 result: email={email}, name={name}, googleId={googleId}");
+                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
+                    return Redirect($"{frontendUrl}/login?error=invalid-token");
+
+                Console.WriteLine("Step 3: Getting or creating player...");
+                var player = await GetOrCreateGooglePlayerAsync(googleId, name);
+                Console.WriteLine($"Step 3 result: playerId={player.Id}");
+
+                Console.WriteLine("Step 4: Setting auth cookies...");
+                var authResult = await SetAuthCookiesAsync(player);
+                if ((authResult as ObjectResult)?.StatusCode >= 400)
+                {
+                    return Redirect($"{frontendUrl}/login?error=auth-failed");
+                }
+                Console.WriteLine("Step 5: Redirecting to lobby");
+                return Redirect($"{frontendUrl}/lobby");
             }
-            return Redirect($"{frontendUrl}/lobby");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Google callback EXCEPTION: {ex}");
+                return Redirect($"{frontendUrl}/login?error=server-error");
+            }
         }
         #endregion
     }

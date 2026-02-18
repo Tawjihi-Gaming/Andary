@@ -17,8 +17,12 @@ builder.Services.AddGoogleOAuth();
 builder.Services.AddAppDatabase();
 #endregion
 
+#region Services
+builder.services.AddAppServices();
+#endregion
+
 #region App Pipeline
 var app = builder.Build();
-app.UseAppPipeline();
+app.UseAppPipeline().UseAppInfrastructure();
 app.Run();
 #endregion

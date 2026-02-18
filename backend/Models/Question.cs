@@ -19,6 +19,8 @@ namespace Backend.Models
         public string CorrectAnswer { get; set; } = string.Empty;
         [MaxLength(1000)]
         public string? Explanation { get; set; }
+        [MaxLength(100)]
+        public string? TopicName { get; set; }
         [MaxLength(500)]
         public string? Modifier { get; set; }
         [Required]

@@ -5,7 +5,7 @@ using Backend.Services;
 using Backend.Models;
 using backend.Enums;
 
-namespace backend.Hubs;
+namespace Backend.Hubs;
 
 public class GameHub : Hub
 {

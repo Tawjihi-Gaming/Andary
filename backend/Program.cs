@@ -18,7 +18,7 @@ builder.Services.AddAppDatabase();
 #endregion
 
 #region Services
-builder.services.AddAppServices();
+builder.Services.AddAppServices();
 #endregion
 
 #region App Pipeline

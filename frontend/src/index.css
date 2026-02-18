@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+@theme {
+  --color-game-yellow: #FBBF24;
+  --color-game-cyan: #06B6D4;
+  --color-game-blue: #2563EB;
+  --color-game-purple: #8B5CF6;
+  --color-game-orange: #F97316;
+  --color-game-green: #22C55E;
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Tajawal', Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #8B5CF6, #EC4899);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #A78BFA, #F472B6);
+}
+
+/* Input focus styles */
+input:focus {
+  outline: none;
+}
+
+/* Button hover animation */
+.btn-game {
+  transition: all 0.2s ease;
+  transform: translateY(0);
+}
+
+.btn-game:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 0 #D97706, 0 12px 25px rgba(251, 191, 36, 0.5);
+}
+
+.btn-game:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #D97706;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Logo bounce animation */
+.logo-bounce {
+  animation: bounce 3s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Tab transition */
+.tab-active {
+  background: #2563EB;
+  color: white;
+  font-weight: bold;
+}
+
+.tab-inactive {
+  background: transparent;
+  color: #CBD5E1;
+}
+
+.tab-inactive:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Avatar picker */
+.avatar-option {
+  cursor: pointer;
+  user-select: none;
+}
+
+.avatar-option:hover {
+  animation: avatar-wiggle 0.9s ease;
+}
+
+@keyframes avatar-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1.05); }
+  25% { transform: rotate(-8deg) scale(1.05); }
+  75% { transform: rotate(8deg) scale(1.05); }
+}
+
+/* Custom Range Slider Styles */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FBBF24 0%, #F97316 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+  transition: all 0.2s ease;
+}
+
+input[type="range"].slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.6);
+}
+
+input[type="range"].slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FBBF24 0%, #F97316 100%);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+  transition: all 0.2s ease;
+}
+
+input[type="range"].slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.6);
+}
+
+input[type="range"].slider::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 6px;
+}
+
+input[type="range"].slider::-moz-range-track {
+  height: 12px;
+  border-radius: 6px;
+}

@@ -205,19 +205,19 @@ const GameRoom = ({ user }) => {
     }, [roomId, user])
    
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] relative overflow-hidden flex items-center justify-center p-6">
-            <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-3/4 max-w-6xl shadow-2xl border border-white/15">
-                <h1 className="text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
-                <p className="text-white/50 text-center mb-4">
+        <div className="min-h-screen bg-gradient-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
+            <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl border border-white/15">
+                <h1 className="text-xl sm:text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
+                <p className="text-white/50 text-center mb-4 text-xs sm:text-sm">
                     Room ID: {roomId} | Code: {code || 'N/A'}
                 </p>
-                <p className="text-white/50 text-center mb-6">
+                <p className="text-white/50 text-center mb-4 sm:mb-6 text-xs sm:text-sm">
                     {roomOwnerName ? `صاحب الغرفة: ${roomOwnerName}` : 'صاحب الغرفة غير معروف'}
                 </p>
                 
                 {/* Connection Status */}
-                <div className="mb-6 flex justify-center">
-                    <span className={`px-4 py-2 rounded-full text-sm font-bold ${
+                <div className="mb-4 sm:mb-6 flex justify-center">
+                    <span className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold ${
                         connectionStatus === 'connected' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 
                         connectionStatus === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 
                         'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
@@ -229,13 +229,13 @@ const GameRoom = ({ user }) => {
                 </div>
 
                 {/* Players List */}
-                <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-white mb-4 text-center">اللاعبون ({players.length})</h3>
-                    <div className="grid grid-cols-4 gap-4 max-h-64 overflow-y-auto">
+                <div className="mb-4 sm:mb-6">
+                    <h3 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4 text-center">اللاعبون ({players.length})</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4 max-h-64 overflow-y-auto">
                         {players.map((player) => (
                             <div 
                                 key={player.id}
-                                className={`bg-white/10 backdrop-blur-sm rounded-2xl p-5 border-2 ${
+                                className={`bg-white/10 backdrop-blur-sm rounded-2xl p-3 sm:p-5 border-2 ${
                                     player.id === roomMockOwnerId 
                                         ? 'border-yellow-400/50 bg-yellow-500/10' 
                                         : player.isReady 
@@ -243,14 +243,14 @@ const GameRoom = ({ user }) => {
                                         : 'border-white/20'
                                 } transition-all duration-300`}
                             >
-                                <div className="flex flex-col items-center gap-3">
-                                    <span className="text-6xl">{player.avatar}</span>
-                                    <p className="text-white text-base font-semibold truncate w-full text-center">
+                                <div className="flex flex-col items-center gap-1 sm:gap-3">
+                                    <span className="text-4xl sm:text-6xl">{player.avatar}</span>
+                                    <p className="text-white text-xs sm:text-base font-semibold truncate w-full text-center">
                                         {player.username}
                                         {player.id === roomMockOwnerId && ' 👑'}
                                     </p>
                                     {player.isReady && player.id !== roomOwnerId && (
-                                        <span className="text-green-400 text-sm font-bold">✓ جاهز</span>
+                                        <span className="text-green-400 text-xs sm:text-sm font-bold">✓ جاهز</span>
                                     )}
                                 </div>
                             </div>
@@ -263,7 +263,7 @@ const GameRoom = ({ user }) => {
                         <>
                             <button
                                 onClick={handleCopyCode}
-                                className="mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                             >
                                 {isCopied ? (
                                     <>
@@ -277,13 +277,13 @@ const GameRoom = ({ user }) => {
                                     </>
                                 )}
                             </button>
-                            <div className="mt-6 p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
-                                <p className="text-blue-400 font-bold">أنت صاحب الغرفة</p>
-                                <p className="text-blue-300 text-sm">يمكنك بدء اللعبة عندما يكون الجميع جاهزًا!</p>
+                            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
+                                <p className="text-blue-400 font-bold text-sm sm:text-base">أنت صاحب الغرفة</p>
+                                <p className="text-blue-300 text-xs sm:text-sm">يمكنك بدء اللعبة عندما يكون الجميع جاهزًا!</p>
                             </div>
                             <button
                                 onClick={startGame}
-                                className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-2xl transition-all duration-300"
+                                className="mt-3 sm:mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
                             >
                                 بدء اللعبة
                             </button>
@@ -296,19 +296,19 @@ const GameRoom = ({ user }) => {
                             {!isReady ? (
                                 <button
                                     onClick={handleReadyUp}
-                                    className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-2xl transition-all duration-300"
+                                    className="mt-3 sm:mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
                                 >
                                     جاهز
                                 </button>
                             ) : (
                                 <>
-                                    <div className="mt-6 p-4 bg-green-500/20 border border-green-500/30 rounded-lg text-center">
-                                        <p className="text-green-400 font-bold text-lg">✓ أنت جاهز!</p>
-                                        <p className="text-green-300 text-sm mt-2">في انتظار صاحب الغرفة لبدء اللعبة...</p>
+                                    <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-green-500/20 border border-green-500/30 rounded-lg text-center">
+                                        <p className="text-green-400 font-bold text-base sm:text-lg">✓ أنت جاهز!</p>
+                                        <p className="text-green-300 text-xs sm:text-sm mt-1 sm:mt-2">في انتظار صاحب الغرفة لبدء اللعبة...</p>
                                     </div>
                                     <button
                                         onClick={() => setIsReady(false)}
-                                        className="mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-2 rounded-2xl transition-all duration-300 border border-red-500/30"
+                                        className="mt-3 sm:mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-2 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-red-500/30"
                                     >
                                         إلغاء الجاهزية
                                     </button>
@@ -322,7 +322,7 @@ const GameRoom = ({ user }) => {
                 {/* Back Button */}
                 <button
                     onClick={handleBackToLobby}
-                    className="mt-6 w-full bg-white/5 hover:bg-white/10 text-white/70 font-bold py-3 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+                    className="mt-4 sm:mt-6 w-full bg-white/5 hover:bg-white/10 text-white/70 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
                 >
                     العودة للردهة
                 </button>

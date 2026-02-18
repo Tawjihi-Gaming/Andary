@@ -18,6 +18,16 @@ namespace Backend.Data
 		{
 			base.OnModelCreating(modelBuilder);
 
+			// Configure auto-increment for Topics
+			modelBuilder.Entity<Topic>()
+				.Property(t => t.Id)
+				.ValueGeneratedOnAdd();
+
+			// Configure auto-increment for Questions
+			modelBuilder.Entity<Question>()
+				.Property(q => q.Id)
+				.ValueGeneratedOnAdd();
+
 			// Player - AuthLocal (1:1)
 			modelBuilder.Entity<Player>()
 				.HasOne(p => p.AuthLocal)

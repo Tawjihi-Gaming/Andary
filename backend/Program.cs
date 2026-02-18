@@ -21,8 +21,15 @@ builder.Services.AddAppDatabase();
 builder.Services.AddAppServices();
 #endregion
 
-#region App Pipeline
+#region App
 var app = builder.Build();
+#endregion
+
+#region Database Seeding
+await app.SeedDatabaseAsync();
+#endregion
+
+#region App Pipeline
 app.UseAppPipeline().UseAppInfrastructure();
 app.Run();
 #endregion

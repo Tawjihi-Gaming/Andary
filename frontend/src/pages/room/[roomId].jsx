@@ -21,6 +21,11 @@ const GameRoom = ({ user }) => {
     // The current user is the owner if their sessionId matches the room owner
     const isOwner = sessionId && sessionId === roomOwnerId
 
+    // Check if all non-owner players are ready and there's at least one other player
+    const allPlayersReady = players.length > 1 && players
+        .filter(p => p.sessionId !== roomOwnerId)
+        .every(p => p.isReady)
+
     const handleCopyCode = async () => {
         try {
             await navigator.clipboard.writeText(code)
@@ -55,6 +60,7 @@ const GameRoom = ({ user }) => {
         try {
             const connection = getConnection()
             await connection.invoke('StartGame', roomId, sessionId)
+            // Don't navigate here — the 'GameStarted' event will handle navigation for all players
         } catch (error) {
             console.error('Error starting game:', error)
         }
@@ -128,6 +134,9 @@ const GameRoom = ({ user }) => {
                 connection.on('ChooseRoundTopic', (state) => {
                     console.log('Choose round topic:', state)
                     setGameState(state)
+                    navigate(`/game/${roomId}`, {
+                        state: { user, roomId, code, sessionId, gameState: state }
+                    })
                 })
 
                 // Show answer choices
@@ -282,9 +291,14 @@ const GameRoom = ({ user }) => {
                             </div>
                             <button
                                 onClick={startGame}
-                                className="mt-3 sm:mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
+                                disabled={!allPlayersReady}
+                                className={`mt-3 sm:mt-4 w-full font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 ${
+                                    allPlayersReady
+                                        ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                                        : 'bg-gray-500/30 text-white/40 cursor-not-allowed'
+                                }`}
                             >
-                                بدء اللعبة
+                                {allPlayersReady ? 'بدء اللعبة' : 'في انتظار جاهزية جميع اللاعبين...'}
                             </button>
                         </>
                     )

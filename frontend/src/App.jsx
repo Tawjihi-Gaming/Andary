@@ -5,6 +5,7 @@ import Lobby from './pages/Lobby.jsx'
 import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
+import Game from './pages/game/[roomId].jsx'
 import TestRoom from './pages/room/TestRoom.jsx'
 import api from './api/axios'
 
@@ -130,6 +131,14 @@ function App() {
         <Route 
           path="/test-room" 
           element={<TestRoom />} 
+        />
+        <Route 
+          path="/game/:roomId" 
+          element={
+            isAuthenticated ? 
+              <Game user={user} /> :
+              <Navigate to="/" replace />
+          } 
         />
       </Routes>
     </BrowserRouter>

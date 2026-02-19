@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios' 
 
@@ -7,26 +7,24 @@ const CreateRoom = ({ user }) => {
   const [isPrivate, setIsPrivate] = useState(false)
   const [error, setError] = useState('')
   const [selectedTopics, setSelectedTopics] = useState([])
+  const [availableTopics, setAvailableTopics] = useState([])
   const [timer, setTimer] = useState(30)
   const [calcTimer, setCalcTimer] = useState(20)
   const [rounds, setRounds] = useState(5)
   const navigate = useNavigate()
 
-  // Mock topics data
-  const availableTopics = [
-    'Technology',
-    'Science',
-    'History',
-    'Geography',
-    'Sports',
-    'Entertainment',
-    'Literature',
-    'Art',
-    'Music',
-    'Movies',
-    'Gaming',
-    'Nature',
-  ]
+  // Fetch available topics from the backend
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const res = await api.get('/room/topics')
+        setAvailableTopics(res.data)
+      } catch (err) {
+        console.error('Error fetching topics:', err)
+      }
+    }
+    fetchTopics()
+  }, [])
 
   console.log("user data", user)
 
@@ -68,7 +66,8 @@ const CreateRoom = ({ user }) => {
         questions: rounds || 10, 
         playerName: user?.username || 'Guest',
         avatarImageName: user?.avatarImageName || '',
-        playerId: user?.id || null
+        playerId: user?.id || null,
+        selectedTopics: selectedTopics
       })
       console.log('Room created:', response.data)
       const { roomId, code, sessionId, playerName } = response.data

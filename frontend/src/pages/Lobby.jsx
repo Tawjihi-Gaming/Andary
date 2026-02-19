@@ -44,13 +44,27 @@ const Lobby = ({ user, onLogout }) => {
     }, [])
   */
 
-  const handleJoinLobby = (roomId) => {
-    navigate(`/room/${roomId}`, {
-      state: {
-        user: user,
-        roomId: roomId
-      }
-    })
+  const handleJoinLobby = async (roomId) => {
+    try {
+      const response = await api.post('/room/join', {
+        roomId: roomId,
+        playerId: user?.id || null,
+        playerName: user?.username || 'Guest',
+        avatarImageName: user?.avatarImageName || '',
+      })
+      console.log('Joined room:', response.data)
+      const { sessionId, playerName } = response.data
+      navigate(`/room/${response.data.roomId}`, {
+        state: {
+          user: user,
+          roomId: response.data.roomId,
+          sessionId: sessionId,
+          ownerName: playerName,
+        }
+      })
+    } catch (err) {
+      console.error('Error joining room:', err)
+    }
   }
 
   const handleCreateRoom = () => {
@@ -62,22 +76,25 @@ const Lobby = ({ user, onLogout }) => {
   }
 
   const handleJoinSubmit = async () => {
-    const roomId = '12345' // Mock room ID for testing
     if (roomCode.trim()) {
       try {
-        // const response = await api.post(`/room/join`,
-        //   { code: roomCode },
-        //   {PlayerId: user?.id || -1}
-        // )
-        // console.log('Joined room:', response.data)
+        const response = await api.post('/room/join', {
+          code: roomCode,
+          playerId: user?.id || null,
+          playerName: user?.username || 'Guest',
+          avatarImageName: user?.avatarImageName || '',
+        })
+        console.log('Joined room:', response.data)
         setShowJoinModal(false)
-        // setRoomCode('')
+        setRoomCode('')
+        const { roomId, sessionId, playerName } = response.data
         navigate(`/room/${roomId}`, {
           state: {
             code: roomCode,
-            ownerId: 12345, // Mock owner ID for testing
-            ownerName: 'Mock Owner', // Mock owner name for testing
-            user: user
+            sessionId: sessionId,
+            ownerName: playerName,
+            user: user,
+            roomId: roomId,
           }
         })
       } catch (err) {
@@ -87,7 +104,7 @@ const Lobby = ({ user, onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden">
 
       {/* Navbar */}
       <nav className="relative z-10 bg-white/5 backdrop-blur-2xl border-b border-white/10 px-6 py-3">
@@ -257,7 +274,7 @@ const Lobby = ({ user, onLogout }) => {
       {/* join by code modal */}
       {showJoinModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-linear-to-br from-[#1E3A8A]/90 to-[#0F172A]/90 backdrop-blur-2xl rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/15">
+          <div className="bg-linear-to-br from-[#2563EB]/90 to-[#1E3A8A]/90 backdrop-blur-2xl rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/15">
             <div className="w-16 h-16 bg-linear-to-br from-game-cyan to-game-blue rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-game-cyan/20">
               <span className="text-3xl">🔗</span>
             </div>

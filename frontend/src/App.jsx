@@ -70,7 +70,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center">
         <span className="text-white text-2xl animate-pulse">...جاري التحميل</span>
       </div>
     )

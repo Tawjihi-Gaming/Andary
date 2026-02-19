@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
           target: env.BACKEND_URI,
           changeOrigin: true,
           secure: false,
-          ws: true, // Enable WebSocket proxying for SignalR
+          ws: true,
         },
       },
     },

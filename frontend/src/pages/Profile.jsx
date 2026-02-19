@@ -172,7 +172,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] p-4">
+    <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] p-4">
       <div className="max-w-2xl mx-auto">
         {/* back button */}
         <button

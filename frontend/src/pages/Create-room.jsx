@@ -56,23 +56,23 @@ const CreateRoom = ({ user }) => {
       return
     }
 
-    const roomId = Math.floor(Math.random() * 1000000) // Mock room ID generation
-    const code = '12345'// Mock room code generation
-    const roomOwnerId = user?.id || -1
-    const roomOwnerName = user?.username || 'Guest'
-    const finalRoomName = roomName || `Room ${roomId}`
-    // try {
-    //   const response = await api.post('/room/create', { 
-    //     name: roomName,
-    //     isPrivate: isPrivate,
-    //     questions: rounds || 10, 
-    //     topics: selectedTopics,
-    //     ownerId: roomOwnerId,
-    //     ownerName: roomOwnerName
-    //   })
-    //   console.log('Room created:', response.data)
-    //   const { roomId, code } = response.data
-    //   console.log('user room with ID:', user?.id, 'to room:', roomId)
+    // const roomId = Math.floor(Math.random() * 1000000) // Mock room ID generation
+    // const code = '12345'// Mock room code generation
+    // const roomOwnerId = user?.id || -1
+    // const roomOwnerName = user?.username || 'Guest'
+    // const finalRoomName = roomName || `Room ${roomId}`
+    try {
+      const response = await api.post('/room/create', { 
+        name: roomName,
+        isPrivate: isPrivate,
+        questions: rounds || 10, 
+        playerName: user?.username || 'Guest',
+        avatarImageName: user?.avatarImageName || '',
+        playerId: user?.id || null
+      })
+      console.log('Room created:', response.data)
+      const { roomId, code, sessionId, playerName } = response.data
+      console.log('user room with ID:', user?.id, 'to room:', roomId)
       
       // Join the room (use -1 for guest players)
       // await api.post(`/room/join`, { 
@@ -87,23 +87,24 @@ const CreateRoom = ({ user }) => {
           user: user,
           roomId: roomId, 
           code: code,
-          ownerId: roomOwnerId,
-          ownerName: roomOwnerName,
-          roomName: finalRoomName,
+          sessionId: sessionId,
+          ownerId: sessionId,
+          ownerName: playerName || user?.username || 'Guest',
+          roomName: roomName || `Room ${roomId}`,
           timer: timer,
           calcTimer: calcTimer,
           rounds: rounds,
           topics: selectedTopics
         }
       })
-    // } catch (err) {
-    //   console.error('Error creating room:', err)
-    //   setError('Failed to create room. Please try again.')
-    // }
+    } catch (err) {
+      console.error('Error creating room:', err)
+      setError('Failed to create room. Please try again.')
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
       
       <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-4xl shadow-2xl border border-white/15">
         <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg shadow-game-yellow/20">
@@ -111,26 +112,26 @@ const CreateRoom = ({ user }) => {
         </div>
         
         <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-2 text-center">إنشاء غرفة</h1>
-        <p className="text-white/50 text-center mb-5 sm:mb-8 text-base sm:text-lg">Create a new game room</p>
+        <p className="text-white/80 text-center mb-5 sm:mb-8 text-base sm:text-lg">Create a new game room</p>
         
         <form onSubmit={handleCreateRoom} className="space-y-5">
           
           {/* Room Name Input */}
           <div>
-            <label className="block text-white/70 font-semibold mb-2 text-base sm:text-lg">اسم الغرفة</label>
+            <label className="block text-white/90 font-semibold mb-2 text-base sm:text-lg">اسم الغرفة</label>
             <input
               type="text"
               placeholder="Room Name"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              className="w-full bg-white/10 text-white text-base sm:text-lg placeholder:text-white/30 rounded-2xl py-3 px-4 sm:py-4 sm:px-6 border border-white/15 focus:border-game-yellow/50 focus:bg-white/15 focus:shadow-lg focus:shadow-game-yellow/10 transition-all duration-300 focus:outline-none"
+              className="w-full bg-white/10 text-white text-base sm:text-lg placeholder:text-white/50 rounded-2xl py-3 px-4 sm:py-4 sm:px-6 border border-white/15 focus:border-game-yellow/50 focus:bg-white/15 focus:shadow-lg focus:shadow-game-yellow/10 transition-all duration-300 focus:outline-none"
               required
             />
           </div>
 
           {/* Room Type Buttons */}
           <div>
-            <label className="block text-white/70 font-semibold mb-3 text-base sm:text-lg">نوع الغرفة</label>
+            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">نوع الغرفة</label>
             <div className="grid grid-cols-2 gap-3">
               
               {/* Public Button */}
@@ -145,10 +146,10 @@ const CreateRoom = ({ user }) => {
               >
                 <div className="flex flex-col items-center gap-1 sm:gap-2">
                   <span className="text-2xl sm:text-4xl">🌍</span>
-                  <span className={`font-bold text-base sm:text-lg ${!isPrivate ? 'text-game-green' : 'text-white/40'}`}>
+                  <span className={`font-bold text-base sm:text-lg ${!isPrivate ? 'text-game-green' : 'text-white/70'}`}>
                     عامة
                   </span>
-                  <span className={`text-xs sm:text-sm ${!isPrivate ? 'text-game-green/70' : 'text-white/40'}`}>
+                  <span className={`text-xs sm:text-sm ${!isPrivate ? 'text-game-green/70' : 'text-white/60'}`}>
                     Public
                   </span>
                 </div>
@@ -173,10 +174,10 @@ const CreateRoom = ({ user }) => {
               >
                 <div className="flex flex-col items-center gap-1 sm:gap-2">
                   <span className="text-2xl sm:text-4xl">🔒</span>
-                  <span className={`font-bold text-base sm:text-lg ${isPrivate ? 'text-game-orange' : 'text-white/40'}`}>
+                  <span className={`font-bold text-base sm:text-lg ${isPrivate ? 'text-game-orange' : 'text-white/70'}`}>
                     خاصة
                   </span>
-                  <span className={`text-xs sm:text-sm ${isPrivate ? 'text-game-orange/70' : 'text-white/40'}`}>
+                  <span className={`text-xs sm:text-sm ${isPrivate ? 'text-game-orange/70' : 'text-white/60'}`}>
                     Private
                   </span>
                 </div>
@@ -194,9 +195,9 @@ const CreateRoom = ({ user }) => {
 
           {/* Topics Selection */}
           <div>
-            <label className="block text-white/70 font-semibold mb-3 text-base sm:text-lg">
+            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
               اختر المواضيع (اختر 5 على الأقل)
-              <span className="text-xs sm:text-sm block text-white/50 mt-1">
+              <span className="text-xs sm:text-sm block text-white/70 mt-1">
                 Select topics ({selectedTopics.length}/5 minimum, maximum 8 topics)
               </span>
             </label>
@@ -214,7 +215,7 @@ const CreateRoom = ({ user }) => {
                     }`}
                   >
                     <span className={`font-semibold text-center block text-xs sm:text-base ${
-                      selectedTopics.includes(topic) ? 'text-game-yellow' : 'text-white/70'
+                      selectedTopics.includes(topic) ? 'text-game-yellow' : 'text-white/90'
                     }`}>
                       {topic}
                     </span>
@@ -231,7 +232,7 @@ const CreateRoom = ({ user }) => {
             </div>
           </div>
           <div>
-            <label className="block text-white/70 font-semibold mb-3 text-base sm:text-lg">عدد الجولات</label>
+            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">عدد الجولات</label>
             <div className="flex gap-4">
               {roundOptions.map((option) => (
                 <button
@@ -241,7 +242,7 @@ const CreateRoom = ({ user }) => {
                   className={`flex-1 px-3 py-2 sm:px-6 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-200 border-2 ${
                     rounds === option
                       ? 'bg-game-yellow/20 border-game-yellow text-game-yellow shadow-lg shadow-game-yellow/20'
-                      : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20'
+                      : 'bg-white/5 border-white/10 text-white/90 hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
                   {option} جولات
@@ -252,7 +253,7 @@ const CreateRoom = ({ user }) => {
 
           {/* Answer Timer Slider */}
           <div>
-            <label className="block text-white/70 font-semibold mb-3 text-base sm:text-lg">
+            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
               وقت الإجابة على السؤال
               <span className="text-game-yellow font-bold ml-2">{timer} ثانية</span>
             </label>
@@ -269,7 +270,7 @@ const CreateRoom = ({ user }) => {
                   background: `linear-gradient(to left, #FACC15 0%, #FACC15 ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) 100%)`
                 }}
               />
-              <div className="flex justify-between text-white/50 text-xs sm:text-sm mt-2">
+              <div className="flex justify-between text-white/70 text-xs sm:text-sm mt-2">
                 <span>10 ثواني</span>
                 <span>60 ثانية</span>
               </div>
@@ -278,7 +279,7 @@ const CreateRoom = ({ user }) => {
 
           {/* Calculation Timer Slider */}
           <div>
-            <label className="block text-white/70 font-semibold mb-3 text-base sm:text-lg">
+            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
               وقت حساب النتيجة
               <span className="text-game-orange font-bold ml-2">{calcTimer} ثانية</span>
             </label>
@@ -295,7 +296,7 @@ const CreateRoom = ({ user }) => {
                   background: `linear-gradient(to left, #F97316 0%, #F97316 ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) 100%)`
                 }}
               />
-              <div className="flex justify-between text-white/50 text-xs sm:text-sm mt-2">
+              <div className="flex justify-between text-white/70 text-xs sm:text-sm mt-2">
                 <span>5 ثواني</span>
                 <span>30 ثانية</span>
               </div>
@@ -321,7 +322,7 @@ const CreateRoom = ({ user }) => {
           <button
             type="button"
             onClick={() => navigate('/lobby')}
-            className="w-full bg-white/5 hover:bg-white/10 text-white/70 font-bold py-3 sm:py-4 text-base sm:text-lg rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+            className="w-full bg-white/5 hover:bg-white/10 text-white/90 font-bold py-3 sm:py-4 text-base sm:text-lg rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
           >
             رجوع
           </button>

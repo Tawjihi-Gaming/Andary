@@ -14,17 +14,23 @@ const CreateRoom = ({ user }) => {
   const navigate = useNavigate()
 
   // Fetch available topics from the backend
-  useEffect(() => {
-    const fetchTopics = async () => {
-      try {
-        const res = await api.get('/room/topics')
-        setAvailableTopics(res.data)
-      } catch (err) {
-        console.error('Error fetching topics:', err)
-      }
-    }
-    fetchTopics()
-  }, [])
+  // useEffect(() => {
+  //   const fetchTopics = async () => {
+  //     try {
+  //       const res = await api.get('/room/topics')
+  //       setAvailableTopics(res.data)
+  //     } catch (err) {
+  //       console.error('Error fetching topics:', err)
+  //     }
+  //   }
+  //   fetchTopics()
+  // }, [])
+
+  const mockTopics = [
+    'تاريخ', 'علوم', 'رياضيات', 'أدب', 'فنون', 
+    'رياضة', 'جغرافيا', 'تكنولوجيا', 'أفلام', 'موسيقى',
+    'ثقافة عامة', 'سياسة', 'اقتصاد', 'دين', 'لغات'
+  ]
 
   console.log("user data", user)
 
@@ -54,11 +60,6 @@ const CreateRoom = ({ user }) => {
       return
     }
 
-    // const roomId = Math.floor(Math.random() * 1000000) // Mock room ID generation
-    // const code = '12345'// Mock room code generation
-    // const roomOwnerId = user?.id || -1
-    // const roomOwnerName = user?.username || 'Guest'
-    // const finalRoomName = roomName || `Room ${roomId}`
     try {
       const response = await api.post('/room/create', { 
         name: roomName,
@@ -203,7 +204,7 @@ const CreateRoom = ({ user }) => {
             
             <div className="bg-white/5 rounded-2xl p-4 max-h-60 overflow-y-auto border border-white/10">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-                {availableTopics.map((topic, index) => (
+                {mockTopics.map((topic, index) => (
                   <div
                     key={index}
                     onClick={() => toggleTopicSelection(topic)}

@@ -1,14 +1,18 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { startConnection, stopConnection, getConnection } from '../../api/signalr'
+import { useSignalR } from '../../context/SignalRContext'
 
 const GameRoom = ({ user }) => {
     const { roomId } = useParams()
     const location = useLocation()
     const navigate = useNavigate()
+    const { startConnection, stopConnection, getConnection } = useSignalR()
     const code = location.state?.code
     const roomName = location.state?.roomName
     const sessionId = location.state?.sessionId
+    const timer = location.state?.timer || 30
+    const calcTimer = location.state?.calcTimer || 20
+    const rounds = location.state?.rounds || 5
 
     const [connectionStatus, setConnectionStatus] = useState('connecting')
     const [players, setPlayers] = useState([])
@@ -66,6 +70,7 @@ const GameRoom = ({ user }) => {
         }
     }
 
+
     const handleBackToLobby = async () => {
         try {
             const connection = getConnection()
@@ -115,18 +120,15 @@ const GameRoom = ({ user }) => {
                     console.log('All players ready!')
                 })
 
-                // Topics updated
-                connection.on('TopicsUpdated', (topics) => {
-                    console.log('Topics updated:', topics)
-                    setGameState(prev => ({ ...prev, selectedTopics: topics }))
-                })
-
                 // Game started
                 connection.on('GameStarted', (state) => {
                     console.log('Game started:', state)
                     setGameState(state)
                     navigate(`/game/${roomId}`, {
-                        state: { user, roomId, code, sessionId, gameState: state }
+                        state: {
+                            ...location.state,  // passes timer, calcTimer, rounds, sessionId, user etc.
+                            gameState: state,
+                        }
                     })
                 })
 
@@ -197,6 +199,7 @@ const GameRoom = ({ user }) => {
                 await connection.invoke('ConnectToRoom', roomId, sessionId)
                 console.log('✅ Connected to room:', roomId, 'with session:', sessionId)
 
+
             } catch (err) {
                 console.error('SignalR connection failed:', err)
                 setConnectionStatus('error')
@@ -205,9 +208,23 @@ const GameRoom = ({ user }) => {
 
         setupSignalR()
 
+        // Don't stop the connection on unmount — it stays alive for the game page
         return () => {
-            if (connection) {
-                stopConnection()
+            const conn = getConnection()
+            if (conn) {
+                conn.off('PlayerConnected')
+                conn.off('LobbyUpdated')
+                conn.off('AllPlayersReady')
+                conn.off('GameStarted')
+                conn.off('ChooseRoundTopic')
+                conn.off('ShowChoices')
+                conn.off('RoundEnded')
+                conn.off('GameEnded')
+                conn.off('OwnershipTransferred')
+                conn.off('PlayerLeft')
+                conn.off('PlayerDisconnected')
+                conn.off('RoomState')
+                conn.off('RoomClosed')
             }
         }
     }, [roomId, sessionId])

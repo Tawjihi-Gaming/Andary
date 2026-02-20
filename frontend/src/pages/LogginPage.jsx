@@ -4,7 +4,7 @@ import Auth from '../components/Auth.jsx'
 function LoginPage({ onLogin }) {
   return (
     <>
-      <div className="min-h-screen bg-linear-to-br from-[#1E3A8A] via-[#2563EB] to-[#0EA5E9] flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background */}
         <div className="absolute inset-0 opacity-65">
           <div className="absolute top-10 left-10 w-24 h-24 border-4 border-white rounded-full animate-pulse"></div>

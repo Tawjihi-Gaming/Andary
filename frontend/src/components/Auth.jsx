@@ -17,6 +17,20 @@ const Auth = ({ onLogin }) => {
     setMessage({ text, type })
     setTimeout(() => setMessage(null), 4000)
   }
+  
+  const handleUserName = (e) => {
+    const value = e.target.value
+    // Prevent leading whitespace but allow spaces within the name
+    if (value.trimStart() !== value) return
+    setGuestName(value)
+  }
+
+  const handleDisplayName = (e) => {
+    const value = e.target.value
+    // Prevent leading whitespace but allow spaces within the name
+    if (value.trimStart() !== value) return
+    setDisplayName(value)
+  }
 
   const handleGoogleLogin = async () => {
     if (loading)
@@ -40,8 +54,20 @@ const Auth = ({ onLogin }) => {
 
   const handleGuestPlay = (e) => {
     e.preventDefault()
-    // Frontend only - no auth logic
-    // selectedAvatar.emoji is always available
+    if (!guestName.trim()) {
+      setGuestName('')
+      showMessage('❌ اسم المستخدم لا يمكن أن يكون فارغاً أو مسافات فقط.', 'error')
+      return
+    }
+    // Pass guest user data
+    const userData = {
+      id: null, // No real ID for guests
+      username: guestName.trim(),
+      avatar: selectedAvatar.emoji,
+      xp: 0,
+      isGuest: true
+    }
+    onLogin?.(userData)
   }
 
   // handle sign in
@@ -57,28 +83,46 @@ const Auth = ({ onLogin }) => {
     {
       if (isSignUp)
       {
+        if (!displayName.trim()) {
+          setDisplayName('')
+          showMessage('❌ اسم العرض لا يمكن أن يكون فارغاً أو مسافات فقط.', 'error')
+          setLoading(false)
+          return
+        }
         await api.post('/auth/signup', {
-          username: displayName,
+          username: displayName.trim(),
           email,
           password,
-          avatar: selectedAvatar.emoji,
+          avatarImageName: selectedAvatar.emoji,
         })
         showMessage('✅ تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.', 'success')
       }
       else
       {
-        await api.post('/auth/login', {
+        /*
+        Login API
+        */
+        const response = await api.post('/auth/login', {
           email,
           password
         })
         showMessage('✅ تم تسجيل الدخول بنجاح!', 'success')
-        setTimeout(() => onLogin?.(), 1000)
+        // Build user object from the backend response
+        const userData = {
+          id: response.data.id,
+          username: response.data.username,
+          email: response.data.email || email,
+          avatar: response.data.avatarImageName || '👤',
+          isGuest: false
+        }
+        setTimeout(() => onLogin?.(userData), 1000)
       }
     }
     catch (error)
     {
       console.error('Auth error:', error)
-      showMessage('❌ حدث خطأ أثناء العملية. يرجى المحاولة مرة أخرى.', 'error')
+      const errorMsg = error.response?.data?.msg || 'حدث خطأ أثناء العملية. يرجى المحاولة مرة أخرى.'
+      showMessage(`❌ ${errorMsg}`, 'error')
     }
     finally
     {
@@ -158,7 +202,7 @@ const Auth = ({ onLogin }) => {
               placeholder="اسم اللاعب"
               value={guestName}
               required
-              onChange={(e) => setGuestName(e.target.value)}
+              onChange={handleUserName}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pr-12 border-2 border-white/20 focus:border-game-yellow focus:bg-white/20 transition-all duration-200"
               dir="rtl"
             />
@@ -240,7 +284,7 @@ const Auth = ({ onLogin }) => {
                   placeholder="اسم العرض (مطلوب)"
                   value={displayName}
                   required
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  onChange={handleDisplayName}
                   className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pr-12 border-2 border-white/20 focus:border-game-green focus:bg-white/20 transition-all duration-200"
                   dir="rtl"
                 />

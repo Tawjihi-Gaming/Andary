@@ -147,21 +147,37 @@ public class GameManager
     }
 
     // Player selects the topic for the current round (only when multiple topics exist)
-    public bool SelectRoundTopic(Room room, string connectionId, string topic)
+    public bool SelectRoundTopic(Room room, string connectionId, string sessionId, string topic)
     {
         if (room.Phase != GamePhase.ChoosingRoundTopic)
             return false;
 
-        // Only the current topic chooser can select
         var chooser = room.Players[room.TopicChooserIndex];
-        if (chooser.ConnectionId != connectionId)
+
+        // Validate caller is the chooser: use sessionId when provided, else fall back to connectionId
+        bool isChooser = false;
+        if (!string.IsNullOrEmpty(sessionId) && chooser.SessionId == sessionId)
+        {
+            isChooser = true;
+            if (string.IsNullOrEmpty(chooser.ConnectionId))
+                chooser.ConnectionId = connectionId; // Update stale connection
+        }
+        else
+        {
+            var caller = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+            isChooser = caller != null && caller.SessionId == chooser.SessionId;
+        }
+
+        if (!isChooser)
             return false;
 
-        // Must be one of the selected topics
-        if (!room.SelectedTopics.Contains(topic))
+        // Must be one of the selected topics (flexible match: trim, ignore case)
+        var matchedTopic = room.SelectedTopics.FirstOrDefault(t =>
+            string.Equals(t?.Trim(), topic?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (matchedTopic == null)
             return false;
 
-        room.CurrentRoundTopic = topic;
+        room.CurrentRoundTopic = matchedTopic;
 
         // Find a question for this topic that hasn't been used yet
         var usedQuestionIds = new HashSet<int>();
@@ -172,12 +188,12 @@ public class GameManager
         }
 
         var question = room.Questions
-            .Where(q => q.TopicId == GetTopicId(room, topic) && !usedQuestionIds.Contains(q.Id))
+            .Where(q => q.TopicId == GetTopicId(room, matchedTopic) && !usedQuestionIds.Contains(q.Id))
             .FirstOrDefault();
 
         if (question == null)
         {
-            // Fallback: pick any unused question
+            // Fallback: pick any unused question (e.g. when topic not in DB)
             question = room.Questions
                 .Where(q => !usedQuestionIds.Contains(q.Id))
                 .FirstOrDefault();
@@ -325,7 +341,11 @@ public class GameManager
 
         // Tell the frontend who is choosing the topic and whether a choice is needed
         if (room.Players.Count > 0)
-            state.TopicChooserName = room.Players[room.TopicChooserIndex].DisplayName;
+        {
+            var chooser = room.Players[room.TopicChooserIndex];
+            state.TopicChooserName = chooser.DisplayName;
+            state.CurrentPlayerSessionId = chooser.SessionId;
+        }
         state.NeedsTopicChoice = room.SelectedTopics.Count > 1;
 
         if (room.Phase == GamePhase.ChoosingAns)

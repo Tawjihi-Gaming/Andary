@@ -211,11 +211,11 @@ const Game = () => {
         const conn = connRef.current
         if (!conn) return
         try {
-            await conn.invoke('SelectRoundTopic', roomId, topic)
+            await conn.invoke('SelectRoundTopic', roomId, sessionId, topic)
         } catch (error) {
             console.error('Error selecting topic:', error)
         }
-    }, [roomId])
+    }, [roomId, sessionId])
 
     const handleSubmitFake = useCallback(async () => {
         const conn = connRef.current

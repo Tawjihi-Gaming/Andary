@@ -111,6 +111,11 @@ public class GameHub : Hub
 
         // Fetch questions from all selected topics
         var questions = _questionsService.GetQuestionsFromTopics(room.TotalQuestions, room.SelectedTopics);
+        if (questions.Count == 0)
+        {
+            await Clients.Caller.SendAsync("GameError", new { message = "No questions are available for the selected topics." });
+            return;
+        }
 
         _game.StartGame(room, questions);
 
@@ -124,12 +129,30 @@ public class GameHub : Hub
     }
 
     // Per-round topic selection — the designated player picks the topic for this round
-    public async Task SelectRoundTopic(string roomId, string topic)
+    // Accepts (roomId, topic) or (roomId, sessionId, topic) — frontend may send either
+    public async Task SelectRoundTopic(string roomId, string sessionIdOrTopic, string? topic = null)
     {
         var room = _game.GetRoom(roomId);
 
-        if (!_game.SelectRoundTopic(room, Context.ConnectionId, topic))
+        // Support both 2-arg (roomId, topic) and 3-arg (roomId, sessionId, topic) calls
+        string sessionId;
+        string topicToSelect;
+        if (topic != null)
+        {
+            sessionId = sessionIdOrTopic;
+            topicToSelect = topic;
+        }
+        else
+        {
+            sessionId = string.Empty;
+            topicToSelect = sessionIdOrTopic;
+        }
+
+        if (!_game.SelectRoundTopic(room, Context.ConnectionId, sessionId, topicToSelect))
+        {
+            await Clients.Caller.SendAsync("TopicSelectionFailed", new { message = "Unable to select this topic. Ensure it is your turn and questions exist." });
             return;
+        }
 
         var gameState = _game.GetGameState(room);
         await Clients.Group(roomId).SendAsync("GameStarted", gameState);

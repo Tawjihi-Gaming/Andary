@@ -55,6 +55,16 @@ public class RoomController : ControllerBase
 
         var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name, creator);
 
+        // Add topics selected during room creation (needed for StartGame)
+        if (request.SelectedTopics != null)
+        {
+            foreach (var topic in request.SelectedTopics.Take(7)) // max 7 topics per room
+            {
+                if (!string.IsNullOrWhiteSpace(topic))
+                    _game.AddTopic(room, topic.Trim());
+            }
+        }
+
         return Ok(new
         {
             roomId = room.RoomId,
@@ -172,6 +182,7 @@ public class CreateRoomRequest
     public string? PlayerName { get; set; } // Creator's display name (required)
     public string? AvatarImageName { get; set; } // Creator's avatar
     public int? PlayerId { get; set; } // Optional — set if the creator is logged in
+    public List<string>? SelectedTopics { get; set; } // Topics chosen at room creation (min 1 to start game)
 }
 
 public class JoinRoomRequest

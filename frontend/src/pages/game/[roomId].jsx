@@ -58,6 +58,8 @@ const Game = () => {
     const [fakeAnswer, setFakeAnswer] = useState('')
     const [connectionReady, setConnectionReady] = useState(false)
     const [isReconnecting, setIsReconnecting] = useState(false)
+    const [hasSubmittedFake, setHasSubmittedFake] = useState(false)
+    const [selectedAnswer, setSelectedAnswer] = useState(null)
 
     const isMyTurn = currentTurn === sessionId
 
@@ -66,6 +68,10 @@ const Game = () => {
         if (phase === 'collecting-fakes') {
             setFakeAnswer('')
             setMessage('')
+            setHasSubmittedFake(false)
+        }
+        if (phase === 'choosing-answer') {
+            setSelectedAnswer(null)
         }
     }, [phase, question, selectedTopic])
 
@@ -232,6 +238,7 @@ const Game = () => {
             await conn.invoke('SubmitFakeAnswer', roomId, fakeAnswer.trim())
             setFakeAnswer('')
             setMessage('تم إرسال إجابتك المزيفة!')
+            setHasSubmittedFake(true)
         } catch (error) {
             console.error('Error submitting fake answer:', error)
         }
@@ -308,17 +315,6 @@ const Game = () => {
                             ⏳ في انتظار <strong>{getCurrentPlayerName()}</strong> لاختيار الموضوع...
                         </p>
                     )}
-                    {/* Scoreboard */}
-                    <div className="mt-8">
-                        <h3 className="text-white font-bold text-center mb-3">النقاط</h3>
-                        <div className="flex flex-wrap justify-center gap-3">
-                            {players.map(p => (
-                                <div key={p.sessionId} className={`px-4 py-2 rounded-xl text-sm font-bold ${p.sessionId === currentTurn ? 'bg-yellow-500/30 text-yellow-300 border border-yellow-400/40' : 'bg-white/10 text-white/80'}`}>
-                                    {p.displayName}: {scores[p.sessionId] || 0}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </div>
         )
@@ -334,7 +330,7 @@ const Game = () => {
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-6 text-center">{question}</h2>
                     <p className="text-white/70 text-center mb-6">اكتب إجابة مزيفة مقنعة لخداع اللاعبين الآخرين!</p>
-                    {message ? (
+                    {hasSubmittedFake ? (
                         <p className="text-green-300 text-center text-lg font-bold">✅ {message}</p>
                     ) : (
                         <div className="flex flex-col gap-4">
@@ -355,17 +351,6 @@ const Game = () => {
                             </button>
                         </div>
                     )}
-                    {/* Scoreboard */}
-                    <div className="mt-8">
-                        <h3 className="text-white font-bold text-center mb-3">النقاط</h3>
-                        <div className="flex flex-wrap justify-center gap-3">
-                            {players.map(p => (
-                                <div key={p.sessionId} className="px-4 py-2 rounded-xl bg-white/10 text-white/80 text-sm font-bold">
-                                    {p.displayName}: {scores[p.sessionId] || 0}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </div>
         )
@@ -385,8 +370,12 @@ const Game = () => {
                         {choices.map((choice, i) => (
                             <button
                                 key={i}
-                                onClick={() => handleChooseAnswer(choice)}
-                                className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
+                                onClick={() => { setSelectedAnswer(choice); handleChooseAnswer(choice) }}
+                                className={`border font-semibold py-3 px-6 rounded-xl transition-all duration-300 ${
+                                    selectedAnswer === choice
+                                        ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
+                                        : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
+                                }`}
                             >
                                 {choice}
                             </button>
@@ -399,26 +388,55 @@ const Game = () => {
 
     // ─── ROUND RESULT ─────────────────────────────────────────────────────────
     if (phase === 'round-result') {
+        const sortedPlayers = [...players].sort((a, b) => (scores[b.sessionId] || 0) - (scores[a.sessionId] || 0))
+        const medals = ['🥇', '🥈', '🥉']
+
         return (
             <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
                 <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15 text-center">
-                    <h2 className="text-3xl font-bold text-white mb-4">نتيجة الجولة</h2>
+                    <h2 className="text-3xl font-bold text-white mb-2">🏆 لوحة المتصدرين</h2>
+
                     {roundResult?.currentQuestion && (
-                        <div className="mb-6">
+                        <div className="mb-6 bg-white/10 rounded-2xl px-6 py-4 border border-white/20">
                             <p className="text-white/60 text-sm mb-1">الإجابة الصحيحة:</p>
                             <p className="text-green-300 text-xl font-bold">{roundResult.currentQuestion.correctAnswer}</p>
                         </div>
                     )}
-                    <div className="flex flex-wrap justify-center gap-3 mb-6">
-                        {players.map(p => (
-                            <div key={p.sessionId} className="px-4 py-2 rounded-xl bg-white/10 text-white font-bold text-sm">
-                                {p.displayName}: {scores[p.sessionId] || 0}
-                            </div>
-                        ))}
+
+                    {/* Leaderboard */}
+                    <div className="flex flex-col gap-3 mb-8">
+                        {sortedPlayers.map((p, index) => {
+                            const isMe = p.sessionId === sessionId
+                            const isFirst = index === 0
+                            return (
+                                <div
+                                    key={p.sessionId}
+                                    className={`flex items-center justify-between px-5 py-4 rounded-2xl border transition-all duration-300
+                                        ${isFirst
+                                            ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20'
+                                            : isMe
+                                                ? 'bg-white/15 border-white/40'
+                                                : 'bg-white/10 border-white/20'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">{medals[index] || `#${index + 1}`}</span>
+                                        <span className={`font-bold text-lg ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
+                                            {p.displayName}
+                                            {isMe && <span className="text-white/50 text-sm font-normal mr-2">(أنت)</span>}
+                                        </span>
+                                    </div>
+                                    <span className={`text-xl font-extrabold ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
+                                        {scores[p.sessionId] || 0} نقطة
+                                    </span>
+                                </div>
+                            )
+                        })}
                     </div>
+
                     <button
                         onClick={handleNextRound}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20"
+                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20 hover:border-white/40"
                     >
                         الجولة التالية ➡️
                     </button>

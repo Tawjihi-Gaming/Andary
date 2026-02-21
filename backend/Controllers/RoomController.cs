@@ -3,7 +3,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Backend.Services;
 using Backend.Models;
-using backend.Enums;
+using Backend.Enums;
 using Backend.Data;
 
 namespace backend.Controllers;

@@ -71,14 +71,13 @@ const CreateRoom = ({ user }) => {
       return
     }
     
-    // Validate topic selection
-    if (selectedTopics.length < 5) {
-      setError('يجب اختيار 5 مواضيع على الأقل (Please select at least 5 topics)')
+    if (selectedTopics.length === 0) {
+      setError('يجب اختيار موضوع واحد على الأقل (Please select at least one topic)')
       return
     }
-
-    if (selectedTopics.length > 7) {
-      setError('يجب اختيار 7 مواضيع كحد أقصى (Please select no more than 7 topics)')
+  
+    if (selectedTopics.length > 8) {
+      setError('يجب اختيار 8 مواضيع كحد أقصى (Please select no more than 8 topics)')
       return
     }
 
@@ -97,11 +96,6 @@ const CreateRoom = ({ user }) => {
       const { roomId, code, sessionId, playerName } = response.data
       console.log('user room with ID:', user?.id, 'to room:', roomId)
       
-      // Join the room (use -1 for guest players)
-      // await api.post(`/room/join`, { 
-      //   RoomId: roomId, 
-      //   PlayerId: user?.id || -1,
-      // })
      
       console.log('User joined room successfully')
 
@@ -219,9 +213,9 @@ const CreateRoom = ({ user }) => {
           {/* Topics Selection */}
           <div>
             <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
-              اختر المواضيع (اختر 5 على الأقل)
+              اختر المواضيع (اختر 8 على الأكثر)
               <span className="text-xs sm:text-sm block text-white/70 mt-1">
-                Select topics ({selectedTopics.length}/5 minimum, maximum 7 topics)
+                Select topics ({selectedTopics.length}/8 maximum)
               </span>
             </label>
             

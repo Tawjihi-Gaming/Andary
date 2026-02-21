@@ -3,7 +3,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Backend.Services;
 using Backend.Models;
-using backend.Enums;
+using Backend.Enums;
 
 namespace Backend.Hubs;
 

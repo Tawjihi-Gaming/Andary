@@ -109,6 +109,7 @@ const GameRoom = ({ user }) => {
                 connection.on('LobbyUpdated', (lobbyState) => {
                     console.log('Lobby updated:', lobbyState)
                     setPlayers(lobbyState.map(p => ({
+                        avatarUrl: p.avatarUrl,
                         sessionId: p.sessionId,
                         name: p.name,
                         isReady: p.isReady

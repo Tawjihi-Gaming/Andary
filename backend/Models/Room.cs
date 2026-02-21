@@ -1,6 +1,6 @@
 //Pure data. No behavior.
 
-using backend.Enums;
+using Backend.Enums;
 
 namespace Backend.Models;
 

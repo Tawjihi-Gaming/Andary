@@ -1,6 +1,6 @@
 //The game brain.
 
-using backend.Enums;
+using Backend.Enums;
 using Backend.Models;
 using Backend.Data;
 using System.Text.Json;
@@ -238,7 +238,7 @@ public class GameManager
     {
         room.Questions = questions;
         room.CurrentQuestionIndex = 0;
-        room.TopicChooserIndex = 0;
+        room.TopicChooserIndex = Random.Shared.Next(room.Players.Count);
         room.UsedQuestionIds.Clear();
         room.FakeAnswers.Clear();
         room.ChosenAnswers.Clear();
@@ -410,8 +410,14 @@ public class GameManager
         room.FakeAnswers.Clear();
         room.ChosenAnswers.Clear();
 
-        // Rotate topic chooser to next player
-        room.TopicChooserIndex = (room.TopicChooserIndex + 1) % room.Players.Count;
+        // Randomly select next topic chooser (different from current when possible)
+        if (room.Players.Count > 1)
+        {
+            int next;
+            do { next = Random.Shared.Next(room.Players.Count); }
+            while (next == room.TopicChooserIndex);
+            room.TopicChooserIndex = next;
+        }
 
         // If only 1 topic → auto-pick, go straight to collecting answers
         if (room.SelectedTopics.Count == 1)

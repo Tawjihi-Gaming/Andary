@@ -61,6 +61,14 @@ const Game = () => {
 
     const isMyTurn = currentTurn === sessionId
 
+    // New round/new question: clear previous fake-answer UI state.
+    useEffect(() => {
+        if (phase === 'collecting-fakes') {
+            setFakeAnswer('')
+            setMessage('')
+        }
+    }, [phase, question, selectedTopic])
+
     // Save session to localStorage whenever key data changes
     useEffect(() => {
         if (!sessionId || !roomId) return

@@ -14,11 +14,13 @@ public class RoomController : ControllerBase
 {
     private readonly GameManager _game;
     private readonly AppDbContext _context;
+    private readonly QuestionsService _questionsService;
 
-    public RoomController(GameManager game, AppDbContext context)
+    public RoomController(GameManager game, AppDbContext context, QuestionsService questionsService)
     {
         _game = game;
         _context = context;
+        _questionsService = questionsService;
     }
 
     // POST api/room/create
@@ -38,7 +40,8 @@ public class RoomController : ControllerBase
         var creator = new SessionPlayer
         {
             DisplayName = request.PlayerName,
-            AvatarImageName = request.AvatarImageName ?? ""
+            AvatarImageName = request.AvatarImageName ?? "",
+            ClientKey = string.IsNullOrWhiteSpace(request.ClientKey) ? null : request.ClientKey.Trim()
         };
 
         // If the creator is logged in, link their DB account
@@ -119,7 +122,8 @@ public class RoomController : ControllerBase
         {
             DisplayName = request.PlayerName,
             AvatarImageName = request.AvatarImageName ?? "",
-            ConnectionId = "" // Will be set when the player connects via SignalR
+            ConnectionId = "", // Will be set when the player connects via SignalR
+            ClientKey = string.IsNullOrWhiteSpace(request.ClientKey) ? null : request.ClientKey.Trim()
         };
 
         // If the player is logged in, link their DB account
@@ -134,9 +138,17 @@ public class RoomController : ControllerBase
             sessionPlayer.AvatarImageName = dbPlayer.AvatarImageName;
         }
 
-        if (!_game.JoinRoom(room.RoomId, sessionPlayer))
+        var joinResult = _game.JoinRoom(room.RoomId, sessionPlayer);
+        if (joinResult != JoinRoomResult.Success)
         {
-            return BadRequest(new { error = "Unable to join room. The room may be full (max " + Room.MaxPlayers + " players)." });
+            return joinResult switch
+            {
+                JoinRoomResult.DuplicateAccount => BadRequest(new { error = "This account is already in the room." }),
+                JoinRoomResult.DuplicateGuest => BadRequest(new { error = "This guest session is already in the room." }),
+                JoinRoomResult.RoomFull => BadRequest(new { error = "Unable to join room. The room may be full (max " + Room.MaxPlayers + " players)." }),
+                JoinRoomResult.NotInLobby => BadRequest(new { error = "Unable to join room after the game has started." }),
+                _ => BadRequest(new { error = "Unable to join room." })
+            };
         }
 
         return Ok(new
@@ -148,7 +160,8 @@ public class RoomController : ControllerBase
     }
 
     // GET api/room/{roomId}
-    [HttpGet("{roomId}")]
+    // Room IDs are generated as GUID strings.
+    [HttpGet("{roomId:guid}")]
     public IActionResult GetRoom(string roomId)
     {
         try
@@ -171,6 +184,25 @@ public class RoomController : ControllerBase
             return NotFound(new { error = "Room not found." });
         }
     }
+
+    // GET api/room/topics
+    [HttpGet("topics")]
+    public IActionResult GetTopics()
+    {
+        try
+        {
+            var topics = _questionsService.GetTopics();
+            return Ok(topics);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                error = "Failed to fetch topics from database.",
+                details = ex.Message
+            });
+        }
+    }
 }
 
 // Request DTOs
@@ -182,6 +214,7 @@ public class CreateRoomRequest
     public string? PlayerName { get; set; } // Creator's display name (required)
     public string? AvatarImageName { get; set; } // Creator's avatar
     public int? PlayerId { get; set; } // Optional — set if the creator is logged in
+    public string? ClientKey { get; set; } // Browser identity key (used for guest deduplication)
     public List<string>? SelectedTopics { get; set; } // Topics chosen at room creation (min 1 to start game)
 }
 
@@ -191,5 +224,6 @@ public class JoinRoomRequest
     public int? PlayerId { get; set; } // Optional — set if the player is logged in (DB account)
     public string? PlayerName { get; set; } // Display name (required for anonymous, optional for logged-in)
     public string? AvatarImageName { get; set; } // Optional avatar
+    public string? ClientKey { get; set; } // Browser identity key (used for guest deduplication)
     public string? Code { get; set; } // Provide this to join a private room by code
 }

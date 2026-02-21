@@ -55,7 +55,8 @@ namespace Backend.Services
                 .ToList();
         }
 
-        // Get questions from multiple topics, distributed evenly
+        // Get questions from selected topics only.
+        // Load up to `total` per topic so players can pick the same topic again in later rounds.
         public List<Question> GetQuestionsFromTopics(int total, List<string> topicNames)
         {
             if (total <= 0)
@@ -78,57 +79,13 @@ namespace Backend.Services
                 .Where(t => normalizedTopics.Contains(t.Name, StringComparer.OrdinalIgnoreCase))
                 .ToList();
 
-            // Distribute questions evenly across topics that actually exist.
-            if (matchedTopics.Count > 0)
+            foreach (var topic in matchedTopics)
             {
-                int perTopic = total / matchedTopics.Count;
-                int remainder = total % matchedTopics.Count;
-
-                foreach (var topic in matchedTopics)
-                {
-                    int count = perTopic + (remainder > 0 ? 1 : 0);
-                    if (remainder > 0) remainder--;
-                    if (count <= 0) continue;
-
-                    var questions = _context.Questions
-                        .AsNoTracking()
-                        .Where(q => q.TopicId == topic.Id)
-                        .OrderBy(_ => Guid.NewGuid())
-                        .Take(count)
-                        .Select(q => new Question
-                        {
-                            Id = q.Id,
-                            TopicId = q.TopicId,
-                            QuestionText = q.QuestionText,
-                            CorrectAnswer = q.CorrectAnswer,
-                            Explanation = q.Explanation,
-                            Modifier = q.Modifier,
-                            CreatedAt = q.CreatedAt,
-                            TopicName = topic.Name
-                        })
-                        .ToList();
-
-                    allQuestions.AddRange(questions);
-                }
-            }
-
-            // If selected topics provide too few/no questions, backfill from the global pool
-            // so gameplay can still proceed instead of stalling in topic selection.
-            int remaining = total - allQuestions.Count;
-            if (remaining > 0)
-            {
-                var usedIds = allQuestions.Select(q => q.Id).ToList();
-                var fallbackQuery = _context.Questions
+                var questions = _context.Questions
                     .AsNoTracking()
-                    .Include(q => q.Topic)
-                    .AsQueryable();
-
-                if (usedIds.Count > 0)
-                    fallbackQuery = fallbackQuery.Where(q => !usedIds.Contains(q.Id));
-
-                var fallbackQuestions = fallbackQuery
+                    .Where(q => q.TopicId == topic.Id)
                     .OrderBy(_ => Guid.NewGuid())
-                    .Take(remaining)
+                    .Take(total)
                     .Select(q => new Question
                     {
                         Id = q.Id,
@@ -138,11 +95,11 @@ namespace Backend.Services
                         Explanation = q.Explanation,
                         Modifier = q.Modifier,
                         CreatedAt = q.CreatedAt,
-                        TopicName = q.Topic.Name
+                        TopicName = topic.Name
                     })
                     .ToList();
 
-                allQuestions.AddRange(fallbackQuestions);
+                allQuestions.AddRange(questions);
             }
 
             // Shuffle so topics are mixed

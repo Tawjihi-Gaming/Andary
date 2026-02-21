@@ -6,6 +6,7 @@ const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
   const [showJoinModal, setShowJoinModal] = useState(false)
   const [roomCode, setRoomCode] = useState('')
+  const [joinError, setJoinError] = useState('')
 
   // This is mock data to test front
   const [lobbies, setLobbies] = useState([
@@ -45,12 +46,14 @@ const Lobby = ({ user, onLogout }) => {
   */
 
   const handleJoinLobby = async (roomId) => {
+    setJoinError('')
     try {
       const response = await api.post('/room/join', {
         roomId: roomId,
         playerId: user?.id || null,
         playerName: user?.username || 'Guest',
         avatarImageName: user?.avatarImageName || '',
+        clientKey: user?.clientKey || null,
       })
       console.log('Joined room:', response.data)
       const { sessionId, playerName } = response.data
@@ -64,6 +67,7 @@ const Lobby = ({ user, onLogout }) => {
       })
     } catch (err) {
       console.error('Error joining room:', err)
+      setJoinError(err?.response?.data?.error || 'Unable to join room.')
     }
   }
 
@@ -72,17 +76,20 @@ const Lobby = ({ user, onLogout }) => {
   }
 
   const handleJoinByCode = () => {
+    setJoinError('')
     setShowJoinModal(true)
   }
 
   const handleJoinSubmit = async () => {
     if (roomCode.trim()) {
+      setJoinError('')
       try {
         const response = await api.post('/room/join', {
           code: roomCode,
           playerId: user?.id || null,
           playerName: user?.username || 'Guest',
           avatarImageName: user?.avatarImageName || '',
+          clientKey: user?.clientKey || null,
         })
         console.log('Joined room:', response.data)
         setShowJoinModal(false)
@@ -99,6 +106,7 @@ const Lobby = ({ user, onLogout }) => {
         })
       } catch (err) {
         console.error('Error joining room:', err)
+        setJoinError(err?.response?.data?.error || 'Unable to join room.')
       }
     }
   }
@@ -195,6 +203,11 @@ const Lobby = ({ user, onLogout }) => {
 
         {/* lobbies section */}
         <div>
+          {joinError && (
+            <div className="mb-4 bg-red-500/20 border border-red-400/40 text-red-100 px-4 py-3 rounded-2xl text-sm">
+              {joinError}
+            </div>
+          )}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-3">
               🎮 الغرف المتاحة

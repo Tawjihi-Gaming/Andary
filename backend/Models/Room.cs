@@ -64,4 +64,7 @@ public class Room
     //Easy to check if player already submitted
     public Dictionary<string, string> FakeAnswers { get; set; } = new();
     public Dictionary<string, string> ChosenAnswers { get; set; } = new();
+
+    // Track used question IDs so a topic choice never reuses a previously shown question.
+    public HashSet<int> UsedQuestionIds { get; set; } = new();
 }

@@ -8,6 +8,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.Services;
 
+public enum JoinRoomResult
+{
+    Success,
+    RoomNotFound,
+    NotInLobby,
+    RoomFull,
+    DuplicateAccount,
+    DuplicateGuest
+}
+
 public class GameManager
 {
     private readonly Dictionary<string, Room> _rooms = new();
@@ -48,16 +58,31 @@ public class GameManager
     //Join an existing room
     // Accepts SessionPlayer (in-memory) instead of Player (DB).
     // Anyone can join — logged-in or anonymous.
-    public bool JoinRoom(string roomId, SessionPlayer sessionPlayer)
+    public JoinRoomResult JoinRoom(string roomId, SessionPlayer sessionPlayer)
     {
         if (!_rooms.TryGetValue(roomId, out var room))
-            return false;
+            return JoinRoomResult.RoomNotFound;
         if (room.Phase != GamePhase.Lobby)
-            return false;
+            return JoinRoomResult.NotInLobby;
         if (room.Players.Count >= Room.MaxPlayers)
-            return false;
+            return JoinRoomResult.RoomFull;
+
+        // Prevent the same logged-in account from joining the same room multiple times.
+        if (sessionPlayer.PlayerId.HasValue &&
+            room.Players.Any(p => p.PlayerId == sessionPlayer.PlayerId.Value))
+            return JoinRoomResult.DuplicateAccount;
+
+        // Prevent the same guest browser/session from joining the same room multiple times.
+        if (!sessionPlayer.PlayerId.HasValue &&
+            !string.IsNullOrWhiteSpace(sessionPlayer.ClientKey) &&
+            room.Players.Any(p =>
+                !p.PlayerId.HasValue &&
+                !string.IsNullOrWhiteSpace(p.ClientKey) &&
+                string.Equals(p.ClientKey, sessionPlayer.ClientKey, StringComparison.Ordinal)))
+            return JoinRoomResult.DuplicateGuest;
+
         room.Players.Add(sessionPlayer);
-        return true;
+        return JoinRoomResult.Success;
     }
 
     //Get room by id
@@ -131,12 +156,25 @@ public class GameManager
         room.Questions = questions;
         room.CurrentQuestionIndex = 0;
         room.TopicChooserIndex = 0;
+        room.UsedQuestionIds.Clear();
+        room.FakeAnswers.Clear();
+        room.ChosenAnswers.Clear();
 
         // If only 1 topic selected → no per-round choice needed, go straight to collecting answers
         if (room.SelectedTopics.Count == 1)
         {
-            room.CurrentRoundTopic = room.SelectedTopics[0];
-            room.CurrentQuestion = questions[0];
+            var singleTopic = room.SelectedTopics[0];
+            room.CurrentRoundTopic = singleTopic;
+            room.CurrentQuestion = room.Questions
+                .FirstOrDefault(q => TopicMatches(q, singleTopic));
+
+            if (room.CurrentQuestion == null)
+            {
+                room.Phase = GamePhase.GameEnded;
+                return;
+            }
+
+            room.UsedQuestionIds.Add(room.CurrentQuestion.Id);
             room.Phase = GamePhase.CollectingAns;
         }
         // If multiple topics → first player chooses topic for first round
@@ -180,40 +218,23 @@ public class GameManager
         room.CurrentRoundTopic = matchedTopic;
 
         // Find a question for this topic that hasn't been used yet
-        var usedQuestionIds = new HashSet<int>();
-        for (int i = 0; i < room.CurrentQuestionIndex; i++)
-        {
-            if (i < room.Questions.Count)
-                usedQuestionIds.Add(room.Questions[i].Id);
-        }
-
         var question = room.Questions
-            .Where(q => q.TopicId == GetTopicId(room, matchedTopic) && !usedQuestionIds.Contains(q.Id))
+            .Where(q => TopicMatches(q, matchedTopic) && !room.UsedQuestionIds.Contains(q.Id))
             .FirstOrDefault();
-
-        if (question == null)
-        {
-            // Fallback: pick any unused question (e.g. when topic not in DB)
-            question = room.Questions
-                .Where(q => !usedQuestionIds.Contains(q.Id))
-                .FirstOrDefault();
-        }
 
         if (question == null)
             return false;
 
         room.CurrentQuestion = question;
+        room.UsedQuestionIds.Add(question.Id);
         room.Phase = GamePhase.CollectingAns;
         return true;
     }
 
-    // Helper: find topicId from the questions already loaded
-    private int GetTopicId(Room room, string topicName)
+    // Compare question topic and selected topic in a tolerant way.
+    private bool TopicMatches(Question q, string topicName)
     {
-        // Look through loaded questions to find the topicId for this topic name
-        // This avoids a DB call during gameplay
-        var q = room.Questions.FirstOrDefault(q => q.TopicName == topicName);
-        return q?.TopicId ?? -1;
+        return string.Equals(q.TopicName?.Trim(), topicName?.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
     //Submit fake answer
@@ -297,7 +318,7 @@ public class GameManager
     public bool NextRound(Room room)
     {
         room.CurrentQuestionIndex++;
-        if (room.CurrentQuestionIndex >= room.TotalQuestions || room.CurrentQuestionIndex >= room.Questions.Count)
+        if (room.CurrentQuestionIndex >= room.TotalQuestions)
         {
             room.Phase = GamePhase.GameEnded;
             return false;
@@ -313,7 +334,18 @@ public class GameManager
         if (room.SelectedTopics.Count == 1)
         {
             room.CurrentRoundTopic = room.SelectedTopics[0];
-            room.CurrentQuestion = room.Questions[room.CurrentQuestionIndex];
+            room.CurrentQuestion = room.Questions
+                .FirstOrDefault(q =>
+                    TopicMatches(q, room.CurrentRoundTopic) &&
+                    !room.UsedQuestionIds.Contains(q.Id));
+
+            if (room.CurrentQuestion == null)
+            {
+                room.Phase = GamePhase.GameEnded;
+                return false;
+            }
+
+            room.UsedQuestionIds.Add(room.CurrentQuestion.Id);
             room.Phase = GamePhase.CollectingAns;
         }
         // If multiple topics → next player chooses the topic

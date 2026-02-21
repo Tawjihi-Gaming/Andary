@@ -6,6 +6,8 @@ const CreateRoom = ({ user }) => {
   const [roomName, setRoomName] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
   const [error, setError] = useState('')
+  const [topicsError, setTopicsError] = useState('')
+  const [topicsLoading, setTopicsLoading] = useState(true)
   const [selectedTopics, setSelectedTopics] = useState([])
   const [availableTopics, setAvailableTopics] = useState([])
   const [timer, setTimer] = useState(30)
@@ -14,25 +16,39 @@ const CreateRoom = ({ user }) => {
   const navigate = useNavigate()
 
   // Fetch available topics from the backend
-  // useEffect(() => {
-  //   const fetchTopics = async () => {
-  //     try {
-  //       const res = await api.get('/room/topics')
-  //       setAvailableTopics(res.data)
-  //     } catch (err) {
-  //       console.error('Error fetching topics:', err)
-  //     }
-  //   }
-  //   fetchTopics()
-  // }, [])
+  useEffect(() => {
+    const fetchTopics = async () => {
+      setTopicsLoading(true)
+      setTopicsError('')
+      try {
+        const res = await api.get('/room/topics')
+        const normalizedTopics = Array.isArray(res.data)
+          ? res.data
+              .map((topic) => {
+                if (typeof topic === 'string') return topic.trim()
+                if (topic && typeof topic === 'object') {
+                  return (topic.name || topic.topic || '').toString().trim()
+                }
+                return ''
+              })
+              .filter(Boolean)
+          : []
+        setAvailableTopics(normalizedTopics)
 
-  const mockTopics = [
-    'تاريخ', 'علوم', 'رياضيات', 'أدب', 'فنون', 
-    'رياضة', 'جغرافيا', 'تكنولوجيا', 'أفلام', 'موسيقى',
-    'ثقافة عامة', 'سياسة', 'اقتصاد', 'دين', 'لغات'
-  ]
-
-  console.log("user data", user)
+        if (normalizedTopics.length === 0) {
+          setTopicsError('No topics found in database.')
+        }
+      } catch (err) {
+        console.error('Error fetching topics:', err)
+        setAvailableTopics([])
+        const backendMsg = err?.response?.data?.details || err?.response?.data?.error || err?.message
+        setTopicsError(`Failed to load topics from database. ${backendMsg || ''}`.trim())
+      } finally {
+        setTopicsLoading(false)
+      }
+    }
+    fetchTopics()
+  }, [])
 
   const toggleTopicSelection = (topic) => {
     setSelectedTopics(prev => {
@@ -48,6 +64,12 @@ const CreateRoom = ({ user }) => {
 
   const handleCreateRoom = async (e) => {
     e.preventDefault()
+    setError('')
+
+    if (availableTopics.length === 0) {
+      setError('لا يمكن إنشاء غرفة بدون مواضيع من قاعدة البيانات (Cannot create room without database topics)')
+      return
+    }
     
     // Validate topic selection
     if (selectedTopics.length < 5) {
@@ -55,8 +77,8 @@ const CreateRoom = ({ user }) => {
       return
     }
 
-    if (selectedTopics.length > 8) {
-      setError('يجب اختيار 8 مواضيع كحد أقصى (Please select no more than 8 topics)')
+    if (selectedTopics.length > 7) {
+      setError('يجب اختيار 7 مواضيع كحد أقصى (Please select no more than 7 topics)')
       return
     }
 
@@ -68,6 +90,7 @@ const CreateRoom = ({ user }) => {
         playerName: user?.username || 'Guest',
         avatarImageName: user?.avatarImageName || '',
         playerId: user?.id || null,
+        clientKey: user?.clientKey || null,
         selectedTopics: selectedTopics
       })
       console.log('Room created:', response.data)
@@ -198,37 +221,43 @@ const CreateRoom = ({ user }) => {
             <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
               اختر المواضيع (اختر 5 على الأقل)
               <span className="text-xs sm:text-sm block text-white/70 mt-1">
-                Select topics ({selectedTopics.length}/5 minimum, maximum 8 topics)
+                Select topics ({selectedTopics.length}/5 minimum, maximum 7 topics)
               </span>
             </label>
             
             <div className="bg-white/5 rounded-2xl p-4 max-h-60 overflow-y-auto border border-white/10">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-                {mockTopics.map((topic, index) => (
-                  <div
-                    key={index}
-                    onClick={() => toggleTopicSelection(topic)}
-                    className={`relative p-3 sm:p-5 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                      selectedTopics.includes(topic)
-                        ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20'
-                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <span className={`font-semibold text-center block text-xs sm:text-base ${
-                      selectedTopics.includes(topic) ? 'text-game-yellow' : 'text-white/90'
-                    }`}>
-                      {topic}
-                    </span>
-                    {selectedTopics.includes(topic) && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-game-yellow rounded-full flex items-center justify-center">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {topicsLoading ? (
+                <p className="text-white/70 text-sm text-center py-6">Loading topics from database...</p>
+              ) : topicsError ? (
+                <p className="text-red-300 text-sm text-center py-6">{topicsError}</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                  {availableTopics.map((topic, index) => (
+                    <div
+                      key={`${topic}-${index}`}
+                      onClick={() => toggleTopicSelection(topic)}
+                      className={`relative p-3 sm:p-5 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                        selectedTopics.includes(topic)
+                          ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20'
+                          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                      }`}
+                    >
+                      <span className={`font-semibold text-center block text-xs sm:text-base ${
+                        selectedTopics.includes(topic) ? 'text-game-yellow' : 'text-white/90'
+                      }`}>
+                        {topic}
+                      </span>
+                      {selectedTopics.includes(topic) && (
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-game-yellow rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div>

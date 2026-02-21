@@ -2,6 +2,13 @@ import { useState } from 'react'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from './AvatarPicker'
 
+const createClientKey = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
 const Auth = ({ onLogin }) => {
   const [activeTab, setActiveTab] = useState('guest')
   const [guestName, setGuestName] = useState('')
@@ -65,7 +72,8 @@ const Auth = ({ onLogin }) => {
       username: guestName.trim(),
       avatar: selectedAvatar.emoji,
       xp: 0,
-      isGuest: true
+      isGuest: true,
+      clientKey: createClientKey(),
     }
     onLogin?.(userData)
   }

@@ -8,6 +8,7 @@ const GameRoom = ({ user }) => {
     const navigate = useNavigate()
     const { startConnection, stopConnection, getConnection } = useSignalR()
     const code = location.state?.code
+    const isPrivateRoom = Boolean(location.state?.isPrivate)
     const roomName = location.state?.roomName
     const sessionId = location.state?.sessionId
     const timer = location.state?.timer || 30
@@ -24,6 +25,9 @@ const GameRoom = ({ user }) => {
 
     // The current user is the owner if their sessionId matches the room owner
     const isOwner = sessionId && sessionId === roomOwnerId
+    const roomTypeLabel = isPrivateRoom ? 'خاصة' : 'عامة'
+    const displayedCode = isPrivateRoom && !isOwner ? 'Hidden' : (code || 'N/A')
+    const canCopyCode = Boolean(code) && (!isPrivateRoom || isOwner)
 
     // Check if all non-owner players are ready and there's at least one other player
     const allPlayersReady = players.length > 1 && players
@@ -31,6 +35,9 @@ const GameRoom = ({ user }) => {
         .every(p => p.isReady)
 
     const handleCopyCode = async () => {
+        if (!canCopyCode)
+            return
+
         try {
             await navigator.clipboard.writeText(code)
             setIsCopied(true)
@@ -235,7 +242,7 @@ const GameRoom = ({ user }) => {
             <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl border border-white/15">
                 <h1 className="text-xl sm:text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
                 <p className="text-white/80 text-center mb-4 text-xs sm:text-sm">
-                    Room ID: {roomId} | Code: {code || 'N/A'}
+                    النوع: {roomTypeLabel}
                 </p>
                 <p className="text-white/80 text-center mb-4 sm:mb-6 text-xs sm:text-sm">
                     {roomOwnerName ? `صاحب الغرفة: ${roomOwnerName}` : 'صاحب الغرفة غير معروف'}
@@ -284,25 +291,28 @@ const GameRoom = ({ user }) => {
                     </div>
                 </div>
 
+                {canCopyCode && (
+                    <button
+                        onClick={handleCopyCode}
+                        className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                        {isCopied ? (
+                            <>
+                                <span>✓</span>
+                                <span>تم النسخ!</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>📋</span>
+                                <span>نسخ كود الغرفة: {code}</span>
+                            </>
+                        )}
+                    </button>
+                )}
+
                 {
                     isOwner && (
                         <>
-                            <button
-                                onClick={handleCopyCode}
-                                className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                            >
-                                {isCopied ? (
-                                    <>
-                                        <span>✓</span>
-                                        <span>تم النسخ!</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>📋</span>
-                                        <span>نسخ كود الغرفة: {code}</span>
-                                    </>
-                                )}
-                            </button>
                             <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
                                 <p className="text-blue-400 font-bold text-sm sm:text-base">أنت صاحب الغرفة</p>
                                 <p className="text-blue-300 text-xs sm:text-sm">يمكنك بدء اللعبة عندما يكون الجميع جاهزًا!</p>

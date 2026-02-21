@@ -30,6 +30,15 @@ const clearSession = () => {
     localStorage.removeItem('andary_game_session')
 }
 
+const buildScoresMapFromPlayers = (playersList = []) => {
+    return playersList.reduce((acc, player) => {
+        if (player?.sessionId) {
+            acc[player.sessionId] = player.score || 0
+        }
+        return acc
+    }, {})
+}
+
 const Game = () => {
     const { roomId } = useParams()
     const location = useLocation()
@@ -51,8 +60,11 @@ const Game = () => {
     const [players, setPlayers] = useState(initialGameState?.players || [])
     const [question, setQuestion] = useState(initialGameState?.currentQuestion?.questionText || null)
     const [choices, setChoices] = useState(initialGameState?.choices || [])
-    const [scores, setScores] = useState(initialGameState?.scores || {})
+    const [scores, setScores] = useState(
+        initialGameState?.scores || buildScoresMapFromPlayers(initialGameState?.players || [])
+    )
     const [message, setMessage] = useState('')
+    const [fakeSubmitError, setFakeSubmitError] = useState('')
     const [roundResult, setRoundResult] = useState(null)
     const [winner, setWinner] = useState(null)
     const [fakeAnswer, setFakeAnswer] = useState('')
@@ -68,6 +80,7 @@ const Game = () => {
         if (phase === 'collecting-fakes') {
             setFakeAnswer('')
             setMessage('')
+            setFakeSubmitError('')
             setHasSubmittedFake(false)
         }
         if (phase === 'choosing-answer') {
@@ -146,16 +159,20 @@ const Game = () => {
                 setPhase('topic-selection')
                 setTopics(state.selectedTopics || [])
                 setCurrentTurn(state.currentPlayerSessionId)
-                if (state.players) setPlayers(state.players)
-                if (state.scores) setScores(state.scores)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
             })
 
             conn.on('GameStarted', (state) => {
                 setPhase(mapPhase(state.phase))
                 setSelectedTopic(state.currentRoundTopic)
                 setCurrentTurn(state.currentPlayerSessionId)
-                if (state.players) setPlayers(state.players)
-                if (state.scores) setScores(state.scores)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
                 if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
                 if (state.choices?.length > 0) setChoices(state.choices)
             })
@@ -168,15 +185,19 @@ const Game = () => {
             conn.on('RoundEnded', (state) => {
                 setPhase('round-result')
                 setRoundResult(state)
-                if (state.scores) setScores(state.scores)
-                if (state.players) setPlayers(state.players)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
             })
 
             conn.on('GameEnded', (state) => {
                 setPhase('finished')
                 clearSession() // Game over — clear saved session
-                if (state.scores) setScores(state.scores)
-                if (state.players) setPlayers(state.players)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
                 if (state.players?.length > 0) {
                     const topPlayer = state.players.reduce((best, p) =>
                         p.score > (best?.score || 0) ? p : best, state.players[0])
@@ -195,8 +216,10 @@ const Game = () => {
                 setTopics(state.selectedTopics || [])
                 setSelectedTopic(state.currentRoundTopic)
                 setCurrentTurn(state.currentPlayerSessionId)
-                if (state.players) setPlayers(state.players)
-                if (state.scores) setScores(state.scores)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
                 if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
                 if (state.choices?.length > 0) setChoices(state.choices)
             })
@@ -233,13 +256,27 @@ const Game = () => {
 
     const handleSubmitFake = useCallback(async () => {
         const conn = connRef.current
-        if (!conn || !fakeAnswer.trim()) return
+        const trimmedFakeAnswer = fakeAnswer.trim()
+        if (!conn || !trimmedFakeAnswer) return
+
+        setFakeSubmitError('')
+
         try {
-            await conn.invoke('SubmitFakeAnswer', roomId, fakeAnswer.trim())
+            const result = await conn.invoke('SubmitFakeAnswer', roomId, trimmedFakeAnswer)
+            if (!result?.success) {
+                setMessage('')
+                setHasSubmittedFake(false)
+                setFakeSubmitError(result?.message || 'تعذر إرسال الإجابة المزيفة. حاول مرة أخرى.')
+                return
+            }
+
             setFakeAnswer('')
             setMessage('تم إرسال إجابتك المزيفة!')
             setHasSubmittedFake(true)
         } catch (error) {
+            setMessage('')
+            setHasSubmittedFake(false)
+            setFakeSubmitError('تعذر إرسال الإجابة المزيفة. تحقق من الاتصال ثم حاول مرة أخرى.')
             console.error('Error submitting fake answer:', error)
         }
     }, [roomId, fakeAnswer])
@@ -349,6 +386,9 @@ const Game = () => {
                             >
                                 إرسال
                             </button>
+                            {fakeSubmitError && (
+                                <p className="text-red-300 text-center font-semibold" dir="rtl">{fakeSubmitError}</p>
+                            )}
                         </div>
                     )}
                 </div>

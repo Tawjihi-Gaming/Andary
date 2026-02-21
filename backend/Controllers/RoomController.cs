@@ -72,6 +72,8 @@ public class RoomController : ControllerBase
         {
             roomId = room.RoomId,
             code = room.Code,
+            isPrivate = room.Type == RoomType.Private,
+            roomType = room.Type.ToString(),
             name = room.Name,
             sessionId = owner.SessionId,
             playerName = owner.DisplayName
@@ -85,7 +87,7 @@ public class RoomController : ControllerBase
     {
         Room? room = null;
 
-        // If a code is provided, look up the room by code (join-by-code)
+        // If a code is provided, look up the room by code (works for public/private)
         if (!string.IsNullOrEmpty(request.Code))
         {
             room = _game.GetRoomByCode(request.Code);
@@ -154,6 +156,10 @@ public class RoomController : ControllerBase
         return Ok(new
         {
             roomId = room.RoomId,
+            code = room.Code,
+            isPrivate = room.Type == RoomType.Private,
+            roomType = room.Type.ToString(),
+            name = room.Name,
             sessionId = sessionPlayer.SessionId,
             playerName = sessionPlayer.DisplayName
         });
@@ -172,6 +178,8 @@ public class RoomController : ControllerBase
                 roomId = room.RoomId,
                 name = room.Name,
                 code = room.Code,
+                isPrivate = room.Type == RoomType.Private,
+                roomType = room.Type.ToString(),
                 ownerSessionId = room.OwnerSessionId,
                 phase = room.Phase.ToString(),
                 players = room.Players.Select(p => new { sessionId = p.SessionId, name = p.DisplayName, score = p.Score, isReady = p.IsReady }),
@@ -183,6 +191,38 @@ public class RoomController : ControllerBase
         {
             return NotFound(new { error = "Room not found." });
         }
+    }
+
+    // GET api/room/lobbies
+    // Returns public rooms that are still waiting in lobby phase.
+    [HttpGet("lobbies")]
+    public IActionResult GetPublicLobbies()
+    {
+        var lobbies = _game.GetPublicWaitingRooms()
+            .Select(room =>
+            {
+                var owner = room.Players.FirstOrDefault(p => p.SessionId == room.OwnerSessionId);
+                var topic = room.SelectedTopics.Count > 0
+                    ? string.Join("، ", room.SelectedTopics.Take(2))
+                    : "بدون مواضيع";
+
+                return new
+                {
+                    id = room.RoomId,
+                    roomId = room.RoomId,
+                    name = room.Name,
+                    code = room.Code,
+                    players = room.Players.Count,
+                    maxPlayers = Room.MaxPlayers,
+                    topic,
+                    status = "waiting",
+                    ownerSessionId = room.OwnerSessionId,
+                    ownerName = owner?.DisplayName ?? "Unknown"
+                };
+            })
+            .ToList();
+
+        return Ok(lobbies);
     }
 
     // GET api/room/topics
@@ -225,5 +265,5 @@ public class JoinRoomRequest
     public string? PlayerName { get; set; } // Display name (required for anonymous, optional for logged-in)
     public string? AvatarImageName { get; set; } // Optional avatar
     public string? ClientKey { get; set; } // Browser identity key (used for guest deduplication)
-    public string? Code { get; set; } // Provide this to join a private room by code
+    public string? Code { get; set; } // Provide this to join a room by code (public/private)
 }

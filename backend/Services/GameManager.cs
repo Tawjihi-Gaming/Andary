@@ -5,6 +5,7 @@ using Backend.Models;
 using Backend.Data;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.RegularExpressions;
 
 namespace Backend.Services;
 
@@ -47,12 +48,7 @@ public class GameManager
         room.Name = name;
         room.Type = type;
         room.OwnerSessionId = creator.SessionId;
-
-        if (type == RoomType.Private)
-            //6 digits
-            room.Code = new Random().Next(100000, 999999).ToString();
-        else
-            room.Code = null;
+        room.Code = GenerateRoomCode();
 
         room.TotalQuestions = totalQuestions;
 
@@ -64,6 +60,20 @@ public class GameManager
         _rooms[room.RoomId] = room;
 
         return (room, creator);
+    }
+
+    private string GenerateRoomCode()
+    {
+        string code;
+
+        do
+        {
+            code = Random.Shared.Next(100000, 1000000).ToString();
+        } while (_rooms.Values.Any(r =>
+            !string.IsNullOrWhiteSpace(r.Code) &&
+            string.Equals(r.Code, code, StringComparison.Ordinal)));
+
+        return code;
     }
 
     //Join an existing room
@@ -174,10 +184,24 @@ public class GameManager
         return null;
     }
 
-    // Get room by its code (used for private room join-by-code)
+    // Get room by its code (used for public/private join-by-code)
     public Room? GetRoomByCode(string code)
     {
-        return _rooms.Values.FirstOrDefault(r => r.Code == code);
+        if (string.IsNullOrWhiteSpace(code))
+            return null;
+
+        var normalizedCode = code.Trim();
+        return _rooms.Values.FirstOrDefault(r =>
+            !string.IsNullOrWhiteSpace(r.Code) &&
+            string.Equals(r.Code, normalizedCode, StringComparison.Ordinal));
+    }
+
+    public List<Room> GetPublicWaitingRooms()
+    {
+        return _rooms.Values
+            .Where(r => r.Type == RoomType.Public && r.Phase == GamePhase.Lobby)
+            .OrderByDescending(r => r.Players.Count)
+            .ToList();
     }
 
     // Add a topic to the room's selected topics list (lobby phase)
@@ -320,17 +344,67 @@ public class GameManager
         return string.Equals(q.TopicName?.Trim(), topicName?.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
+    private static string NormalizeAnswerForComparison(string answer)
+    {
+        if (string.IsNullOrWhiteSpace(answer))
+            return string.Empty;
+
+        var trimmed = answer.Trim();
+        return Regex.Replace(trimmed, @"\s+", " ").ToUpperInvariant();
+    }
+
     //Submit fake answer
+    public bool SubmitFakeAnswer(Room room, string connectionId, string fake, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        if (room.Phase != GamePhase.CollectingAns)
+        {
+            errorMessage = "مرحلة الإجابات المزيفة انتهت.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionId))
+        {
+            errorMessage = "تعذر التعرف على اللاعب.";
+            return false;
+        }
+
+        var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+        if (player == null)
+        {
+            errorMessage = "اللاعب غير موجود في الغرفة.";
+            return false;
+        }
+
+        if (room.CurrentQuestion == null)
+        {
+            errorMessage = "لا يوجد سؤال حالي.";
+            return false;
+        }
+
+        var submittedFakeAnswer = fake?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(submittedFakeAnswer))
+        {
+            errorMessage = "اكتب إجابة مزيفة أولاً.";
+            return false;
+        }
+
+        if (NormalizeAnswerForComparison(submittedFakeAnswer) ==
+            NormalizeAnswerForComparison(room.CurrentQuestion.CorrectAnswer))
+        {
+            errorMessage = "لا يمكنك إرسال الإجابة الصحيحة كإجابة مزيفة.";
+            return false;
+        }
+
+        room.FakeAnswers[connectionId] = submittedFakeAnswer;
+        player.HasSubmittedFake = true;
+        return true;
+    }
+
     public bool SubmitFakeAnswer(Room room, string connectionId, string fake)
     {
-        if (room.Phase != GamePhase.CollectingAns)
-            return false;
-
-        if (fake == room.CurrentQuestion!.CorrectAnswer)
-            return false;
-
-        room.FakeAnswers[connectionId] = fake;
-        return true;
+        return SubmitFakeAnswer(room, connectionId, fake, out _);
     }
 
     // Check if all players submitted fake answers

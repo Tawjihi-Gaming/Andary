@@ -224,12 +224,18 @@ public class GameHub : Hub
         await Clients.Group(roomId).SendAsync("GameStarted", gameState);
     }
 
-    public async Task SubmitFakeAnswer(string roomId, string fake)
+    public async Task<object> SubmitFakeAnswer(string roomId, string fake)
     {
         var room = _game.GetRoom(roomId);
 
-        if (!_game.SubmitFakeAnswer(room, Context.ConnectionId, fake))
-            return;
+        if (!_game.SubmitFakeAnswer(room, Context.ConnectionId, fake, out var errorMessage))
+        {
+            return new
+            {
+                success = false,
+                message = errorMessage
+            };
+        }
 
         if (_game.AllFakeAnswersSubmitted(room))
         {
@@ -238,6 +244,11 @@ public class GameHub : Hub
 
             await Clients.Group(roomId).SendAsync("ShowChoices", choices);
         }
+
+        return new
+        {
+            success = true
+        };
     }
 
     public async Task ChooseAnswer(string roomId, string answer)

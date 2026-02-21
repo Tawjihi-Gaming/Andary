@@ -93,7 +93,7 @@ const CreateRoom = ({ user }) => {
         selectedTopics: selectedTopics
       })
       console.log('Room created:', response.data)
-      const { roomId, code, sessionId, playerName } = response.data
+      const { roomId, code, sessionId, playerName, isPrivate: createdRoomIsPrivate } = response.data
       console.log('user room with ID:', user?.id, 'to room:', roomId)
       
      
@@ -104,6 +104,7 @@ const CreateRoom = ({ user }) => {
           user: user,
           roomId: roomId, 
           code: code,
+          isPrivate: typeof createdRoomIsPrivate === 'boolean' ? createdRoomIsPrivate : isPrivate,
           sessionId: sessionId,
           ownerId: sessionId,
           ownerName: playerName || user?.username || 'Guest',

@@ -18,10 +18,8 @@ public class Room
     //the enum i defined earlier
     public RoomType Type { get; set; }
 
-    //The ? means: nullable (“This value is allowed to be null.”)
-    //Because:
-    // - Public rooms don’t have a code
-    // - Private rooms have a code
+    // Join code shown to players.
+    // Public and private rooms both have a 6-digit numeric code.
     public string? Code { get; set; }
 
     public GamePhase Phase { get; set; } = GamePhase.Lobby;

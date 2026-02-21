@@ -18,6 +18,17 @@ public enum JoinRoomResult
     DuplicateGuest
 }
 
+public class LeaveRoomResult
+{
+    public bool PlayerRemoved { get; set; }
+    public bool RoomClosed { get; set; }
+    public bool OwnershipTransferred { get; set; }
+    public string? RemovedSessionId { get; set; }
+    public string? RemovedName { get; set; }
+    public string? NewOwnerSessionId { get; set; }
+    public string? NewOwnerName { get; set; }
+}
+
 public class GameManager
 {
     private readonly Dictionary<string, Room> _rooms = new();
@@ -85,10 +96,82 @@ public class GameManager
         return JoinRoomResult.Success;
     }
 
+    // Remove a player from a room and transfer ownership if needed.
+    public LeaveRoomResult LeaveRoom(string roomId, string sessionId)
+    {
+        var result = new LeaveRoomResult();
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return result;
+
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
+            return result;
+
+        var removedIndex = room.Players.IndexOf(player);
+        var wasOwner = room.OwnerSessionId == player.SessionId;
+
+        room.Players.RemoveAt(removedIndex);
+        result.PlayerRemoved = true;
+        result.RemovedSessionId = player.SessionId;
+        result.RemovedName = player.DisplayName;
+
+        // Remove round data written by this player to avoid stale counts.
+        if (!string.IsNullOrWhiteSpace(player.ConnectionId))
+        {
+            room.FakeAnswers.Remove(player.ConnectionId);
+            room.ChosenAnswers.Remove(player.ConnectionId);
+        }
+
+        if (room.Players.Count == 0)
+        {
+            _rooms.Remove(roomId);
+            result.RoomClosed = true;
+            return result;
+        }
+
+        // Keep chooser index valid after removing a player.
+        if (removedIndex < room.TopicChooserIndex)
+            room.TopicChooserIndex--;
+        if (room.TopicChooserIndex >= room.Players.Count)
+            room.TopicChooserIndex = 0;
+        if (room.TopicChooserIndex < 0)
+            room.TopicChooserIndex = 0;
+
+        if (wasOwner)
+        {
+            var newOwner = room.Players[0];
+            room.OwnerSessionId = newOwner.SessionId;
+            newOwner.IsReady = true;
+            result.OwnershipTransferred = true;
+            result.NewOwnerSessionId = newOwner.SessionId;
+            result.NewOwnerName = newOwner.DisplayName;
+        }
+
+        return result;
+    }
+
     //Get room by id
     public Room GetRoom(string roomId)
     {
         return _rooms[roomId];
+    }
+
+    public bool TryGetRoom(string roomId, out Room? room)
+    {
+        return _rooms.TryGetValue(roomId, out room);
+    }
+
+    // Find player by SignalR connection (used for unexpected disconnects).
+    public (string roomId, string sessionId)? FindPlayerByConnection(string connectionId)
+    {
+        foreach (var kv in _rooms)
+        {
+            var player = kv.Value.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+            if (player != null)
+                return (kv.Key, player.SessionId);
+        }
+        return null;
     }
 
     // Get room by its code (used for private room join-by-code)

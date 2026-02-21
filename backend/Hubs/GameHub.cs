@@ -18,6 +18,54 @@ public class GameHub : Hub
         _questionsService = questionsService;
     }
 
+    private async Task BroadcastLobbyState(string roomId, Room room)
+    {
+        var lobbyState = room.Players.Select(p => new
+        {
+            sessionId = p.SessionId,
+            name = p.DisplayName,
+            isReady = p.IsReady
+        });
+        await Clients.Group(roomId).SendAsync("LobbyUpdated", lobbyState);
+    }
+
+    private async Task HandlePlayerExit(string roomId, string sessionId, bool disconnected)
+    {
+        var leaveResult = _game.LeaveRoom(roomId, sessionId);
+        if (!leaveResult.PlayerRemoved)
+            return;
+
+        await Clients.Group(roomId).SendAsync(
+            disconnected ? "PlayerDisconnected" : "PlayerLeft",
+            new
+            {
+                sessionId = leaveResult.RemovedSessionId,
+                name = leaveResult.RemovedName
+            });
+
+        if (leaveResult.RoomClosed)
+        {
+            await Clients.Group(roomId).SendAsync("RoomClosed", new
+            {
+                message = "The room has been closed.",
+                reason = "All players left."
+            });
+            return;
+        }
+
+        if (leaveResult.OwnershipTransferred)
+        {
+            await Clients.Group(roomId).SendAsync("OwnershipTransferred", new
+            {
+                newOwnerSessionId = leaveResult.NewOwnerSessionId,
+                newOwnerName = leaveResult.NewOwnerName
+            });
+        }
+
+        if (_game.TryGetRoom(roomId, out var updatedRoom) && updatedRoom != null)
+            await BroadcastLobbyState(roomId, updatedRoom);
+    }
+
     // Called by each player after joining a room (via REST API) to register
     // their SignalR connection with the room's group.
     // Uses sessionId (UUID) instead of playerName to identify the player.
@@ -37,6 +85,30 @@ public class GameHub : Hub
         await Clients.Group(roomId).SendAsync("PlayerConnected", sessionPlayer.DisplayName);
     }
 
+    // Reconnect helper used by frontend after refresh/reconnect.
+    public async Task RejoinRoom(string roomId, string sessionId)
+    {
+        await ConnectToRoom(roomId, sessionId);
+    }
+
+    // Explicit leave from frontend.
+    public async Task LeaveRoom(string roomId, string sessionId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomId);
+        await HandlePlayerExit(roomId, sessionId, disconnected: false);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var player = _game.FindPlayerByConnection(Context.ConnectionId);
+        if (player.HasValue)
+        {
+            await HandlePlayerExit(player.Value.roomId, player.Value.sessionId, disconnected: true);
+        }
+
+        await base.OnDisconnectedAsync(exception);
+    }
+
     // Player toggles their ready status in the lobby.
     public async Task SetReady(string roomId, string sessionId, bool isReady)
     {
@@ -45,13 +117,7 @@ public class GameHub : Hub
         if (!_game.SetReady(room, sessionId, isReady))
             return;
 
-        var lobbyState = room.Players.Select(p => new
-        {
-            sessionId = p.SessionId,
-            name = p.DisplayName,
-            isReady = p.IsReady
-        });
-        await Clients.Group(roomId).SendAsync("LobbyUpdated", lobbyState);
+        await BroadcastLobbyState(roomId, room);
 
         if (_game.AllPlayersReady(room))
             await Clients.Group(roomId).SendAsync("AllPlayersReady");

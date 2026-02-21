@@ -39,6 +39,17 @@ const buildScoresMapFromPlayers = (playersList = []) => {
     }, {})
 }
 
+const arabicCharsRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/
+const latinCharsRegex = /[A-Za-z]/
+
+const getTextDirection = (value) => {
+    const text = (value || '').toString().trim()
+    if (!text) return 'rtl'
+    if (arabicCharsRegex.test(text)) return 'rtl'
+    if (latinCharsRegex.test(text)) return 'ltr'
+    return 'rtl'
+}
+
 const Game = () => {
     const { roomId } = useParams()
     const location = useLocation()
@@ -74,6 +85,7 @@ const Game = () => {
     const [selectedAnswer, setSelectedAnswer] = useState(null)
 
     const isMyTurn = currentTurn === sessionId
+    const questionDirection = getTextDirection(question)
 
     // New round/new question: clear previous fake-answer UI state.
     useEffect(() => {
@@ -365,7 +377,7 @@ const Game = () => {
                     <div className="text-center mb-4">
                         <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-6 text-center">{question}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-6 text-center" dir={questionDirection}>{question}</h2>
                     <p className="text-white/70 text-center mb-6">اكتب إجابة مزيفة مقنعة لخداع اللاعبين الآخرين!</p>
                     {hasSubmittedFake ? (
                         <p className="text-green-300 text-center text-lg font-bold">✅ {message}</p>
@@ -377,7 +389,7 @@ const Game = () => {
                                 onChange={(e) => setFakeAnswer(e.target.value)}
                                 placeholder="اكتب إجابتك المزيفة..."
                                 className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-white/40"
-                                dir="rtl"
+                                dir={questionDirection}
                             />
                             <button
                                 onClick={handleSubmitFake}
@@ -404,7 +416,7 @@ const Game = () => {
                     <div className="text-center mb-4">
                         <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-6 text-center">{question}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-6 text-center" dir={questionDirection}>{question}</h2>
                     <p className="text-white/70 text-center mb-4">اختر الإجابة الصحيحة من بين الخيارات:</p>
                     <div className="grid grid-cols-1 gap-3">
                         {choices.map((choice, i) => (
@@ -416,6 +428,7 @@ const Game = () => {
                                         ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
                                         : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
                                 }`}
+                                dir={getTextDirection(choice)}
                             >
                                 {choice}
                             </button>
@@ -439,7 +452,7 @@ const Game = () => {
                     {roundResult?.currentQuestion && (
                         <div className="mb-6 bg-white/10 rounded-2xl px-6 py-4 border border-white/20">
                             <p className="text-white/60 text-sm mb-1">الإجابة الصحيحة:</p>
-                            <p className="text-green-300 text-xl font-bold">{roundResult.currentQuestion.correctAnswer}</p>
+                            <p className="text-green-300 text-xl font-bold" dir={getTextDirection(roundResult.currentQuestion.correctAnswer)}>{roundResult.currentQuestion.correctAnswer}</p>
                         </div>
                     )}
 

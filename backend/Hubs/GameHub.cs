@@ -83,6 +83,10 @@ public class GameHub : Hub
         // Add this connection to the SignalR group for real-time updates
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         await Clients.Group(roomId).SendAsync("PlayerConnected", sessionPlayer.DisplayName);
+
+        // Keep lobby player list in sync as soon as a connection joins.
+        if (room.Phase == GamePhase.Lobby)
+            await BroadcastLobbyState(roomId, room);
     }
 
     // Reconnect helper used by frontend after refresh/reconnect.

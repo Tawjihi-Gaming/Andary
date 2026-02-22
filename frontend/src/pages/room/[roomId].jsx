@@ -1,14 +1,19 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { startConnection, stopConnection, getConnection } from '../../api/signalr'
+import { useSignalR } from '../../context/SignalRContext'
 
 const GameRoom = ({ user }) => {
     const { roomId } = useParams()
     const location = useLocation()
     const navigate = useNavigate()
+    const { startConnection, stopConnection, getConnection } = useSignalR()
     const code = location.state?.code
+    const isPrivateRoom = Boolean(location.state?.isPrivate)
     const roomName = location.state?.roomName
     const sessionId = location.state?.sessionId
+    const timer = location.state?.timer || 30
+    const calcTimer = location.state?.calcTimer || 20
+    const rounds = location.state?.rounds || 5
 
     const [connectionStatus, setConnectionStatus] = useState('connecting')
     const [players, setPlayers] = useState([])
@@ -20,8 +25,19 @@ const GameRoom = ({ user }) => {
 
     // The current user is the owner if their sessionId matches the room owner
     const isOwner = sessionId && sessionId === roomOwnerId
+    const roomTypeLabel = isPrivateRoom ? 'خاصة' : 'عامة'
+    const displayedCode = isPrivateRoom && !isOwner ? 'Hidden' : (code || 'N/A')
+    const canCopyCode = Boolean(code) && (!isPrivateRoom || isOwner)
+
+    // Check if all non-owner players are ready and there's at least one other player
+    const allPlayersReady = players.length > 1 && players
+        .filter(p => p.sessionId !== roomOwnerId)
+        .every(p => p.isReady)
 
     const handleCopyCode = async () => {
+        if (!canCopyCode)
+            return
+
         try {
             await navigator.clipboard.writeText(code)
             setIsCopied(true)
@@ -55,10 +71,12 @@ const GameRoom = ({ user }) => {
         try {
             const connection = getConnection()
             await connection.invoke('StartGame', roomId, sessionId)
+            // Don't navigate here — the 'GameStarted' event will handle navigation for all players
         } catch (error) {
             console.error('Error starting game:', error)
         }
     }
+
 
     const handleBackToLobby = async () => {
         try {
@@ -98,6 +116,7 @@ const GameRoom = ({ user }) => {
                 connection.on('LobbyUpdated', (lobbyState) => {
                     console.log('Lobby updated:', lobbyState)
                     setPlayers(lobbyState.map(p => ({
+                        avatarUrl: p.avatarUrl,
                         sessionId: p.sessionId,
                         name: p.name,
                         isReady: p.isReady
@@ -109,18 +128,15 @@ const GameRoom = ({ user }) => {
                     console.log('All players ready!')
                 })
 
-                // Topics updated
-                connection.on('TopicsUpdated', (topics) => {
-                    console.log('Topics updated:', topics)
-                    setGameState(prev => ({ ...prev, selectedTopics: topics }))
-                })
-
                 // Game started
                 connection.on('GameStarted', (state) => {
                     console.log('Game started:', state)
                     setGameState(state)
                     navigate(`/game/${roomId}`, {
-                        state: { user, roomId, code, sessionId, gameState: state }
+                        state: {
+                            ...location.state,  // passes timer, calcTimer, rounds, sessionId, user etc.
+                            gameState: state,
+                        }
                     })
                 })
 
@@ -128,6 +144,9 @@ const GameRoom = ({ user }) => {
                 connection.on('ChooseRoundTopic', (state) => {
                     console.log('Choose round topic:', state)
                     setGameState(state)
+                    navigate(`/game/${roomId}`, {
+                        state: { user, roomId, code, sessionId, gameState: state }
+                    })
                 })
 
                 // Show answer choices
@@ -188,6 +207,7 @@ const GameRoom = ({ user }) => {
                 await connection.invoke('ConnectToRoom', roomId, sessionId)
                 console.log('✅ Connected to room:', roomId, 'with session:', sessionId)
 
+
             } catch (err) {
                 console.error('SignalR connection failed:', err)
                 setConnectionStatus('error')
@@ -196,9 +216,23 @@ const GameRoom = ({ user }) => {
 
         setupSignalR()
 
+        // Don't stop the connection on unmount — it stays alive for the game page
         return () => {
-            if (connection) {
-                stopConnection()
+            const conn = getConnection()
+            if (conn) {
+                conn.off('PlayerConnected')
+                conn.off('LobbyUpdated')
+                conn.off('AllPlayersReady')
+                conn.off('GameStarted')
+                conn.off('ChooseRoundTopic')
+                conn.off('ShowChoices')
+                conn.off('RoundEnded')
+                conn.off('GameEnded')
+                conn.off('OwnershipTransferred')
+                conn.off('PlayerLeft')
+                conn.off('PlayerDisconnected')
+                conn.off('RoomState')
+                conn.off('RoomClosed')
             }
         }
     }, [roomId, sessionId])
@@ -208,7 +242,7 @@ const GameRoom = ({ user }) => {
             <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl border border-white/15">
                 <h1 className="text-xl sm:text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
                 <p className="text-white/80 text-center mb-4 text-xs sm:text-sm">
-                    Room ID: {roomId} | Code: {code || 'N/A'}
+                    النوع: {roomTypeLabel}
                 </p>
                 <p className="text-white/80 text-center mb-4 sm:mb-6 text-xs sm:text-sm">
                     {roomOwnerName ? `صاحب الغرفة: ${roomOwnerName}` : 'صاحب الغرفة غير معروف'}
@@ -257,34 +291,42 @@ const GameRoom = ({ user }) => {
                     </div>
                 </div>
 
+                {canCopyCode && (
+                    <button
+                        onClick={handleCopyCode}
+                        className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                        {isCopied ? (
+                            <>
+                                <span>✓</span>
+                                <span>تم النسخ!</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>📋</span>
+                                <span>نسخ كود الغرفة: {code}</span>
+                            </>
+                        )}
+                    </button>
+                )}
+
                 {
                     isOwner && (
                         <>
-                            <button
-                                onClick={handleCopyCode}
-                                className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                            >
-                                {isCopied ? (
-                                    <>
-                                        <span>✓</span>
-                                        <span>تم النسخ!</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>📋</span>
-                                        <span>نسخ كود الغرفة: {code}</span>
-                                    </>
-                                )}
-                            </button>
                             <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
                                 <p className="text-blue-400 font-bold text-sm sm:text-base">أنت صاحب الغرفة</p>
                                 <p className="text-blue-300 text-xs sm:text-sm">يمكنك بدء اللعبة عندما يكون الجميع جاهزًا!</p>
                             </div>
                             <button
                                 onClick={startGame}
-                                className="mt-3 sm:mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
+                                disabled={!allPlayersReady}
+                                className={`mt-3 sm:mt-4 w-full font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 ${
+                                    allPlayersReady
+                                        ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                                        : 'bg-gray-500/30 text-white/40 cursor-not-allowed'
+                                }`}
                             >
-                                بدء اللعبة
+                                {allPlayersReady ? 'بدء اللعبة' : 'في انتظار جاهزية جميع اللاعبين...'}
                             </button>
                         </>
                     )

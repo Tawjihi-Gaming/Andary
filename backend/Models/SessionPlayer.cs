@@ -34,4 +34,7 @@ public class SessionPlayer
     // null = anonymous/guest player.
     // If set, the game can save stats to the Player's account after the game ends.
     public int? PlayerId { get; set; }
+
+    // Browser-level identity key used for guest deduplication.
+    public string? ClientKey { get; set; }
 }

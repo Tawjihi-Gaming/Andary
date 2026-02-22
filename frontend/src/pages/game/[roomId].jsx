@@ -1,0 +1,529 @@
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { useSignalR } from '../../context/SignalRContext'
+import { getConnection as getSignalRConnection, startConnection } from '../../api/signalr'
+
+const mapPhase = (backendPhase) => {
+    switch (backendPhase) {
+        case 'ChoosingRoundTopic': return 'topic-selection'
+        case 'CollectingAns': return 'collecting-fakes'
+        case 'ChoosingAns': return 'choosing-answer'
+        case 'ShowingRanking': return 'round-result'
+        case 'GameEnded': return 'finished'
+        default: return 'topic-selection'
+    }
+}
+
+// Save game session to localStorage so refresh doesn't lose it
+const saveSession = (data) => {
+    localStorage.setItem('andary_game_session', JSON.stringify(data))
+}
+
+const loadSession = () => {
+    try {
+        const data = localStorage.getItem('andary_game_session')
+        return data ? JSON.parse(data) : null
+    } catch { return null }
+}
+
+const clearSession = () => {
+    localStorage.removeItem('andary_game_session')
+}
+
+const buildScoresMapFromPlayers = (playersList = []) => {
+    return playersList.reduce((acc, player) => {
+        if (player?.sessionId) {
+            acc[player.sessionId] = player.score || 0
+        }
+        return acc
+    }, {})
+}
+
+const arabicCharsRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/
+const latinCharsRegex = /[A-Za-z]/
+
+const getTextDirection = (value) => {
+    const text = (value || '').toString().trim()
+    if (!text) return 'rtl'
+    if (arabicCharsRegex.test(text)) return 'rtl'
+    if (latinCharsRegex.test(text)) return 'ltr'
+    return 'rtl'
+}
+
+const Game = () => {
+    const { roomId } = useParams()
+    const location = useLocation()
+    const navigate = useNavigate()
+    const { stopConnection } = useSignalR()
+    const connRef = useRef(null)
+    const hasSetup = useRef(false)
+
+    // Try location.state first, fall back to localStorage on refresh
+    const savedSession = loadSession()
+    const sessionId = location.state?.sessionId || savedSession?.sessionId
+    const initialGameState = location.state?.gameState || savedSession?.gameState
+    const user = location.state?.user || savedSession?.user
+
+    const [phase, setPhase] = useState(initialGameState ? mapPhase(initialGameState.phase) : 'topic-selection')
+    const [topics, setTopics] = useState(initialGameState?.selectedTopics || [])
+    const [selectedTopic, setSelectedTopic] = useState(initialGameState?.currentRoundTopic || null)
+    const [currentTurn, setCurrentTurn] = useState(initialGameState?.currentPlayerSessionId || null)
+    const [players, setPlayers] = useState(initialGameState?.players || [])
+    const [question, setQuestion] = useState(initialGameState?.currentQuestion?.questionText || null)
+    const [choices, setChoices] = useState(initialGameState?.choices || [])
+    const [scores, setScores] = useState(
+        initialGameState?.scores || buildScoresMapFromPlayers(initialGameState?.players || [])
+    )
+    const [message, setMessage] = useState('')
+    const [fakeSubmitError, setFakeSubmitError] = useState('')
+    const [roundResult, setRoundResult] = useState(null)
+    const [winner, setWinner] = useState(null)
+    const [fakeAnswer, setFakeAnswer] = useState('')
+    const [connectionReady, setConnectionReady] = useState(false)
+    const [isReconnecting, setIsReconnecting] = useState(false)
+    const [hasSubmittedFake, setHasSubmittedFake] = useState(false)
+    const [selectedAnswer, setSelectedAnswer] = useState(null)
+
+    const isMyTurn = currentTurn === sessionId
+    const questionDirection = getTextDirection(question)
+
+    // New round/new question: clear previous fake-answer UI state.
+    useEffect(() => {
+        if (phase === 'collecting-fakes') {
+            setFakeAnswer('')
+            setMessage('')
+            setFakeSubmitError('')
+            setHasSubmittedFake(false)
+        }
+        if (phase === 'choosing-answer') {
+            setSelectedAnswer(null)
+        }
+    }, [phase, question, selectedTopic])
+
+    // Save session to localStorage whenever key data changes
+    useEffect(() => {
+        if (!sessionId || !roomId) return
+        saveSession({
+            sessionId,
+            roomId,
+            user,
+            gameState: {
+                phase: Object.entries({
+                    'topic-selection': 'ChoosingRoundTopic',
+                    'collecting-fakes': 'CollectingAns',
+                    'choosing-answer': 'ChoosingAns',
+                    'round-result': 'ShowingRanking',
+                    'finished': 'GameEnded',
+                }).find(([k]) => k === phase)?.[1] || 'ChoosingRoundTopic',
+                selectedTopics: topics,
+                currentRoundTopic: selectedTopic,
+                currentPlayerSessionId: currentTurn,
+                players,
+                currentQuestion: question ? { questionText: question } : null,
+                choices,
+                scores,
+            }
+        })
+    }, [phase, topics, selectedTopic, currentTurn, players, question, choices, scores])
+
+    // Setup connection — handles both first load and page refresh
+    useEffect(() => {
+        if (hasSetup.current) return
+
+        const setup = async () => {
+            let conn = getSignalRConnection()
+
+            // If no connection (page was refreshed), reconnect
+            if (!conn || conn.state !== 'Connected') {
+                if (!sessionId || !roomId) {
+                    console.error('[Game] No session data — redirecting to lobby')
+                    clearSession()
+                    navigate('/lobby')
+                    return
+                }
+
+                try {
+                    setIsReconnecting(true)
+                    console.log('[Game] Reconnecting to SignalR...')
+                    conn = await startConnection(roomId, sessionId)
+
+                    if (!conn || conn.state !== 'Connected') {
+                        throw new Error('Failed to reconnect')
+                    }
+
+                    // Rejoin the room after reconnect
+                    await conn.invoke('RejoinRoom', roomId, sessionId)
+                    console.log('[Game] ✅ Rejoined room after refresh')
+                    setIsReconnecting(false)
+                } catch (err) {
+                    console.error('[Game] Reconnect failed:', err)
+                    clearSession()
+                    navigate('/lobby')
+                    return
+                }
+            }
+
+            hasSetup.current = true
+            connRef.current = conn
+
+            // Register all event handlers
+            conn.on('ChooseRoundTopic', (state) => {
+                setPhase('topic-selection')
+                setTopics(state.selectedTopics || [])
+                setCurrentTurn(state.currentPlayerSessionId)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
+            })
+
+            conn.on('GameStarted', (state) => {
+                setPhase(mapPhase(state.phase))
+                setSelectedTopic(state.currentRoundTopic)
+                setCurrentTurn(state.currentPlayerSessionId)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
+                if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
+                if (state.choices?.length > 0) setChoices(state.choices)
+            })
+
+            conn.on('ShowChoices', (data) => {
+                setPhase('choosing-answer')
+                setChoices(data)
+            })
+
+            conn.on('RoundEnded', (state) => {
+                setPhase('round-result')
+                setRoundResult(state)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
+            })
+
+            conn.on('GameEnded', (state) => {
+                setPhase('finished')
+                clearSession() // Game over — clear saved session
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
+                if (state.players?.length > 0) {
+                    const topPlayer = state.players.reduce((best, p) =>
+                        p.score > (best?.score || 0) ? p : best, state.players[0])
+                    setWinner(topPlayer.displayName)
+                }
+            })
+
+            conn.on('TurnChanged', (data) => {
+                setCurrentTurn(data.currentPlayerSessionId)
+            })
+
+            // Server sends full current state on rejoin
+            conn.on('GameStateSync', (state) => {
+                console.log('[Game] State synced after reconnect:', state)
+                setPhase(mapPhase(state.phase))
+                setTopics(state.selectedTopics || [])
+                setSelectedTopic(state.currentRoundTopic)
+                setCurrentTurn(state.currentPlayerSessionId)
+                if (state.players) {
+                    setPlayers(state.players)
+                    setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                }
+                if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
+                if (state.choices?.length > 0) setChoices(state.choices)
+            })
+
+            setConnectionReady(true)
+        }
+
+        setup()
+
+        return () => {
+            hasSetup.current = false
+            const conn = connRef.current
+            if (conn) {
+                conn.off('ChooseRoundTopic')
+                conn.off('GameStarted')
+                conn.off('ShowChoices')
+                conn.off('RoundEnded')
+                conn.off('GameEnded')
+                conn.off('TurnChanged')
+                conn.off('GameStateSync')
+            }
+        }
+    }, [navigate])
+
+    const handleTopicSelect = useCallback(async (topic) => {
+        const conn = connRef.current
+        if (!conn) return
+        try {
+            await conn.invoke('SelectRoundTopic', roomId, sessionId, topic)
+        } catch (error) {
+            console.error('Error selecting topic:', error)
+        }
+    }, [roomId, sessionId])
+
+    const handleSubmitFake = useCallback(async () => {
+        const conn = connRef.current
+        const trimmedFakeAnswer = fakeAnswer.trim()
+        if (!conn || !trimmedFakeAnswer) return
+
+        setFakeSubmitError('')
+
+        try {
+            const result = await conn.invoke('SubmitFakeAnswer', roomId, trimmedFakeAnswer)
+            if (!result?.success) {
+                setMessage('')
+                setHasSubmittedFake(false)
+                setFakeSubmitError(result?.message || 'تعذر إرسال الإجابة المزيفة. حاول مرة أخرى.')
+                return
+            }
+
+            setFakeAnswer('')
+            setMessage('تم إرسال إجابتك المزيفة!')
+            setHasSubmittedFake(true)
+        } catch (error) {
+            setMessage('')
+            setHasSubmittedFake(false)
+            setFakeSubmitError('تعذر إرسال الإجابة المزيفة. تحقق من الاتصال ثم حاول مرة أخرى.')
+            console.error('Error submitting fake answer:', error)
+        }
+    }, [roomId, fakeAnswer])
+
+    const handleChooseAnswer = useCallback(async (answer) => {
+        const conn = connRef.current
+        if (!conn) return
+        try {
+            await conn.invoke('ChooseAnswer', roomId, answer)
+        } catch (error) {
+            console.error('Error choosing answer:', error)
+        }
+    }, [roomId])
+
+    const handleNextRound = useCallback(async () => {
+        const conn = connRef.current
+        if (!conn) return
+        try {
+            await conn.invoke('NextRound', roomId)
+        } catch (error) {
+            console.error('Error advancing round:', error)
+        }
+    }, [roomId])
+
+    const handleLeave = async () => {
+        clearSession()
+        await stopConnection()
+        navigate('/lobby')
+    }
+
+    const getCurrentPlayerName = () => {
+        return players.find(p => p.sessionId === currentTurn)?.displayName || 'Unknown'
+    }
+
+    // ─── RECONNECTING ─────────────────────────────────────────────────────────
+    if (isReconnecting || !connectionReady) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/15 text-center">
+                    <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-white mb-2">
+                        {isReconnecting ? '🔄 إعادة الاتصال...' : 'جاري الاتصال...'}
+                    </h2>
+                    <p className="text-white/70">يرجى الانتظار</p>
+                </div>
+            </div>
+        )
+    }
+
+    // ─── TOPIC SELECTION ──────────────────────────────────────────────────────
+    if (phase === 'topic-selection') {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                    <h1 className="text-3xl font-extrabold text-white mb-6 text-center">🎯 اختر الموضوع</h1>
+                    {isMyTurn ? (
+                        <>
+                            <p className="text-white/80 text-center mb-6">دورك! اختر موضوعًا للجولة:</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {topics.map((topic) => (
+                                    <button
+                                        key={topic}
+                                        onClick={() => handleTopicSelect(topic)}
+                                        className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 text-lg"
+                                    >
+                                        {topic}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <p className="text-white/80 text-center text-lg">
+                            ⏳ في انتظار <strong>{getCurrentPlayerName()}</strong> لاختيار الموضوع...
+                        </p>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    // ─── COLLECTING FAKE ANSWERS ──────────────────────────────────────────────
+    if (phase === 'collecting-fakes') {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                    <div className="text-center mb-4">
+                        <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-6 text-center" dir={questionDirection}>{question}</h2>
+                    <p className="text-white/70 text-center mb-6">اكتب إجابة مزيفة مقنعة لخداع اللاعبين الآخرين!</p>
+                    {hasSubmittedFake ? (
+                        <p className="text-green-300 text-center text-lg font-bold">✅ {message}</p>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            <input
+                                type="text"
+                                value={fakeAnswer}
+                                onChange={(e) => setFakeAnswer(e.target.value)}
+                                placeholder="اكتب إجابتك المزيفة..."
+                                className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-white/40"
+                                dir={questionDirection}
+                            />
+                            <button
+                                onClick={handleSubmitFake}
+                                disabled={!fakeAnswer.trim()}
+                                className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                إرسال
+                            </button>
+                            {fakeSubmitError && (
+                                <p className="text-red-300 text-center font-semibold" dir="rtl">{fakeSubmitError}</p>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    // ─── CHOOSING ANSWER (from real + fake) ───────────────────────────────────
+    if (phase === 'choosing-answer') {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                    <div className="text-center mb-4">
+                        <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-6 text-center" dir={questionDirection}>{question}</h2>
+                    <p className="text-white/70 text-center mb-4">اختر الإجابة الصحيحة من بين الخيارات:</p>
+                    <div className="grid grid-cols-1 gap-3">
+                        {choices.map((choice, i) => (
+                            <button
+                                key={i}
+                                onClick={() => { setSelectedAnswer(choice); handleChooseAnswer(choice) }}
+                                className={`border font-semibold py-3 px-6 rounded-xl transition-all duration-300 ${
+                                    selectedAnswer === choice
+                                        ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
+                                        : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
+                                }`}
+                                dir={getTextDirection(choice)}
+                            >
+                                {choice}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // ─── ROUND RESULT ─────────────────────────────────────────────────────────
+    if (phase === 'round-result') {
+        const sortedPlayers = [...players].sort((a, b) => (scores[b.sessionId] || 0) - (scores[a.sessionId] || 0))
+        const medals = ['🥇', '🥈', '🥉']
+
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15 text-center">
+                    <h2 className="text-3xl font-bold text-white mb-2">🏆 لوحة المتصدرين</h2>
+
+                    {roundResult?.currentQuestion && (
+                        <div className="mb-6 bg-white/10 rounded-2xl px-6 py-4 border border-white/20">
+                            <p className="text-white/60 text-sm mb-1">الإجابة الصحيحة:</p>
+                            <p className="text-green-300 text-xl font-bold" dir={getTextDirection(roundResult.currentQuestion.correctAnswer)}>{roundResult.currentQuestion.correctAnswer}</p>
+                        </div>
+                    )}
+
+                    {/* Leaderboard */}
+                    <div className="flex flex-col gap-3 mb-8">
+                        {sortedPlayers.map((p, index) => {
+                            const isMe = p.sessionId === sessionId
+                            const isFirst = index === 0
+                            return (
+                                <div
+                                    key={p.sessionId}
+                                    className={`flex items-center justify-between px-5 py-4 rounded-2xl border transition-all duration-300
+                                        ${isFirst
+                                            ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20'
+                                            : isMe
+                                                ? 'bg-white/15 border-white/40'
+                                                : 'bg-white/10 border-white/20'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">{medals[index] || `#${index + 1}`}</span>
+                                        <span className={`font-bold text-lg ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
+                                            {p.displayName}
+                                            {isMe && <span className="text-white/50 text-sm font-normal mr-2">(أنت)</span>}
+                                        </span>
+                                    </div>
+                                    <span className={`text-xl font-extrabold ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
+                                        {scores[p.sessionId] || 0} نقطة
+                                    </span>
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    <button
+                        onClick={handleNextRound}
+                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20 hover:border-white/40"
+                    >
+                        الجولة التالية ➡️
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    // ─── GAME FINISHED ────────────────────────────────────────────────────────
+    if (phase === 'finished') {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15 text-center">
+                    <h1 className="text-4xl font-extrabold text-white mb-4">🏆 انتهت اللعبة!</h1>
+                    {winner && <p className="text-yellow-300 text-2xl font-bold mb-6">الفائز: {winner}</p>}
+                    <div className="flex flex-wrap justify-center gap-3 mb-8">
+                        {players.map(p => (
+                            <div key={p.sessionId} className="px-4 py-2 rounded-xl bg-white/10 text-white font-bold text-sm">
+                                {p.displayName}: {scores[p.sessionId] || 0}
+                            </div>
+                        ))}
+                    </div>
+                    <button
+                        onClick={handleLeave}
+                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20"
+                    >
+                        العودة للردهة
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    return null
+}
+
+export default Game

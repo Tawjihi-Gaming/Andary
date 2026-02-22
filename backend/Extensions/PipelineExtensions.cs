@@ -36,7 +36,12 @@ namespace Backend.Extensions
 
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseHttpsRedirection();
+
+            // Keep local development simple with Vite proxy (http://localhost:5000).
+            // Enforce HTTPS outside Development.
+            if (!app.Environment.IsDevelopment())
+                app.UseHttpsRedirection();
+
             app.MapControllers();
 
             return app;

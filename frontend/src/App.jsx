@@ -5,8 +5,16 @@ import Lobby from './pages/Lobby.jsx'
 import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
+import Game from './pages/game/[roomId].jsx'
 import TestRoom from './pages/room/TestRoom.jsx'
 import api from './api/axios'
+
+const createClientKey = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -15,7 +23,16 @@ function App() {
 
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('userData')
-    return savedUser ? JSON.parse(savedUser) : null
+    if (!savedUser) return null
+    const parsedUser = JSON.parse(savedUser)
+    const normalizedUser = {
+      ...parsedUser,
+      clientKey: parsedUser.clientKey || createClientKey(),
+    }
+    if (!parsedUser.clientKey) {
+      localStorage.setItem('userData', JSON.stringify(normalizedUser))
+    }
+    return normalizedUser
   })
 
   const [loading, setLoading] = useState(true)
@@ -31,7 +48,8 @@ function App() {
           email: res.data.email,
           avatar: res.data.avatarImageName || '👤',
           xp: res.data.xp || 0,
-          isGuest: false
+          isGuest: false,
+          clientKey: createClientKey(),
         }
         handleLogin(userData)
       } catch {
@@ -49,9 +67,13 @@ function App() {
   }, [])
 
   const handleLogin = (userData) => {
+    const normalizedUser = {
+      ...userData,
+      clientKey: userData.clientKey || createClientKey(),
+    }
     localStorage.setItem('isAuthenticated', 'true')
-    localStorage.setItem('userData', JSON.stringify(userData))
-    setUser(userData)
+    localStorage.setItem('userData', JSON.stringify(normalizedUser))
+    setUser(normalizedUser)
     setIsAuthenticated(true)
   }
 
@@ -64,8 +86,12 @@ function App() {
 
   // Update user data in state and localStorage (used by Profile page edits)
   const handleUpdateUser = (updatedUser) => {
-    localStorage.setItem('userData', JSON.stringify(updatedUser))
-    setUser(updatedUser)
+    const normalizedUser = {
+      ...updatedUser,
+      clientKey: updatedUser.clientKey || user?.clientKey || createClientKey(),
+    }
+    localStorage.setItem('userData', JSON.stringify(normalizedUser))
+    setUser(normalizedUser)
   }
 
   if (loading) {
@@ -130,6 +156,14 @@ function App() {
         <Route 
           path="/test-room" 
           element={<TestRoom />} 
+        />
+        <Route 
+          path="/game/:roomId" 
+          element={
+            isAuthenticated ? 
+              <Game user={user} /> :
+              <Navigate to="/" replace />
+          } 
         />
       </Routes>
     </BrowserRouter>

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Backend.Services;
 using Backend.Hubs;    
 using System;
+using System.Text.Json.Serialization;
 
 namespace Backend.Extensions
 {
@@ -10,7 +11,14 @@ namespace Backend.Extensions
         public static IServiceCollection AddAppServices(this IServiceCollection services)
         {
             // SignalR
-            services.AddSignalR();
+            services
+                .AddSignalR()
+                .AddJsonProtocol(options =>
+                {
+                    // Send enum names (e.g. "CollectingAns") instead of numeric values.
+                    // Frontend phase mapping expects string names.
+                    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                });
 
             // HttpClient as Scoped
             services.AddScoped<HttpClient>();

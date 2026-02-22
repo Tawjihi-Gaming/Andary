@@ -12,6 +12,9 @@ using Backend.Models.DTOs;
 using System.Text.Json;
 using System.Net;
 using System.Security.Cryptography;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 namespace Backend.Controllers
 {
@@ -71,6 +74,72 @@ namespace Backend.Controllers
             using var sha256 = SHA256.Create();
             var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
             return Convert.ToBase64String(bytes);
+        }
+
+        private string GenerateSixDigitOtp()
+        {
+            var value = RandomNumberGenerator.GetInt32(0, 1000000);
+            return value.ToString("D6");
+        }
+
+        private bool IsHashMatch(string input, string storedHash)
+        {
+            if (string.IsNullOrWhiteSpace(input) || string.IsNullOrWhiteSpace(storedHash))
+                return false;
+
+            try
+            {
+                var inputHash = HashToken(input);
+                var inputHashBytes = Convert.FromBase64String(inputHash);
+                var storedHashBytes = Convert.FromBase64String(storedHash);
+
+                return CryptographicOperations.FixedTimeEquals(inputHashBytes, storedHashBytes);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task SendVerificationCodeAsync(string email, string code)
+        {
+            var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
+                ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
+
+            var smtpPortRaw = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
+            if (!int.TryParse(smtpPortRaw, out var smtpPort))
+                throw new InvalidOperationException("SMTP_PORT env var is invalid");
+
+            var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER")
+                ?? throw new InvalidOperationException("SMTP_USER env var is missing");
+
+            var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS")
+                ?? throw new InvalidOperationException("SMTP_PASS env var is missing");
+
+            var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpUser;
+            var fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? "Andary";
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(fromName, fromEmail));
+            message.To.Add(MailboxAddress.Parse(email));
+            message.Subject = "Your Andary verification code";
+            message.Body = new TextPart("plain")
+            {
+                Text =
+                    "Hello,\n\n" +
+                    "Thank you for signing up with Andary. To complete your email verification, please use the one-time verification code below:\n\n" +
+                    $"Verification Code: {code}\n\n" +
+                    "This code is valid for 3 hours. For your security, please do not share this code with anyone.\n\n" +
+                    "If you did not request this verification, you can safely ignore this email.\n\n" +
+                    "Best regards,\n" +
+                    "The Andary Team"
+            };
+
+            using var smtp = new SmtpClient();
+            await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(smtpUser, smtpPass);
+            await smtp.SendAsync(message);
+            await smtp.DisconnectAsync(true);
         }
 
         #endregion
@@ -328,10 +397,106 @@ namespace Backend.Controllers
 				AvatarImageName = dto.AvatarImageName
 			};
 
-            _db.Players.Add(player);
+            var otpCode = GenerateSixDigitOtp();
+            authLocal.EmailVerificationTokenHash = HashToken(otpCode);
+            authLocal.EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(3);
+
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                _db.Players.Add(player);
+                await _db.SaveChangesAsync();
+
+                await SendVerificationCodeAsync(authLocal.Email, otpCode);
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    new { msg = "Could not complete signup verification email flow" });
+            }
+
+            return Ok(new { msg = "Player created. Verification code sent to email." });
+        }
+
+        [HttpPost("verify")]
+        public async Task<IActionResult> Verify(PlayerVerifyDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Code))
+                return BadRequest(new { msg = "Invalid verification data" });
+
+            if (dto.Code.Length != 6 || !dto.Code.All(char.IsDigit))
+                return BadRequest(new { msg = "Code must be a 6-digit number" });
+
+            var player = await _db.Players
+                .Include(p => p.AuthLocal)
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
+
+            if (player?.AuthLocal == null)
+                return BadRequest(new { msg = "Invalid email" });
+
+            var authLocal = player.AuthLocal;
+
+            if (authLocal.IsVerified)
+                return Ok(new { msg = "Email is already verified" });
+
+            if (string.IsNullOrEmpty(authLocal.EmailVerificationTokenHash)
+                || authLocal.EmailVerificationTokenExpiresAt == null)
+                return BadRequest(new { msg = "No active verification code" });
+
+            if (authLocal.EmailVerificationTokenExpiresAt <= DateTime.UtcNow)
+                return BadRequest(new { msg = "Verification code expired" });
+
+            if (!IsHashMatch(dto.Code, authLocal.EmailVerificationTokenHash))
+                return BadRequest(new { msg = "Invalid verification code" });
+
+            authLocal.IsVerified = true;
+            authLocal.EmailVerificationTokenHash = null;
+            authLocal.EmailVerificationTokenExpiresAt = null;
             await _db.SaveChangesAsync();
 
-            return Ok(new { msg = "Player created" });
+            return Ok(new { msg = "Email verified successfully" });
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification(PlayerResendVerificationDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest(new { msg = "Invalid resend data" });
+
+            var player = await _db.Players
+                .Include(p => p.AuthLocal)
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
+
+            if (player?.AuthLocal == null)
+                return BadRequest(new { msg = "Invalid email" });
+
+            var authLocal = player.AuthLocal;
+
+            if (authLocal.IsVerified)
+                return BadRequest(new { msg = "Email is already verified" });
+
+            var otpCode = GenerateSixDigitOtp();
+            authLocal.EmailVerificationTokenHash = HashToken(otpCode);
+            authLocal.EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(3);
+
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+                await SendVerificationCodeAsync(authLocal.Email, otpCode);
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    new { msg = "Could not resend verification email" });
+            }
+
+            return Ok(new { msg = "Verification code resent" });
         }
 
         [HttpPost("login")]

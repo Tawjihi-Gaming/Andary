@@ -12,6 +12,9 @@ namespace Backend.Extensions
             // SignalR
             services.AddSignalR();
 
+            // HttpClient as Scoped
+            services.AddScoped<HttpClient>();
+
             // Game services
             services.AddSingleton<GameManager>();
             services.AddScoped<QuestionsService>();
@@ -24,7 +27,7 @@ namespace Backend.Extensions
                     var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
 
                     policy.WithOrigins(
-                              frontendUrl ?? "http://localhost:3000")
+                              frontendUrl ?? "http://localhost:5173")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();

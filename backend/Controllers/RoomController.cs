@@ -5,11 +5,13 @@ using Backend.Services;
 using Backend.Models;
 using backend.Enums;
 using Backend.Data;
+using Backend.Filters;
 
 namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ValidatePlayerOwnershipFilter] // Apply player ownership validation globally to all actions in this controller
 public class RoomController : ControllerBase
 {
     private readonly GameManager _game;

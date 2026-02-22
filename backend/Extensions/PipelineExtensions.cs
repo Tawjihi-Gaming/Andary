@@ -10,9 +10,27 @@ namespace Backend.Extensions
             {
                 errorApp.Run(async context =>
                 {
+                    var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+                    var exception = exceptionFeature?.Error;
+                    
                     context.Response.StatusCode = 500;
                     context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(new { msg = "Server error" });
+                    
+                    var isDev = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+                    
+                    if (isDev && exception != null)
+                    {
+                        await context.Response.WriteAsJsonAsync(new 
+                        { 
+                            msg = "Server error",
+                            error = exception.Message,
+                            stackTrace = exception.StackTrace
+                        });
+                    }
+                    else
+                    {
+                        await context.Response.WriteAsJsonAsync(new { msg = "Server error" });
+                    }
                 });
             });
 

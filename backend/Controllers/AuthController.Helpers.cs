@@ -10,6 +10,9 @@ using System.Security.Claims;
 using Backend.Models.Configs;
 using System.Text.Json;
 using System.Security.Cryptography;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 namespace Backend.Controllers
 {
@@ -344,6 +347,72 @@ namespace Backend.Controllers
             
             player.AuthLocal.PasswordHash = hasher.HashPassword(player.AuthLocal, password);
             return (true, null);
+        }
+
+        private string GenerateSixDigitOtp()
+        {
+            var value = RandomNumberGenerator.GetInt32(0, 1000000);
+            return value.ToString("D6");
+        }
+
+        private bool IsHashMatch(string input, string storedHash)
+        {
+            if (string.IsNullOrWhiteSpace(input) || string.IsNullOrWhiteSpace(storedHash))
+                return false;
+
+            try
+            {
+                var inputHash = HashToken(input);
+                var inputHashBytes = Convert.FromBase64String(inputHash);
+                var storedHashBytes = Convert.FromBase64String(storedHash);
+
+                return CryptographicOperations.FixedTimeEquals(inputHashBytes, storedHashBytes);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task SendVerificationCodeAsync(string email, string code)
+        {
+            var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
+                ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
+
+            var smtpPortRaw = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
+            if (!int.TryParse(smtpPortRaw, out var smtpPort))
+                throw new InvalidOperationException("SMTP_PORT env var is invalid");
+
+            var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER")
+                ?? throw new InvalidOperationException("SMTP_USER env var is missing");
+
+            var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS")
+                ?? throw new InvalidOperationException("SMTP_PASS env var is missing");
+
+            var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpUser;
+            var fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? "Andary";
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(fromName, fromEmail));
+            message.To.Add(MailboxAddress.Parse(email));
+            message.Subject = "Your Andary verification code";
+            message.Body = new TextPart("plain")
+            {
+                Text =
+                    "Hello,\n\n" +
+                    "Thank you for signing up with Andary. To complete your email verification, please use the one-time verification code below:\n\n" +
+                    $"Verification Code: {code}\n\n" +
+                    "This code is valid for 3 hours. For your security, please do not share this code with anyone.\n\n" +
+                    "If you did not request this verification, you can safely ignore this email.\n\n" +
+                    "Best regards,\n" +
+                    "The Andary Team"
+            };
+
+            using var smtp = new SmtpClient();
+            await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(smtpUser, smtpPass);
+            await smtp.SendAsync(message);
+            await smtp.DisconnectAsync(true);
         }
 
         #endregion

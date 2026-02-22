@@ -13,6 +13,9 @@ using System.Text.Json;
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 namespace Backend.Controllers
 {
@@ -113,10 +116,106 @@ namespace Backend.Controllers
 				AvatarImageName = dto.AvatarImageName
 			};
 
-            _db.Players.Add(player);
+            var otpCode = GenerateSixDigitOtp();
+            authLocal.EmailVerificationTokenHash = HashToken(otpCode);
+            authLocal.EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(3);
+
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                _db.Players.Add(player);
+                await _db.SaveChangesAsync();
+
+                await SendVerificationCodeAsync(authLocal.Email, otpCode);
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    new { msg = "Could not complete signup verification email flow" });
+            }
+
+            return Ok(new { msg = "Player created. Verification code sent to email." });
+        }
+
+        [HttpPost("verify")]
+        public async Task<IActionResult> Verify(PlayerVerifyDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Code))
+                return BadRequest(new { msg = "Invalid verification data" });
+
+            if (dto.Code.Length != 6 || !dto.Code.All(char.IsDigit))
+                return BadRequest(new { msg = "Code must be a 6-digit number" });
+
+            var player = await _db.Players
+                .Include(p => p.AuthLocal)
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
+
+            if (player?.AuthLocal == null)
+                return BadRequest(new { msg = "Invalid email" });
+
+            var authLocal = player.AuthLocal;
+
+            if (authLocal.IsVerified)
+                return Ok(new { msg = "Email is already verified" });
+
+            if (string.IsNullOrEmpty(authLocal.EmailVerificationTokenHash)
+                || authLocal.EmailVerificationTokenExpiresAt == null)
+                return BadRequest(new { msg = "No active verification code" });
+
+            if (authLocal.EmailVerificationTokenExpiresAt <= DateTime.UtcNow)
+                return BadRequest(new { msg = "Verification code expired" });
+
+            if (!IsHashMatch(dto.Code, authLocal.EmailVerificationTokenHash))
+                return BadRequest(new { msg = "Invalid verification code" });
+
+            authLocal.IsVerified = true;
+            authLocal.EmailVerificationTokenHash = null;
+            authLocal.EmailVerificationTokenExpiresAt = null;
             await _db.SaveChangesAsync();
 
-            return Ok(new { msg = "Player created" });
+            return Ok(new { msg = "Email verified successfully" });
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification(PlayerResendVerificationDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest(new { msg = "Invalid resend data" });
+
+            var player = await _db.Players
+                .Include(p => p.AuthLocal)
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
+
+            if (player?.AuthLocal == null)
+                return BadRequest(new { msg = "Invalid email" });
+
+            var authLocal = player.AuthLocal;
+
+            if (authLocal.IsVerified)
+                return BadRequest(new { msg = "Email is already verified" });
+
+            var otpCode = GenerateSixDigitOtp();
+            authLocal.EmailVerificationTokenHash = HashToken(otpCode);
+            authLocal.EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(3);
+
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+                await SendVerificationCodeAsync(authLocal.Email, otpCode);
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    new { msg = "Could not resend verification email" });
+            }
+
+            return Ok(new { msg = "Verification code resent" });
         }
 
         [HttpPost("login")]

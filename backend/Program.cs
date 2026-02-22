@@ -1,23 +1,35 @@
-var builder = WebApplication.CreateBuilder(args);
+using Backend.Extensions;
 
-// Add services to the container.
+#region App Builder
+var builder = WebApplication.CreateBuilder(args)
+.AddAppBuilder();
+#endregion
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+#region JWT Authentication
+builder.Services.AddJwtAuthentication();
+#endregion
 
+#region Google OAuth Configuration
+builder.Services.AddGoogleOAuth();
+#endregion
+
+#region Database
+builder.Services.AddAppDatabase();
+#endregion
+
+#region Services
+builder.Services.AddAppServices();
+#endregion
+
+#region App
 var app = builder.Build();
+#endregion
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+#region Database Seeding
+await app.SeedDatabaseAsync();
+#endregion
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
+#region App Pipeline
+app.UseAppPipeline().UseAppInfrastructure();
 app.Run();
+#endregion

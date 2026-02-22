@@ -1,0 +1,122 @@
+[
+  {
+    "question": "What is the correct form of the verb in this sentence: 'She ____ to the store every day.'",
+    "answer": "goes",
+    "explanation": "The verb 'goes' is used because the subject 'she' is third-person singular, so we add 'es' to the base verb 'go'.",
+    "modifier": ""
+  },
+  {
+    "question": "What article is used before singular nouns starting with a consonant sound?",
+    "answer": "a",
+    "explanation": "'A' is used before singular, countable nouns that start with a consonant sound.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the synonym of the word 'happy'?",
+    "answer": "joyful",
+    "explanation": "'Joyful' is a synonym of 'happy,' meaning both express a state of happiness.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the opposite of the word 'difficult'?",
+    "answer": "easy",
+    "explanation": "'Easy' is the opposite of 'difficult,' meaning something that is not hard to do.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the past tense of the verb 'eat'?",
+    "answer": "ate",
+    "explanation": "'Ate' is the past tense of 'eat.'",
+    "modifier": ""
+  },
+  {
+    "question": "What is the correct preposition in the sentence: 'She is interested ____ learning languages.'",
+    "answer": "in",
+    "explanation": "The correct preposition with 'interested' is 'in.' So the sentence should be 'She is interested in learning languages.'",
+    "modifier": ""
+  },
+  {
+    "question": "What is the plural form of the word 'child'?",
+    "answer": "children",
+    "explanation": "The plural form of 'child' is 'children,' which is an irregular plural.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the past form of 'run'?",
+    "answer": "ran",
+    "explanation": "The past tense of 'run' is 'ran.' This is an irregular verb.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the correct sentence: 'She don’t like coffee.' / 'She doesn’t like coffee.'",
+    "answer": "She doesn’t like coffee.",
+    "explanation": "In the negative form of present simple, we use 'doesn't' with third-person singular subjects.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the correct possessive form of 'Tom'?",
+    "answer": "Tom’s",
+    "explanation": "The possessive form of a singular noun is formed by adding an apostrophe + 's' (Tom’s).",
+    "modifier": ""
+  },
+  {
+    "question": "What is the meaning of the idiom 'Break the ice'?",
+    "answer": "To start a conversation or make people feel more comfortable.",
+    "explanation": "'Break the ice' means to initiate a conversation or action that makes people feel relaxed.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the opposite of 'early'?",
+    "answer": "late",
+    "explanation": "'Late' is the opposite of 'early,' indicating something happening after the expected time.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the correct question form: '____ you like pizza?'",
+    "answer": "Do",
+    "explanation": "To make a question in the present simple, we use 'Do' for plural subjects or 'I/you/we/they.'",
+    "modifier": ""
+  },
+  {
+    "question": "What is the meaning of the word 'enough' in the sentence: 'I have enough money to buy the book.'?",
+    "answer": "Sufficient",
+    "explanation": "'Enough' means 'sufficient' or 'adequate.' In this case, it refers to having enough money.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the plural of 'fox'?",
+    "answer": "foxes",
+    "explanation": "The plural of 'fox' is formed by adding 'es' to the end of the word, making it 'foxes.'",
+    "modifier": ""
+  },
+  {
+    "question": "What is the meaning of the word 'quickly' in the sentence: 'She runs quickly.'?",
+    "answer": "In a fast manner",
+    "explanation": "'Quickly' is an adverb that describes how the action of running is performed.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the correct form of the verb in: 'He ____ to the party yesterday.'",
+    "answer": "went",
+    "explanation": "'Went' is the past form of the verb 'go,' used for events that happened in the past.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the synonym of the word 'large'?",
+    "answer": "huge",
+    "explanation": "'Huge' is a synonym for 'large,' both indicating something that is big in size.",
+    "modifier": ""
+  },
+  {
+    "question": "What is the past participle of the verb 'see'?",
+    "answer": "seen",
+    "explanation": "'Seen' is the past participle of 'see,' used with auxiliary verbs like 'have' or 'had.'",
+    "modifier": ""
+  },
+  {
+    "question": "What is the correct form of the verb in: 'They ____ playing football when it started to rain.'",
+    "answer": "were",
+    "explanation": "We use 'were' in past continuous tense to describe an action in progress in the past.",
+    "modifier": ""
+  }
+]

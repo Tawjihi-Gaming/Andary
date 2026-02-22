@@ -1,14 +1,14 @@
 
 services:
 
-  # backend:
-  #   container_name: dotnet_backend
-  #   image: backend:andari
-  #   build: ./backend
-  #   networks:
-  #     - web-net
-  #   env_file:
-  #     - .env
+  backend:
+    container_name: dotnet_backend
+    image: backend:andari
+    build: ./backend
+    networks:
+      - web-net
+    env_file:
+      - backend/.env.docker
 
   nginx:
     container_name: nginx
@@ -17,10 +17,12 @@ services:
       context: .
       dockerfile: nginx/Dockerfile
     ports:
-      - "80:80"
+      - "8080:8080"
       - "443:443"
     networks:
       - web-net
+    env_file:
+      - .env
 
   db:
     container_name: db

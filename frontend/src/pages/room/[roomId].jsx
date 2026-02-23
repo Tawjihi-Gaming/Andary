@@ -309,8 +309,8 @@ const GameRoom = ({ user }) => {
     }, [roomId, sessionId])
    
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
-            <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl border border-white/15">
+        <div className="min-h-screen app-page-bg relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
+            <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl">
                 <h1 className="text-xl sm:text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
                 <p className="text-white/80 text-center mb-4 text-xs sm:text-sm">
                     {t('room.type')} {roomTypeLabel}

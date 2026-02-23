@@ -9,6 +9,65 @@
   --color-game-green: #22C55E;
 }
 
+:root,
+[data-theme="light"] {
+  --color-game-yellow: #FBBF24;
+  --color-game-cyan: #06B6D4;
+  --color-game-blue: #2563EB;
+  --color-game-purple: #8B5CF6;
+  --color-game-orange: #F97316;
+  --color-game-green: #22C55E;
+
+  --app-gradient-from: #2563EB;
+  --app-gradient-via: #3B82F6;
+  --app-gradient-to: #38BDF8;
+  --app-card-bg: rgba(255, 255, 255, 0.05);
+  --app-card-bg-strong: rgba(255, 255, 255, 0.10);
+  --app-card-border: rgba(255, 255, 255, 0.15);
+  --app-card-border-soft: rgba(255, 255, 255, 0.10);
+  --app-text: #ffffff;
+  --app-text-soft: rgba(255, 255, 255, 0.8);
+  --app-text-muted: rgba(255, 255, 255, 0.6);
+  --app-text-faint: rgba(255, 255, 255, 0.45);
+  --app-input-placeholder: rgba(255, 255, 255, 0.5);
+  --app-modal-bg: linear-gradient(to bottom right, rgba(37, 99, 235, 0.9), rgba(30, 58, 138, 0.9));
+  --scrollbar-track: #1e293b;
+  --scrollbar-thumb-from: #8B5CF6;
+  --scrollbar-thumb-to: #EC4899;
+  --scrollbar-thumb-hover-from: #A78BFA;
+  --scrollbar-thumb-hover-to: #F472B6;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --color-game-yellow: #FBBF24;
+  --color-game-cyan: #06B6D4;
+  --color-game-blue: #2563EB;
+  --color-game-purple: #8B5CF6;
+  --color-game-orange: #F97316;
+  --color-game-green: #22C55E;
+
+  --app-gradient-from: #0f172a;
+  --app-gradient-via: #1e3a8a;
+  --app-gradient-to: #155e75;
+  --app-card-bg: rgba(15, 23, 42, 0.62);
+  --app-card-bg-strong: rgba(15, 23, 42, 0.76);
+  --app-card-border: rgba(148, 163, 184, 0.33);
+  --app-card-border-soft: rgba(148, 163, 184, 0.25);
+  --app-text: #f8fafc;
+  --app-text-soft: #e2e8f0;
+  --app-text-muted: #cbd5e1;
+  --app-text-faint: #94a3b8;
+  --app-input-placeholder: #94a3b8;
+  --app-modal-bg: linear-gradient(to bottom right, rgba(15, 23, 42, 0.95), rgba(30, 58, 138, 0.85));
+  --scrollbar-track: #0f172a;
+  --scrollbar-thumb-from: #2563eb;
+  --scrollbar-thumb-to: #06b6d4;
+  --scrollbar-thumb-hover-from: #3b82f6;
+  --scrollbar-thumb-hover-to: #22d3ee;
+  color-scheme: dark;
+}
+
 
 * {
   box-sizing: border-box;
@@ -25,16 +84,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #8B5CF6, #EC4899);
+  background: linear-gradient(135deg, var(--scrollbar-thumb-from), var(--scrollbar-thumb-to));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #A78BFA, #F472B6);
+  background: linear-gradient(135deg, var(--scrollbar-thumb-hover-from), var(--scrollbar-thumb-hover-to));
 }
 
 /* Input focus styles */
@@ -174,4 +233,71 @@ input[type="range"].slider::-webkit-slider-runnable-track {
 input[type="range"].slider::-moz-range-track {
   height: 12px;
   border-radius: 6px;
+}
+
+.app-page-bg {
+  background: linear-gradient(to bottom right, var(--app-gradient-from), var(--app-gradient-via), var(--app-gradient-to));
+}
+
+.app-glass-card {
+  background: var(--app-card-bg);
+  border: 1px solid var(--app-card-border);
+}
+
+.app-glass-card-strong {
+  background: var(--app-card-bg-strong);
+  border: 1px solid var(--app-card-border);
+}
+
+.app-modal-card {
+  background: var(--app-modal-bg);
+  border: 1px solid var(--app-card-border);
+}
+
+.app-soft-btn {
+  background: var(--app-card-bg);
+  border: 1px solid var(--app-card-border-soft);
+  color: var(--app-text-soft);
+}
+
+.app-soft-btn:hover {
+  background: var(--app-card-bg-strong);
+  color: var(--app-text);
+}
+
+.app-theme-switch {
+  background: var(--app-card-bg-strong);
+  border: 1px solid var(--app-card-border);
+  color: var(--app-text-soft);
+}
+
+.app-theme-switch:hover {
+  background: var(--app-card-bg);
+  color: var(--app-text);
+}
+
+/* Theme-aware overrides for heavily used utility classes */
+.bg-white\/5 {
+  background-color: var(--app-card-bg) !important;
+}
+
+.bg-white\/10 {
+  background-color: var(--app-card-bg-strong) !important;
+}
+
+.bg-white\/15 {
+  background-color: color-mix(in srgb, var(--app-card-bg-strong) 75%, transparent) !important;
+}
+
+.bg-white\/20 {
+  background-color: color-mix(in srgb, var(--app-card-bg-strong) 90%, transparent) !important;
+}
+
+.border-white\/10 {
+  border-color: var(--app-card-border-soft) !important;
+}
+
+.border-white\/15,
+.border-white\/20 {
+  border-color: var(--app-card-border) !important;
 }

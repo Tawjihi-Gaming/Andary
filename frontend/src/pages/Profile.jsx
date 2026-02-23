@@ -150,7 +150,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] p-4">
+    <div className="min-h-screen app-page-bg p-4">
       <div className="max-w-2xl mx-auto">
         {/* back button and language switcher */}
         <div dir="ltr" className="flex flex-col sm:flex-row sm:items-center sm:justify-between items-start gap-3 mb-4">
@@ -177,7 +177,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
         )}
 
         {/* profile card */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-2 border-white/20">
+        <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-8 shadow-2xl">
           <h1 className="text-4xl font-extrabold text-white mb-8 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
             {t('profile.title')}
           </h1>
@@ -185,7 +185,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* AVATAR SECTION */}
           <div className="flex flex-col items-center gap-4 mb-8">
             <div
-              className="w-32 h-32 cursor-pointer rounded-full bg-game-yellow flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform pt-2"
+              className="w-32 h-32 cursor-pointer rounded-full bg-game-yellow pt-4 flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform pt-2"
               onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
               title={t('profile.clickToChangeAvatar')}
             >
@@ -273,7 +273,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   {!user?.isGuest && (
                     <button
                       onClick={() => setEditingField('username')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
                       {t('common.edit')}
                     </button>
@@ -316,7 +316,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   {!user?.isGuest && (
                     <button
                       onClick={() => setEditingField('email')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm cursor-pointer"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
                       {t('common.edit')}
                     </button>
@@ -366,7 +366,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                     <span className="text-white text-lg">••••••••</span>
                     <button
                       onClick={() => setEditingField('password')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm cursor-pointer"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
                       {t('profile.changePassword')}
                     </button>

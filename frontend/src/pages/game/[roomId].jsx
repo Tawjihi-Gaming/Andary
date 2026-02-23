@@ -389,8 +389,8 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── RECONNECTING ─────────────────────────────────────────────────────────
     if (isReconnecting || !connectionReady) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/15 text-center">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-2xl text-center">
                     <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-white mb-2">
                         {isReconnecting ? t('game.reconnecting') : t('game.connecting')}
@@ -404,14 +404,14 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── TOPIC SELECTION ──────────────────────────────────────────────────────
     if (phase === 'topic-selection') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
                 <button
                     onClick={handleRequestLeave}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
                     <h1 className="text-3xl font-extrabold text-white mb-6 text-center">{t('game.chooseTopic')}</h1>
                     {isMyTurn ? (
                         <>
@@ -442,14 +442,14 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── COLLECTING FAKE ANSWERS ──────────────────────────────────────────────
     if (phase === 'collecting-fakes') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
                 <button
                     onClick={handleRequestLeave}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
                     <div className="text-center mb-4">
                         <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
                     </div>
@@ -488,14 +488,14 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── CHOOSING ANSWER (from real + fake) ───────────────────────────────────
     if (phase === 'choosing-answer') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
                 <button
                     onClick={handleRequestLeave}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
                     <div className="text-center mb-4">
                         <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
                     </div>
@@ -529,14 +529,14 @@ const Game = ({ user: authenticatedUser }) => {
         const medals = ['🥇', '🥈', '🥉']
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
                 <button
                     onClick={handleRequestLeave}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15 text-center">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl text-center">
                     <h2 className="text-3xl font-bold text-white mb-2">{t('game.leaderboard')}</h2>
 
                     {roundResult?.currentQuestion && (
@@ -592,8 +592,8 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── GAME FINISHED ────────────────────────────────────────────────────────
     if (phase === 'finished') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15 text-center">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl text-center">
                     <h1 className="text-4xl font-extrabold text-white mb-4">{t('game.gameOver')}</h1>
                     {winner && <p className="text-yellow-300 text-2xl font-bold mb-6">{t('game.winner', { name: winner })}</p>}
                     <div className="flex flex-wrap justify-center gap-3 mb-8">

@@ -94,7 +94,8 @@ const CreateRoom = ({ user }) => {
         avatarImageName: user?.avatarImageName || '',
         playerId: user?.id || null,
         clientKey: user?.clientKey || null,
-        selectedTopics: selectedTopics
+        selectedTopics: selectedTopics,
+        timer: timer
       })
       console.log('Room created:', response.data)
       const { roomId, code, sessionId, playerName } = response.data
@@ -138,9 +139,9 @@ const CreateRoom = ({ user }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
+    <div className="min-h-screen app-page-bg relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
       
-      <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-4xl shadow-2xl border border-white/15">
+      <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-4xl shadow-2xl">
         <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg shadow-game-yellow/20">
           <span className="text-2xl sm:text-4xl pt-2">➕</span>
         </div>
@@ -301,49 +302,21 @@ const CreateRoom = ({ user }) => {
               <input
                 type="range"
                 min="10"
-                max="60"
+                max="120"
                 step="5"
                 value={timer}
                 onChange={(e) => setTimer(Number(e.target.value))}
                 className="w-full h-3 bg-white/10 rounded-full appearance-none cursor-pointer slider"
                 style={{
-                  background: `linear-gradient(${isRTL ? 'to left' : 'to right'}, #FACC15 0%, #FACC15 ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) 100%)`
+                  background: `linear-gradient(${isRTL ? 'to left' : 'to right'}, #FACC15 0%, #FACC15 ${((timer - 10) / 110) * 100}%, rgba(255,255,255,0.1) ${((timer - 10) / 110) * 100}%, rgba(255,255,255,0.1) 100%)`
                 }}
               />
               <div className="flex justify-between text-white/70 text-xs sm:text-sm mt-2">
                 <span>10 {t('common.seconds')}</span>
-                <span>60 {t('common.second')}</span>
+                <span>120 {t('common.seconds')}</span>
               </div>
             </div>
           </div>
-
-          {/* Calculation Timer Slider */}
-          <div>
-            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
-              {t('createRoom.calcTime')}
-              <span className="text-game-orange font-bold ms-2">{calcTimer} {t('common.second')}</span>
-            </label>
-            <div className="relative">
-              <input
-                type="range"
-                min="5"
-                max="30"
-                step="5"
-                value={calcTimer}
-                onChange={(e) => setCalcTimer(Number(e.target.value))}
-                className="w-full h-3 bg-white/10 rounded-full appearance-none cursor-pointer slider"
-                style={{
-                  background: `linear-gradient(${isRTL ? 'to left' : 'to right'}, #F97316 0%, #F97316 ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) 100%)`
-                }}
-              />
-              <div className="flex justify-between text-white/70 text-xs sm:text-sm mt-2">
-                <span>5 {t('common.seconds')}</span>
-                <span>30 {t('common.second')}</span>
-              </div>
-            </div>
-          </div>
-          
-
           {error && (
             <div className="bg-red-500/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-2xl">
               {error}

@@ -154,29 +154,32 @@ const Lobby = ({ user, onLogout }) => {
     <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden">
 
       {/* Navbar */}
-      <nav className="relative z-10 bg-white/5 backdrop-blur-2xl border-b border-white/10 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/lobby')}>
-            <div className="w-12 h-12 bg-linear-to-br from-game-yellow to-game-orange rounded-xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-105 transition-transform">
-              <span className="text-2xl pt-2">🎓</span>
+      <nav dir="rtl" className="relative z-10 bg-white/5 backdrop-blur-2xl border-b border-white/10 px-3 sm:px-6 py-3">
+        <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Logo + language switcher */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/lobby')}>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-linear-to-br from-game-yellow to-game-orange rounded-xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-105 transition-transform">
+                <span className="text-xl sm:text-2xl pt-1 sm:pt-2">🎓</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+                Andary
+              </h1>
             </div>
-            <h1 className="text-2xl font-extrabold text-white">
-              Andary
-            </h1>
+            <LanguageSwitcher />
           </div>
 
           {/* user info & logout */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* user profile */}
             <button
               onClick={() => navigate('/profile')}
-              className="flex items-center gap-3 bg-white/5 hover:bg-white/10 px-4 py-2.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20 group cursor-pointer"
+              className="flex items-center gap-2 sm:gap-3 bg-white/5 hover:bg-white/10 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-full bg-linear-to-br from-game-yellow to-game-orange flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:shadow-game-yellow/20 transition-all">
                 <span className="text-xl pt-1">{user?.avatar}</span>
               </div>
-              <span className="text-white/90 font-semibold">{user?.username || 'Player'}</span>
+              <span className="text-white/90 font-semibold max-w-24 sm:max-w-none truncate">{user?.username || 'Player'}</span>
               <svg className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -185,11 +188,10 @@ const Lobby = ({ user, onLogout }) => {
             {/* logout button */}
             <button
               onClick={handleLogout}
-              className="bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-400 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-red-500/30 cursor-pointer"
+              className="bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-400 font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-red-500/30 cursor-pointer"
             >
               {t('lobby.logout')}
             </button>
-            <LanguageSwitcher />
           </div>
         </div>
       </nav>

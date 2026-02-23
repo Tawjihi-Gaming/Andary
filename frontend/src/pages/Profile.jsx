@@ -15,9 +15,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
 
-  // Mock XP for frontend testing (replace with user?.xp when backend is ready)
-  const MOCK_XP = 720
-  const xp = user?.xp || MOCK_XP
+  const xp = user?.xp || 0
   const level = getLevel(xp)
   const progress = getProgress(xp)
   const progressPercent = (progress / XP_PER_LEVEL) * 100
@@ -29,7 +27,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   const [selectedAvatar, setSelectedAvatar] = useState(
     AVATARS.find(a => a.emoji === user?.avatar) || AVATARS[0]
   )
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -42,126 +39,85 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   }
 
   // Update username
-  // POST /player/:{id}/  {username}
   const handleUpdateUsername = async () => {
-    if (!username.trim())
-    {
-      return
-    }
+    if (!username.trim()) return
     setLoading(true)
-    try
-    {
-    /*
-      API call to update username
-      await api.post('/player/:{id}/', {username})
-    */
+    try {
+      await api.post('/auth/edit', { username })
       onUpdateUser?.({ ...user, username })
       showMessage(t('profile.usernameUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update username error:', error)
-      showMessage(t('profile.usernameUpdateFailed'), 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.usernameUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update email
-  // POST /player/:{id}/  {email}
   const handleUpdateEmail = async () => {
-    if (!email.trim())
-    {
-      return
-    }
+    if (!email.trim()) return
     setLoading(true)
-    try
-    {
-    /*
-      API call to update email
-      await api.post('/player/:{id}/', {email})
-    */
+    try {
+      await api.post('/auth/edit', { email })
       onUpdateUser?.({ ...user, email })
       showMessage(t('profile.emailUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update email error:', error)
-      showMessage(t('profile.emailUpdateFailed'), 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.emailUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update avatar
-  // POST /player/:{id}/  {avatar: selectedAvatar.emoji}
   const handleUpdateAvatar = async () => {
     setLoading(true)
-    try
-    {
-      /*
-      API call to update avatar
-      await api.post('/player/:{id}/', {avatar: selectedAvatar.emoji})
-      */
+    try {
+      await api.post('/auth/edit', { avatarImageName: selectedAvatar.emoji })
       onUpdateUser?.({ ...user, avatar: selectedAvatar.emoji })
       showMessage(t('profile.avatarUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update avatar error:', error)
-      showMessage(t('profile.avatarUpdateFailed'), 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.avatarUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update password
-  // POST /auth/update-password  {currentPassword, newPassword}
   const handleUpdatePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword)
-    {
+    if (!newPassword || !confirmPassword) {
       showMessage(t('profile.fillAllPasswordFields'), 'error')
       return
     }
-    if (newPassword !== confirmPassword)
-    {
+
+    if (newPassword !== confirmPassword) {
       showMessage(t('profile.passwordsDoNotMatch'), 'error')
       return
     }
-    if (newPassword.length < 6)
-    {
+    if (newPassword.length < 6) {
       showMessage(t('profile.passwordMinLength'), 'error')
       return
     }
     setLoading(true)
-    try
-    {
-    /*
-      API call to update password
-      await api.post('/auth/update-password', { currentPassword, newPassword })
-    */
+    try {
+      await api.post('/auth/edit', { password: newPassword })
       showMessage(t('profile.passwordUpdated'))
-      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update password error:', error)
-      showMessage(t('profile.passwordUpdateFailed'), 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.passwordUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
@@ -171,7 +127,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setUsername(user?.username || '')
     setEmail(user?.email || '')
     setSelectedAvatar(AVATARS.find(a => a.emoji === user?.avatar) || AVATARS[0])
-    setCurrentPassword('')
     setNewPassword('')
     setConfirmPassword('')
   }
@@ -180,8 +135,13 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setIsLogoutPopupOpen(true)
   }
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     setIsLogoutPopupOpen(false)
+    try {
+      await api.post('/auth/logout')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
     if (onLogout) {
       onLogout()
     }
@@ -373,13 +333,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   <div className="flex flex-col gap-3">
                     <input
                       type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
-                      placeholder={t('profile.currentPassword')}
-                    />
-                    <input
-                      type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
@@ -396,15 +349,15 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                       <button
                         onClick={handleUpdatePassword}
                         disabled={loading}
-                        className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50"
+                        className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                       >
-                        {loading ? '...' : 'تحديث كلمة المرور'}
+                        {loading ? '...' : t('common.save')}
                       </button>
                       <button
                         onClick={handleCancel}
                         className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                       >
-                        إلغاء
+                        {t('common.cancel')}
                       </button>
                     </div>
                   </div>

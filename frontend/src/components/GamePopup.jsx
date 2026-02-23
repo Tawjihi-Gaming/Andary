@@ -20,7 +20,7 @@ const GamePopup = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300"
+              className="px-4 py-2 rounded-xl cursor-pointer border border-white/20 text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300"
             >
               {cancelText}
             </button>
@@ -28,7 +28,7 @@ const GamePopup = ({
           <button
             type="button"
             onClick={onConfirm}
-            className="px-4 py-2 rounded-xl bg-game-yellow text-gray-900 font-bold hover:brightness-105 transition-all duration-300"
+            className="px-4 py-2 rounded-xl cursor-pointer bg-game-yellow text-gray-900 font-bold hover:brightness-50 transition-all duration-300"
           >
             {confirmText}
           </button>

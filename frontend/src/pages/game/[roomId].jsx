@@ -383,10 +383,10 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── TOPIC SELECTION ──────────────────────────────────────────────────────
     if (phase === 'topic-selection') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative">
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
                 <button
                     onClick={handleRequestLeave}
-                    className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 transition-all duration-300"
+                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
@@ -421,10 +421,10 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── COLLECTING FAKE ANSWERS ──────────────────────────────────────────────
     if (phase === 'collecting-fakes') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative">
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
                 <button
                     onClick={handleRequestLeave}
-                    className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 transition-all duration-300"
+                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
@@ -467,10 +467,10 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── CHOOSING ANSWER (from real + fake) ───────────────────────────────────
     if (phase === 'choosing-answer') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative">
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
                 <button
                     onClick={handleRequestLeave}
-                    className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 transition-all duration-300"
+                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
@@ -508,10 +508,10 @@ const Game = ({ user: authenticatedUser }) => {
         const medals = ['🥇', '🥈', '🥉']
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative">
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
                 <button
                     onClick={handleRequestLeave}
-                    className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 transition-all duration-300"
+                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>

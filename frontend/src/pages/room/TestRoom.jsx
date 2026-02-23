@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const TestRoom = () => {
+    const { t } = useTranslation()
     // Mock data
     const mockUser = {
         id: 1,
@@ -59,7 +61,7 @@ const TestRoom = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden flex items-center justify-center p-6">
             <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-3/4 max-w-6xl shadow-2xl border border-white/15">
-                <h1 className="text-3xl font-extrabold text-white mb-2 text-center">اختبار غرفة اللعب</h1>
+                <h1 className="text-3xl font-extrabold text-white mb-2 text-center">{t('testRoom.title')}</h1>
                 <p className="text-white/50 text-center mb-4">
                     Room ID: {mockRoomId} | Code: {mockCode}
                 </p>
@@ -69,7 +71,7 @@ const TestRoom = () => {
 
                 {/* Players List */}
                 <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-white mb-4 text-center">اللاعبون ({players.length})</h3>
+                    <h3 className="text-2xl font-bold text-white mb-4 text-center">{t('testRoom.players')} ({players.length})</h3>
                     <div className="grid grid-cols-4 gap-4 max-h-64 overflow-y-auto">
                         {players.map((player) => (
                             <div 
@@ -90,7 +92,7 @@ const TestRoom = () => {
                                         {player.id === mockRoomOwnerId && ' 👑'}
                                     </p>
                                     {player.isReady && player.id !== mockRoomOwnerId && (
-                                        <span className="text-green-400 text-sm font-bold">✓ جاهز</span>
+                                        <span className="text-green-400 text-sm font-bold">✓ {t('common.ready')}</span>
                                     )}
                                 </div>
                             </div>
@@ -106,31 +108,31 @@ const TestRoom = () => {
                     {isCopied ? (
                         <>
                             <span>✓</span>
-                            <span>تم النسخ!</span>
+                            <span>{t('testRoom.copied')}</span>
                         </>
                     ) : (
                         <>
                             <span>📋</span>
-                            <span>نسخ كود الغرفة: {mockCode}</span>
+                            <span>{t('testRoom.copyRoomCode')}: {mockCode}</span>
                         </>
                     )}
                 </button>
 
                 {/* Test Controls */}
                 <div className="mt-6 p-4 bg-purple-500/20 border border-purple-500/30 rounded-lg">
-                    <p className="text-purple-400 font-bold mb-3 text-center">أدوات الاختبار:</p>
+                    <p className="text-purple-400 font-bold mb-3 text-center">{t('testRoom.testTools')}:</p>
                     <div className="flex gap-2">
                         <button
                             onClick={addPlayer}
                             className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 font-bold py-2 rounded-lg transition-all border border-green-500/30"
                         >
-                            ➕ إضافة لاعب
+                            ➕ {t('testRoom.addPlayer')}
                         </button>
                         <button
                             onClick={removePlayer}
                             className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-2 rounded-lg transition-all border border-red-500/30"
                         >
-                            ➖ حذف لاعب
+                            ➖ {t('testRoom.removePlayer')}
                         </button>
                     </div>
                     <p className="text-purple-300 text-xs mt-3 text-center">

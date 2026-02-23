@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import LoginPage from './pages/LogginPage.jsx'
 import Lobby from './pages/Lobby.jsx'
 import Profile from './pages/Profile.jsx'
@@ -17,6 +18,7 @@ const createClientKey = () => {
 }
 
 function App() {
+  const { t } = useTranslation()
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true'
   })
@@ -97,7 +99,7 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center">
-        <span className="text-white text-2xl animate-pulse">...جاري التحميل</span>
+        <span className="text-white text-2xl animate-pulse">{t('common.loading')}</span>
       </div>
     )
   }

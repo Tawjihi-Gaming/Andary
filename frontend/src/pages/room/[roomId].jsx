@@ -1,11 +1,13 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSignalR } from '../../context/SignalRContext'
 
 const GameRoom = ({ user }) => {
     const { roomId } = useParams()
     const location = useLocation()
     const navigate = useNavigate()
+    const { t } = useTranslation()
     const { startConnection, stopConnection, getConnection } = useSignalR()
     const code = location.state?.code
     const isPrivateRoom = Boolean(location.state?.isPrivate)
@@ -25,7 +27,7 @@ const GameRoom = ({ user }) => {
 
     // The current user is the owner if their sessionId matches the room owner
     const isOwner = sessionId && sessionId === roomOwnerId
-    const roomTypeLabel = isPrivateRoom ? 'خاصة' : 'عامة'
+    const roomTypeLabel = isPrivateRoom ? t('room.private') : t('room.public')
     const displayedCode = isPrivateRoom && !isOwner ? 'Hidden' : (code || 'N/A')
     const canCopyCode = Boolean(code) && (!isPrivateRoom || isOwner)
 
@@ -242,10 +244,10 @@ const GameRoom = ({ user }) => {
             <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl border border-white/15">
                 <h1 className="text-xl sm:text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
                 <p className="text-white/80 text-center mb-4 text-xs sm:text-sm">
-                    النوع: {roomTypeLabel}
+                    {t('room.type')} {roomTypeLabel}
                 </p>
                 <p className="text-white/80 text-center mb-4 sm:mb-6 text-xs sm:text-sm">
-                    {roomOwnerName ? `صاحب الغرفة: ${roomOwnerName}` : 'صاحب الغرفة غير معروف'}
+                    {roomOwnerName ? t('room.roomOwner', { name: roomOwnerName }) : t('room.roomOwnerUnknown')}
                 </p>
                 
                 {/* Connection Status */}
@@ -255,15 +257,15 @@ const GameRoom = ({ user }) => {
                         connectionStatus === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 
                         'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                     }`}>
-                        {connectionStatus === 'connected' ? '🟢 متصل' : 
-                         connectionStatus === 'error' ? '🔴 خطأ في الاتصال' : 
-                         '🟡 جاري الاتصال...'}
+                        {connectionStatus === 'connected' ? t('room.connected') : 
+                         connectionStatus === 'error' ? t('room.connectionError') : 
+                         t('room.connecting')}
                     </span>
                 </div>
 
                 {/* Players List */}
                 <div className="mb-4 sm:mb-6">
-                    <h3 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4 text-center">اللاعبون ({players.length})</h3>
+                    <h3 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4 text-center">{t('room.playersCount', { count: players.length })}</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4 max-h-64 overflow-y-auto">
                         {players.map((player) => (
                             <div 
@@ -283,7 +285,7 @@ const GameRoom = ({ user }) => {
                                         {player.sessionId === roomOwnerId && ' 👑'}
                                     </p>
                                     {player.isReady && player.sessionId !== roomOwnerId && (
-                                        <span className="text-green-400 text-xs sm:text-sm font-bold">✓ جاهز</span>
+                                        <span className="text-green-400 text-xs sm:text-sm font-bold">✓ {t('common.ready')}</span>
                                     )}
                                 </div>
                             </div>
@@ -299,12 +301,12 @@ const GameRoom = ({ user }) => {
                         {isCopied ? (
                             <>
                                 <span>✓</span>
-                                <span>تم النسخ!</span>
+                                <span>{t('room.copied')}</span>
                             </>
                         ) : (
                             <>
                                 <span>📋</span>
-                                <span>نسخ كود الغرفة: {code}</span>
+                                <span>{t('room.copyRoomCode', { code })}</span>
                             </>
                         )}
                     </button>
@@ -314,8 +316,8 @@ const GameRoom = ({ user }) => {
                     isOwner && (
                         <>
                             <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
-                                <p className="text-blue-400 font-bold text-sm sm:text-base">أنت صاحب الغرفة</p>
-                                <p className="text-blue-300 text-xs sm:text-sm">يمكنك بدء اللعبة عندما يكون الجميع جاهزًا!</p>
+                                <p className="text-blue-400 font-bold text-sm sm:text-base">{t('room.youAreOwner')}</p>
+                                <p className="text-blue-300 text-xs sm:text-sm">{t('room.ownerCanStart')}</p>
                             </div>
                             <button
                                 onClick={startGame}
@@ -326,7 +328,7 @@ const GameRoom = ({ user }) => {
                                         : 'bg-gray-500/30 text-white/40 cursor-not-allowed'
                                 }`}
                             >
-                                {allPlayersReady ? 'بدء اللعبة' : 'في انتظار جاهزية جميع اللاعبين...'}
+                                {allPlayersReady ? t('room.startGame') : t('room.waitingForPlayers')}
                             </button>
                         </>
                     )
@@ -339,19 +341,19 @@ const GameRoom = ({ user }) => {
                                     onClick={handleReadyUp}
                                     className="mt-3 sm:mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
                                 >
-                                    جاهز
+                                    {t('common.ready')}
                                 </button>
                             ) : (
                                 <>
                                     <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-green-500/20 border border-green-500/30 rounded-lg text-center">
-                                        <p className="text-green-400 font-bold text-base sm:text-lg">✓ أنت جاهز!</p>
-                                        <p className="text-green-300 text-xs sm:text-sm mt-1 sm:mt-2">في انتظار صاحب الغرفة لبدء اللعبة...</p>
+                                        <p className="text-green-400 font-bold text-base sm:text-lg">{t('room.youAreReady')}</p>
+                                        <p className="text-green-300 text-xs sm:text-sm mt-1 sm:mt-2">{t('room.waitingForOwner')}</p>
                                     </div>
                                     <button
                                         onClick={handleUnready}
                                         className="mt-3 sm:mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-2 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-red-500/30"
                                     >
-                                        إلغاء الجاهزية
+                                        {t('room.cancelReady')}
                                     </button>
                                 </>
                             )}
@@ -365,7 +367,7 @@ const GameRoom = ({ user }) => {
                     onClick={handleBackToLobby}
                     className="mt-4 sm:mt-6 w-full bg-white/5 hover:bg-white/10 text-white/90 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
                 >
-                    العودة للردهة
+                    {t('room.backToLobby')}
                 </button>
             </div>
         </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const AVATARS = [
   { id: 'fox', emoji: '🦊', bg: 'from-orange-400 to-amber-500' },
@@ -16,16 +17,17 @@ const AVATARS = [
 ]
 
 const AvatarPicker = ({ selected, onSelect }) => {
+  const { t } = useTranslation()
   return (
     <div className="avatar-picker">
-      <p className="text-white/80 text-sm text-center mb-3">اختر صورتك الرمزية</p>
+      <p className="text-white/80 text-sm text-center mb-3">{t('avatar.chooseAvatar')}</p>
       <div className="grid grid-cols-6 gap-2 justify-items-center">
         {AVATARS.map((avatar) => (
           <button
             key={avatar.id}
             type="button"
             onClick={() => onSelect(avatar)}
-            className={`avatar-option w-12 h-12 rounded-full bg-linear-to-br ${avatar.bg} flex items-center justify-center text-2xl transition-all duration-200 border-0 ${
+            className={`avatar-option w-12 h-12 rounded-full bg-linear-to-br ${avatar.bg} flex items-center pt-1 justify-center text-2xl transition-all duration-200 border-0 ${
               selected?.id === avatar.id
                 ? 'border-3 border-game-yellow scale-110 shadow-[0_0_15px_rgba(251,191,36,0.6)]'
                 : 'hover:border-3 hover:border-white/50 hover:scale-105'

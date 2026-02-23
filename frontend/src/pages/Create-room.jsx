@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '../api/axios' 
 
 const CreateRoom = ({ user }) => {
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === 'ar'
   const [roomName, setRoomName] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
   const [error, setError] = useState('')
@@ -67,17 +70,17 @@ const CreateRoom = ({ user }) => {
     setError('')
 
     if (availableTopics.length === 0) {
-      setError('لا يمكن إنشاء غرفة بدون مواضيع من قاعدة البيانات (Cannot create room without database topics)')
+      setError(t('createRoom.noTopicsError'))
       return
     }
     
     if (selectedTopics.length === 0) {
-      setError('يجب اختيار موضوع واحد على الأقل (Please select at least one topic)')
+      setError(t('createRoom.selectTopicError'))
       return
     }
   
     if (selectedTopics.length > 8) {
-      setError('يجب اختيار 8 مواضيع كحد أقصى (Please select no more than 8 topics)')
+      setError(t('createRoom.maxTopicsError'))
       return
     }
 
@@ -126,20 +129,20 @@ const CreateRoom = ({ user }) => {
       
       <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-4xl shadow-2xl border border-white/15">
         <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg shadow-game-yellow/20">
-          <span className="text-2xl sm:text-4xl">➕</span>
+          <span className="text-2xl sm:text-4xl pt-2">➕</span>
         </div>
         
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-2 text-center">إنشاء غرفة</h1>
-        <p className="text-white/80 text-center mb-5 sm:mb-8 text-base sm:text-lg">Create a new game room</p>
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-2 text-center">{t('createRoom.title')}</h1>
+        <p className="text-white/80 text-center mb-5 sm:mb-8 text-base sm:text-lg">{t('createRoom.subtitle')}</p>
         
         <form onSubmit={handleCreateRoom} className="space-y-5">
           
           {/* Room Name Input */}
           <div>
-            <label className="block text-white/90 font-semibold mb-2 text-base sm:text-lg">اسم الغرفة</label>
+            <label className="block text-white/90 font-semibold mb-2 text-base sm:text-lg">{t('createRoom.roomName')}</label>
             <input
               type="text"
-              placeholder="Room Name"
+              placeholder={t('createRoom.roomNamePlaceholder')}
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               className="w-full bg-white/10 text-white text-base sm:text-lg placeholder:text-white/50 rounded-2xl py-3 px-4 sm:py-4 sm:px-6 border border-white/15 focus:border-game-yellow/50 focus:bg-white/15 focus:shadow-lg focus:shadow-game-yellow/10 transition-all duration-300 focus:outline-none"
@@ -149,14 +152,14 @@ const CreateRoom = ({ user }) => {
 
           {/* Room Type Buttons */}
           <div>
-            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">نوع الغرفة</label>
+            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">{t('createRoom.roomType')}</label>
             <div className="grid grid-cols-2 gap-3">
               
               {/* Public Button */}
               <button
                 type="button"
                 onClick={() => setIsPrivate(false)}
-                className={`group relative p-3 sm:p-6 rounded-2xl border-2 transition-all duration-300 ${
+                className={`group relative p-3 sm:p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
                   !isPrivate
                     ? 'bg-gradient-to-br from-game-green/30 to-emerald-500/30 border-game-green/50 shadow-lg shadow-game-green/20'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
@@ -165,14 +168,14 @@ const CreateRoom = ({ user }) => {
                 <div className="flex flex-col items-center gap-1 sm:gap-2">
                   <span className="text-2xl sm:text-4xl">🌍</span>
                   <span className={`font-bold text-base sm:text-lg ${!isPrivate ? 'text-game-green' : 'text-white/70'}`}>
-                    عامة
+                    {t('createRoom.public')}
                   </span>
                   <span className={`text-xs sm:text-sm ${!isPrivate ? 'text-game-green/70' : 'text-white/60'}`}>
                     Public
                   </span>
                 </div>
                 {!isPrivate && (
-                  <div className="absolute top-2 right-2 w-5 h-5 bg-game-green rounded-full flex items-center justify-center">
+                  <div className="absolute top-2 end-2 w-5 h-5 bg-game-green rounded-full flex items-center justify-center">
                     <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -184,7 +187,7 @@ const CreateRoom = ({ user }) => {
               <button
                 type="button"
                 onClick={() => setIsPrivate(true)}
-                className={`group relative p-3 sm:p-6 rounded-2xl border-2 transition-all duration-300 ${
+                className={`group relative p-3 sm:p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
                   isPrivate
                     ? 'bg-gradient-to-br from-game-orange/30 to-red-500/30 border-game-orange/50 shadow-lg shadow-game-orange/20'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
@@ -193,14 +196,14 @@ const CreateRoom = ({ user }) => {
                 <div className="flex flex-col items-center gap-1 sm:gap-2">
                   <span className="text-2xl sm:text-4xl">🔒</span>
                   <span className={`font-bold text-base sm:text-lg ${isPrivate ? 'text-game-orange' : 'text-white/70'}`}>
-                    خاصة
+                    {t('createRoom.private')}
                   </span>
                   <span className={`text-xs sm:text-sm ${isPrivate ? 'text-game-orange/70' : 'text-white/60'}`}>
                     Private
                   </span>
                 </div>
                 {isPrivate && (
-                  <div className="absolute top-2 right-2 w-5 h-5 bg-game-orange rounded-full flex items-center justify-center">
+                  <div className="absolute top-2 end-2 w-5 h-5 bg-game-orange rounded-full flex items-center justify-center">
                     <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -214,15 +217,15 @@ const CreateRoom = ({ user }) => {
           {/* Topics Selection */}
           <div>
             <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
-              اختر المواضيع (اختر 8 على الأكثر)
+              {t('createRoom.selectTopics')}
               <span className="text-xs sm:text-sm block text-white/70 mt-1">
-                Select topics ({selectedTopics.length}/8 maximum)
+                {t('createRoom.topicsCount', { count: selectedTopics.length })}
               </span>
             </label>
             
             <div className="bg-white/5 rounded-2xl p-4 max-h-60 overflow-y-auto border border-white/10">
               {topicsLoading ? (
-                <p className="text-white/70 text-sm text-center py-6">Loading topics from database...</p>
+                <p className="text-white/70 text-sm text-center py-6">{t('createRoom.loadingTopics')}</p>
               ) : topicsError ? (
                 <p className="text-red-300 text-sm text-center py-6">{topicsError}</p>
               ) : (
@@ -243,7 +246,7 @@ const CreateRoom = ({ user }) => {
                         {topic}
                       </span>
                       {selectedTopics.includes(topic) && (
-                        <div className="absolute top-2 right-2 w-5 h-5 bg-game-yellow rounded-full flex items-center justify-center">
+                        <div className="absolute top-2 end-2 w-5 h-5 bg-game-yellow rounded-full flex items-center justify-center">
                           <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -256,20 +259,20 @@ const CreateRoom = ({ user }) => {
             </div>
           </div>
           <div>
-            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">عدد الجولات</label>
+            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">{t('createRoom.numberOfRounds')}</label>
             <div className="flex gap-4">
               {roundOptions.map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => setRounds(option)}
-                  className={`flex-1 px-3 py-2 sm:px-6 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-200 border-2 ${
+                  className={`flex-1 px-3 py-2 sm:px-6 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-200 border-2 cursor-pointer ${
                     rounds === option
                       ? 'bg-game-yellow/20 border-game-yellow text-game-yellow shadow-lg shadow-game-yellow/20'
                       : 'bg-white/5 border-white/10 text-white/90 hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
-                  {option} جولات
+                  {option} {t('common.rounds')}
                 </button>
               ))}
             </div>
@@ -278,8 +281,8 @@ const CreateRoom = ({ user }) => {
           {/* Answer Timer Slider */}
           <div>
             <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
-              وقت الإجابة على السؤال
-              <span className="text-game-yellow font-bold ml-2">{timer} ثانية</span>
+              {t('createRoom.answerTime')}
+              <span className="text-game-yellow font-bold ms-2">{timer} {t('common.second')}</span>
             </label>
             <div className="relative">
               <input
@@ -291,12 +294,12 @@ const CreateRoom = ({ user }) => {
                 onChange={(e) => setTimer(Number(e.target.value))}
                 className="w-full h-3 bg-white/10 rounded-full appearance-none cursor-pointer slider"
                 style={{
-                  background: `linear-gradient(to left, #FACC15 0%, #FACC15 ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) 100%)`
+                  background: `linear-gradient(${isRTL ? 'to left' : 'to right'}, #FACC15 0%, #FACC15 ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) ${((timer - 10) / 50) * 100}%, rgba(255,255,255,0.1) 100%)`
                 }}
               />
               <div className="flex justify-between text-white/70 text-xs sm:text-sm mt-2">
-                <span>10 ثواني</span>
-                <span>60 ثانية</span>
+                <span>10 {t('common.seconds')}</span>
+                <span>60 {t('common.second')}</span>
               </div>
             </div>
           </div>
@@ -304,8 +307,8 @@ const CreateRoom = ({ user }) => {
           {/* Calculation Timer Slider */}
           <div>
             <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
-              وقت حساب النتيجة
-              <span className="text-game-orange font-bold ml-2">{calcTimer} ثانية</span>
+              {t('createRoom.calcTime')}
+              <span className="text-game-orange font-bold ms-2">{calcTimer} {t('common.second')}</span>
             </label>
             <div className="relative">
               <input
@@ -317,12 +320,12 @@ const CreateRoom = ({ user }) => {
                 onChange={(e) => setCalcTimer(Number(e.target.value))}
                 className="w-full h-3 bg-white/10 rounded-full appearance-none cursor-pointer slider"
                 style={{
-                  background: `linear-gradient(to left, #F97316 0%, #F97316 ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) 100%)`
+                  background: `linear-gradient(${isRTL ? 'to left' : 'to right'}, #F97316 0%, #F97316 ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) ${((calcTimer - 5) / 25) * 100}%, rgba(255,255,255,0.1) 100%)`
                 }}
               />
               <div className="flex justify-between text-white/70 text-xs sm:text-sm mt-2">
-                <span>5 ثواني</span>
-                <span>30 ثانية</span>
+                <span>5 {t('common.seconds')}</span>
+                <span>30 {t('common.second')}</span>
               </div>
             </div>
           </div>
@@ -339,7 +342,7 @@ const CreateRoom = ({ user }) => {
             type="submit"
             className="w-full bg-gradient-to-r from-game-yellow to-game-orange hover:from-game-yellow hover:to-game-orange text-white font-bold py-4 sm:py-5 text-base sm:text-lg rounded-2xl transition-all duration-300 shadow-lg shadow-game-yellow/20 hover:shadow-game-yellow/30 hover:scale-[1.02] active:scale-[0.98]"
           >
-            إنشاء الغرفة
+            {t('createRoom.createButton')}
           </button>
 
           {/* Back to Lobby */}
@@ -348,7 +351,7 @@ const CreateRoom = ({ user }) => {
             onClick={() => navigate('/lobby')}
             className="w-full bg-white/5 hover:bg-white/10 text-white/90 font-bold py-3 sm:py-4 text-base sm:text-lg rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
           >
-            رجوع
+            {t('common.back')}
           </button>
         </form>
       </div>

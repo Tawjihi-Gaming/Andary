@@ -78,5 +78,5 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
-*.env
+.env
 Migrations/

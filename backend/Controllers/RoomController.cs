@@ -74,8 +74,6 @@ public class RoomController : ControllerBase
         {
             roomId = room.RoomId,
             code = room.Code,
-            isPrivate = room.Type == RoomType.Private,
-            roomType = room.Type.ToString(),
             name = room.Name,
             sessionId = owner.SessionId,
             playerName = owner.DisplayName

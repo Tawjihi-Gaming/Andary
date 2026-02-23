@@ -2,6 +2,25 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSignalR } from '../../context/SignalRContext'
+import { loadRoomSession, saveRoomSession, clearRoomSession } from '../../utils/roomSession'
+import GamePopup from '../../components/GamePopup'
+
+const normalizePlayer = (player) => ({
+    avatarUrl: player?.avatarUrl || player?.avatarImageName || '',
+    sessionId: player?.sessionId || '',
+    name: player?.name || player?.displayName || 'Player',
+    isReady: Boolean(player?.isReady),
+})
+
+const saveGameSessionSnapshot = ({ roomId, sessionId, user, state }) => {
+    if (!roomId || !sessionId || !state) return
+    localStorage.setItem('andary_game_session', JSON.stringify({
+        roomId,
+        sessionId,
+        user,
+        gameState: state,
+    }))
+}
 
 const GameRoom = ({ user }) => {
     const { roomId } = useParams()
@@ -9,21 +28,28 @@ const GameRoom = ({ user }) => {
     const navigate = useNavigate()
     const { t } = useTranslation()
     const { startConnection, stopConnection, getConnection } = useSignalR()
-    const code = location.state?.code
-    const isPrivateRoom = Boolean(location.state?.isPrivate)
-    const roomName = location.state?.roomName
-    const sessionId = location.state?.sessionId
-    const timer = location.state?.timer || 30
-    const calcTimer = location.state?.calcTimer || 20
-    const rounds = location.state?.rounds || 5
+    const savedRoomSession = loadRoomSession(roomId)
+    const roomState = { ...(savedRoomSession || {}), ...(location.state || {}) }
+    const code = roomState.code
+    const isPrivateRoom = Boolean(roomState.isPrivate)
+    const roomName = roomState.roomName || `Room ${roomId}`
+    const sessionId = roomState.sessionId
+    const timer = roomState.timer || 30
+    const calcTimer = roomState.calcTimer || 20
+    const rounds = roomState.rounds || 5
 
     const [connectionStatus, setConnectionStatus] = useState('connecting')
     const [players, setPlayers] = useState([])
     const [gameState, setGameState] = useState(null)
-    const [roomOwnerId, setRoomOwnerId] = useState(location.state?.ownerId)
-    const [roomOwnerName, setRoomOwnerName] = useState(location.state?.ownerName)
+    const [roomOwnerId, setRoomOwnerId] = useState(roomState.ownerId)
+    const [roomOwnerName, setRoomOwnerName] = useState(roomState.ownerName)
     const [isReady, setIsReady] = useState(false)
     const [isCopied, setIsCopied] = useState(false)
+    const [closedRoomPopup, setClosedRoomPopup] = useState({
+        open: false,
+        message: '',
+        reason: '',
+    })
 
     // The current user is the owner if their sessionId matches the room owner
     const isOwner = sessionId && sessionId === roomOwnerId
@@ -86,18 +112,37 @@ const GameRoom = ({ user }) => {
             if (connection) {
                 await connection.invoke('LeaveRoom', roomId, sessionId)
             }
+            clearRoomSession()
             await stopConnection()
             navigate('/lobby')
         } catch (error) {
             console.error('Error leaving room:', error)
+            clearRoomSession()
             await stopConnection()
             navigate('/lobby')
         }
     }
 
     useEffect(() => {
+        if (!roomId || !sessionId) return
+        saveRoomSession({
+            roomId,
+            code,
+            isPrivate: isPrivateRoom,
+            roomName,
+            sessionId,
+            ownerId: roomOwnerId,
+            ownerName: roomOwnerName,
+            timer,
+            calcTimer,
+            rounds,
+        })
+    }, [roomId, sessionId, code, isPrivateRoom, roomName, roomOwnerId, roomOwnerName, timer, calcTimer, rounds])
+
+    useEffect(() => {
         if (!sessionId) {
             console.error('No sessionId found — cannot connect to room')
+            clearRoomSession()
             navigate('/lobby')
             return
         }
@@ -117,12 +162,11 @@ const GameRoom = ({ user }) => {
                 // Lobby state updated (player list with ready status)
                 connection.on('LobbyUpdated', (lobbyState) => {
                     console.log('Lobby updated:', lobbyState)
-                    setPlayers(lobbyState.map(p => ({
-                        avatarUrl: p.avatarUrl,
-                        sessionId: p.sessionId,
-                        name: p.name,
-                        isReady: p.isReady
-                    })))
+                    setPlayers((lobbyState || []).map(normalizePlayer))
+                    const me = (lobbyState || []).find(p => p.sessionId === sessionId)
+                    if (me) {
+                        setIsReady(Boolean(me.isReady))
+                    }
                 })
 
                 // All players ready
@@ -134,9 +178,10 @@ const GameRoom = ({ user }) => {
                 connection.on('GameStarted', (state) => {
                     console.log('Game started:', state)
                     setGameState(state)
+                    saveGameSessionSnapshot({ roomId, sessionId, user, state })
                     navigate(`/game/${roomId}`, {
                         state: {
-                            ...location.state,  // passes timer, calcTimer, rounds, sessionId, user etc.
+                            ...roomState,
                             gameState: state,
                         }
                     })
@@ -146,8 +191,9 @@ const GameRoom = ({ user }) => {
                 connection.on('ChooseRoundTopic', (state) => {
                     console.log('Choose round topic:', state)
                     setGameState(state)
+                    saveGameSessionSnapshot({ roomId, sessionId, user, state })
                     navigate(`/game/${roomId}`, {
-                        state: { user, roomId, code, sessionId, gameState: state }
+                        state: { ...roomState, user, roomId, code, sessionId, gameState: state }
                     })
                 })
 
@@ -185,7 +231,9 @@ const GameRoom = ({ user }) => {
                 // Player disconnected
                 connection.on('PlayerDisconnected', (data) => {
                     console.log('Player disconnected:', data)
-                    setPlayers(prev => prev.filter(p => p.sessionId !== data.sessionId))
+                    if (!data?.temporary) {
+                        setPlayers(prev => prev.filter(p => p.sessionId !== data.sessionId))
+                    }
                 })
 
                 // Room state
@@ -193,21 +241,41 @@ const GameRoom = ({ user }) => {
                     console.log('Room state received:', state)
                     setGameState(state)
                     if (state.players) {
-                        setPlayers(state.players)
+                        setPlayers(state.players.map(normalizePlayer))
+                    }
+                })
+
+                connection.on('GameStateSync', (state) => {
+                    if (state?.players) {
+                        setPlayers(state.players.map(normalizePlayer))
                     }
                 })
 
                 // Room closed
                 connection.on('RoomClosed', (data) => {
                     console.log('Room closed:', data)
-                    alert(`${data.message}\nReason: ${data.reason}`)
-                    stopConnection()
-                    navigate('/lobby')
+                    setClosedRoomPopup({
+                        open: true,
+                        message: data?.message || t('room.closedFallbackMessage'),
+                        reason: data?.reason || '',
+                    })
                 })
 
-                // Connect to room using sessionId
-                await connection.invoke('ConnectToRoom', roomId, sessionId)
-                console.log('✅ Connected to room:', roomId, 'with session:', sessionId)
+                connection.onreconnecting(() => {
+                    setConnectionStatus('connecting')
+                })
+
+                connection.onreconnected(async () => {
+                    try {
+                        setConnectionStatus('connected')
+                        await connection.invoke('RejoinRoom', roomId, sessionId)
+                    } catch (error) {
+                        console.error('Rejoin after reconnect failed:', error)
+                    }
+                })
+
+                await connection.invoke('RejoinRoom', roomId, sessionId)
+                console.log('✅ Connected/Rejoined room:', roomId, 'with session:', sessionId)
 
 
             } catch (err) {
@@ -234,6 +302,7 @@ const GameRoom = ({ user }) => {
                 conn.off('PlayerLeft')
                 conn.off('PlayerDisconnected')
                 conn.off('RoomState')
+                conn.off('GameStateSync')
                 conn.off('RoomClosed')
             }
         }
@@ -296,7 +365,7 @@ const GameRoom = ({ user }) => {
                 {canCopyCode && (
                     <button
                         onClick={handleCopyCode}
-                        className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        className="mt-4 cursor-pointer sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                     >
                         {isCopied ? (
                             <>
@@ -365,11 +434,25 @@ const GameRoom = ({ user }) => {
                 {/* Back Button */}
                 <button
                     onClick={handleBackToLobby}
-                    className="mt-4 sm:mt-6 w-full bg-white/5 hover:bg-white/10 text-white/90 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+                    className="mt-4 cursor-pointer sm:mt-6 w-full bg-white/5 hover:bg-white/10 text-white/90 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
                 >
                     {t('room.backToLobby')}
                 </button>
             </div>
+            <GamePopup
+                open={closedRoomPopup.open}
+                title={t('room.closedTitle')}
+                message={closedRoomPopup.reason
+                    ? `${closedRoomPopup.message}\n${t('room.reasonPrefix')} ${closedRoomPopup.reason}`
+                    : closedRoomPopup.message}
+                confirmText={t('common.close')}
+                onConfirm={async () => {
+                    setClosedRoomPopup({ open: false, message: '', reason: '' })
+                    clearRoomSession()
+                    await stopConnection()
+                    navigate('/lobby')
+                }}
+            />
         </div>
     )
 }

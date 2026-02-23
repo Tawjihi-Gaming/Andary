@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios' 
+import { saveRoomSession } from '../utils/roomSession'
 
 const CreateRoom = ({ user }) => {
   const { t, i18n } = useTranslation()
@@ -96,18 +97,30 @@ const CreateRoom = ({ user }) => {
         selectedTopics: selectedTopics
       })
       console.log('Room created:', response.data)
-      const { roomId, code, sessionId, playerName, isPrivate: createdRoomIsPrivate } = response.data
+      const { roomId, code, sessionId, playerName } = response.data
       console.log('user room with ID:', user?.id, 'to room:', roomId)
       
      
       console.log('User joined room successfully')
+      saveRoomSession({
+        roomId,
+        roomName: roomName || `Room ${roomId}`,
+        code,
+        isPrivate,
+        sessionId,
+        ownerId: sessionId,
+        ownerName: playerName || user?.username || 'Guest',
+        timer,
+        calcTimer,
+        rounds,
+      })
 
       navigate(`/room/${roomId}`, {
         state: { 
           user: user,
           roomId: roomId, 
           code: code,
-          isPrivate: typeof createdRoomIsPrivate === 'boolean' ? createdRoomIsPrivate : isPrivate,
+          isPrivate: isPrivate,
           sessionId: sessionId,
           ownerId: sessionId,
           ownerName: playerName || user?.username || 'Guest',

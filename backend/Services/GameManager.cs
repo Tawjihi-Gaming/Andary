@@ -6,6 +6,7 @@ using Backend.Data;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.RegularExpressions;
+using System.Collections.Concurrent;
 
 namespace Backend.Services;
 
@@ -32,8 +33,12 @@ public class LeaveRoomResult
 
 public class GameManager
 {
+    public const int OwnerDisconnectGraceSeconds = 180;
+    public const int PlayerDisconnectGraceSeconds = 60;
+
     private readonly Dictionary<string, Room> _rooms = new();
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ConcurrentDictionary<string, DateTime> _disconnectDeadlines = new();
 
     public GameManager(IServiceScopeFactory scopeFactory)
     {
@@ -159,6 +164,88 @@ public class GameManager
         }
 
         return result;
+    }
+
+    // Mark a player as temporarily disconnected (refresh/network blip) without removing them yet.
+    public bool MarkDisconnected(string roomId, string sessionId, out string? playerName, out int graceSeconds)
+    {
+        playerName = null;
+        graceSeconds = PlayerDisconnectGraceSeconds;
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return false;
+
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
+            return false;
+
+        graceSeconds = room.OwnerSessionId == sessionId
+            ? OwnerDisconnectGraceSeconds
+            : PlayerDisconnectGraceSeconds;
+        playerName = player.DisplayName;
+        _disconnectDeadlines[$"{roomId}:{sessionId}"] = DateTime.UtcNow.AddSeconds(graceSeconds);
+        return true;
+    }
+
+    // Rebind a session to a new SignalR connection and migrate per-round data keyed by old connection id.
+    public bool TryReconnectPlayer(string roomId, string sessionId, string newConnectionId)
+    {
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return false;
+
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
+            return false;
+
+        var oldConnectionId = player.ConnectionId;
+        if (!string.IsNullOrWhiteSpace(oldConnectionId) &&
+            !string.Equals(oldConnectionId, newConnectionId, StringComparison.Ordinal))
+        {
+            if (room.FakeAnswers.TryGetValue(oldConnectionId, out var fake))
+            {
+                room.FakeAnswers.Remove(oldConnectionId);
+                room.FakeAnswers[newConnectionId] = fake;
+            }
+
+            if (room.ChosenAnswers.TryGetValue(oldConnectionId, out var chosen))
+            {
+                room.ChosenAnswers.Remove(oldConnectionId);
+                room.ChosenAnswers[newConnectionId] = chosen;
+            }
+        }
+
+        _disconnectDeadlines.TryRemove($"{roomId}:{sessionId}", out _);
+        player.ConnectionId = newConnectionId;
+        return true;
+    }
+
+    // If grace period expired and player did not reconnect, remove them.
+    public LeaveRoomResult LeaveRoomIfDisconnectExpired(string roomId, string sessionId)
+    {
+        var result = new LeaveRoomResult();
+        var key = $"{roomId}:{sessionId}";
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+        {
+            _disconnectDeadlines.TryRemove(key, out _);
+            return result;
+        }
+
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
+        {
+            _disconnectDeadlines.TryRemove(key, out _);
+            return result;
+        }
+
+        if (!_disconnectDeadlines.TryGetValue(key, out var deadline))
+            return result;
+
+        if (DateTime.UtcNow < deadline)
+            return result;
+
+        _disconnectDeadlines.TryRemove(key, out _);
+        return LeaveRoom(roomId, sessionId);
     }
 
     //Get room by id

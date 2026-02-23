@@ -3,6 +3,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useSignalR } from '../../context/SignalRContext'
 import { getConnection as getSignalRConnection, startConnection } from '../../api/signalr'
+import { loadRoomSession, clearRoomSession } from '../../utils/roomSession'
+import GamePopup from '../../components/GamePopup'
 
 const mapPhase = (backendPhase) => {
     switch (backendPhase) {
@@ -51,7 +53,7 @@ const getTextDirection = (value) => {
     return 'rtl'
 }
 
-const Game = () => {
+const Game = ({ user: authenticatedUser }) => {
     const { roomId } = useParams()
     const location = useLocation()
     const navigate = useNavigate()
@@ -62,9 +64,10 @@ const Game = () => {
 
     // Try location.state first, fall back to localStorage on refresh
     const savedSession = loadSession()
-    const sessionId = location.state?.sessionId || savedSession?.sessionId
+    const savedRoomSession = loadRoomSession(roomId)
+    const sessionId = location.state?.sessionId || savedSession?.sessionId || savedRoomSession?.sessionId
     const initialGameState = location.state?.gameState || savedSession?.gameState
-    const user = location.state?.user || savedSession?.user
+    const user = location.state?.user || savedSession?.user || authenticatedUser
 
     const [phase, setPhase] = useState(initialGameState ? mapPhase(initialGameState.phase) : 'topic-selection')
     const [topics, setTopics] = useState(initialGameState?.selectedTopics || [])
@@ -85,6 +88,7 @@ const Game = () => {
     const [isReconnecting, setIsReconnecting] = useState(false)
     const [hasSubmittedFake, setHasSubmittedFake] = useState(false)
     const [selectedAnswer, setSelectedAnswer] = useState(null)
+    const [isLeavePopupOpen, setIsLeavePopupOpen] = useState(false)
 
     const isMyTurn = currentTurn === sessionId
     const questionDirection = getTextDirection(question)
@@ -160,7 +164,11 @@ const Game = () => {
                 } catch (err) {
                     console.error('[Game] Reconnect failed:', err)
                     clearSession()
-                    navigate('/lobby')
+                    if (savedRoomSession?.sessionId) {
+                        navigate(`/room/${roomId}`)
+                    } else {
+                        navigate('/lobby')
+                    }
                     return
                 }
             }
@@ -317,9 +325,41 @@ const Game = () => {
 
     const handleLeave = async () => {
         clearSession()
+        clearRoomSession()
         await stopConnection()
+        if (isMyTurn){
+            // If the player leaves during their turn, we should trigger a turn change so the game can continue smoothly for others
+            const conn = connRef.current
+            if (conn) {
+                try {
+                    await conn.invoke('LeaveRoom', roomId, sessionId)
+                } catch (error) {
+                    console.error('Error leaving room:', error)
+                }
+            }
+        }
         navigate('/lobby')
     }
+    
+    const handleRequestLeave = () => {
+        setIsLeavePopupOpen(true)
+    }
+    
+    const leavePopup = (
+        <GamePopup
+            open={isLeavePopupOpen}
+            title={t('game.leaveRoom')}
+            message={t('game.leaveRoomConfirmation')}
+            confirmText={t('common.yes')}
+            cancelText={t('common.no')}
+            showCancel
+            onCancel={() => setIsLeavePopupOpen(false)}
+            onConfirm={async () => {
+                setIsLeavePopupOpen(false)
+                await handleLeave()
+            }}
+        />
+    )
 
     const getCurrentPlayerName = () => {
         return players.find(p => p.sessionId === currentTurn)?.displayName || 'Unknown'
@@ -343,7 +383,13 @@ const Game = () => {
     // ─── TOPIC SELECTION ──────────────────────────────────────────────────────
     if (phase === 'topic-selection') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative">
+                <button
+                    onClick={handleRequestLeave}
+                    className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 transition-all duration-300"
+                >
+                    {t('game.leaveRoom')}
+                </button>
                 <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
                     <h1 className="text-3xl font-extrabold text-white mb-6 text-center">{t('game.chooseTopic')}</h1>
                     {isMyTurn ? (
@@ -367,6 +413,7 @@ const Game = () => {
                         </p>
                     )}
                 </div>
+                {leavePopup}
             </div>
         )
     }
@@ -374,7 +421,13 @@ const Game = () => {
     // ─── COLLECTING FAKE ANSWERS ──────────────────────────────────────────────
     if (phase === 'collecting-fakes') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative">
+                <button
+                    onClick={handleRequestLeave}
+                    className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 transition-all duration-300"
+                >
+                    {t('game.leaveRoom')}
+                </button>
                 <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
                     <div className="text-center mb-4">
                         <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
@@ -406,6 +459,7 @@ const Game = () => {
                         </div>
                     )}
                 </div>
+                {leavePopup}
             </div>
         )
     }
@@ -413,7 +467,13 @@ const Game = () => {
     // ─── CHOOSING ANSWER (from real + fake) ───────────────────────────────────
     if (phase === 'choosing-answer') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative">
+                <button
+                    onClick={handleRequestLeave}
+                    className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 transition-all duration-300"
+                >
+                    {t('game.leaveRoom')}
+                </button>
                 <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
                     <div className="text-center mb-4">
                         <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
@@ -437,6 +497,7 @@ const Game = () => {
                         ))}
                     </div>
                 </div>
+                {leavePopup}
             </div>
         )
     }
@@ -447,7 +508,13 @@ const Game = () => {
         const medals = ['🥇', '🥈', '🥉']
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative">
+                <button
+                    onClick={handleRequestLeave}
+                    className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 transition-all duration-300"
+                >
+                    {t('game.leaveRoom')}
+                </button>
                 <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15 text-center">
                     <h2 className="text-3xl font-bold text-white mb-2">{t('game.leaderboard')}</h2>
 
@@ -496,6 +563,7 @@ const Game = () => {
                         {t('game.nextRound')}
                     </button>
                 </div>
+                {leavePopup}
             </div>
         )
     }
@@ -515,12 +583,13 @@ const Game = () => {
                         ))}
                     </div>
                     <button
-                        onClick={handleLeave}
+                        onClick={handleRequestLeave}
                         className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20"
                     >
                         {t('game.backToLobby')}
                     </button>
                 </div>
+                {leavePopup}
             </div>
         )
     }

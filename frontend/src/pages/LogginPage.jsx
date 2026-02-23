@@ -19,7 +19,7 @@ function LoginPage({ onLogin }) {
     <>
       <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Language Switcher */}
-        <div className="absolute top-4 end-4 z-20">
+        <div dir="ltr" className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
           <LanguageSwitcher />
         </div>
       {/* Background */}

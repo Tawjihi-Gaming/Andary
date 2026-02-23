@@ -193,14 +193,14 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] p-4">
       <div className="max-w-2xl mx-auto">
         {/* back button and language switcher */}
-        <div className="flex items-center justify-between mb-4">
+        <div dir="ltr" className="flex flex-col sm:flex-row sm:items-center sm:justify-between items-start gap-3 mb-4">
+          <LanguageSwitcher />
           <button
             onClick={() => navigate('/lobby')}
             className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium"
           >
             {t('profile.goBack')}
           </button>
-          <LanguageSwitcher />
         </div>
 
         {/* toast message */}

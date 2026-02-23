@@ -60,6 +60,9 @@ const getSecondsLeftFromDeadline = (deadlineUtc) => {
     return Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000))
 }
 
+const PHASE_DURATION_SECONDS = 15
+const TIMED_PHASES = ['topic-selection', 'collecting-fakes', 'choosing-answer', 'round-result']
+
 const Game = ({ user: authenticatedUser }) => {
     const { roomId } = useParams()
     const location = useLocation()
@@ -80,7 +83,7 @@ const Game = ({ user: authenticatedUser }) => {
         location.state?.answerTimeSeconds ||
         savedRoomSession?.answerTimeSeconds ||
         savedRoomSession?.timer ||
-        30
+        PHASE_DURATION_SECONDS
 
     const [phase, setPhase] = useState(initialGameState ? mapPhase(initialGameState.phase) : 'topic-selection')
     const [topics, setTopics] = useState(initialGameState?.selectedTopics || [])
@@ -398,7 +401,7 @@ const Game = ({ user: authenticatedUser }) => {
             {leaveNotice}
         </div>
     ) : null
-    const showPhaseTimer = (phase === 'collecting-fakes' || phase === 'choosing-answer') && secondsLeft !== null
+    const showPhaseTimer = TIMED_PHASES.includes(phase) && secondsLeft !== null
     const phaseTimerBanner = showPhaseTimer ? (
         <div className="absolute top-4 left-4 z-20 rounded-xl border border-cyan-300/30 bg-black/60 px-3 py-1.5 text-xs font-bold text-cyan-100 shadow-lg backdrop-blur-lg sm:text-sm">
             {t('game.timeLeft')}: {secondsLeft} {secondsLeft === 1 ? t('common.second') : t('common.seconds')}
@@ -522,6 +525,7 @@ const Game = ({ user: authenticatedUser }) => {
         return (
             <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
                 {leaveNoticeBanner}
+                {phaseTimerBanner}
                 <button
                     onClick={handleRequestLeave}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
@@ -652,8 +656,9 @@ const Game = ({ user: authenticatedUser }) => {
         return (
             <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
                 {leaveNoticeBanner}
+                {phaseTimerBanner}
                 <button
-                    onClick={handleRequestLeave}
+                    onClick={(handleRequestLeave)}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}

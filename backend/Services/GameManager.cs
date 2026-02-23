@@ -35,6 +35,10 @@ public class GameManager
 {
     public const int OwnerDisconnectGraceSeconds = 180;
     public const int PlayerDisconnectGraceSeconds = 60;
+    private const int TopicSelectionSeconds = 15;
+    private const int ChoosingAnswerSeconds = 15;
+    private const int LeaderboardSeconds = 5;
+
 
     private readonly Dictionary<string, Room> _rooms = new();
     private readonly IServiceScopeFactory _scopeFactory;
@@ -355,13 +359,56 @@ public class GameManager
 
     public void RefreshPhaseDeadline(Room room)
     {
-        if (room.Phase == GamePhase.CollectingAns || room.Phase == GamePhase.ChoosingAns)
+        var phaseDurationSeconds = room.Phase switch
         {
-            room.PhaseDeadlineUtc = DateTime.UtcNow.AddSeconds(room.AnswerTimeSeconds);
+            GamePhase.ChoosingRoundTopic => TopicSelectionSeconds,
+            GamePhase.CollectingAns => room.AnswerTimeSeconds,
+            GamePhase.ChoosingAns => ChoosingAnswerSeconds,
+            GamePhase.ShowingRanking => LeaderboardSeconds,
+            _ => 0
+        };
+
+        if (phaseDurationSeconds > 0)
+        {
+            room.PhaseDeadlineUtc = DateTime.UtcNow.AddSeconds(phaseDurationSeconds);
             return;
         }
 
         room.PhaseDeadlineUtc = null;
+    }
+
+    // Auto-pick a valid topic/question for the current round when the chooser times out.
+    public bool TryAutoSelectTopicForCurrentRound(Room room)
+    {
+        if (room.Phase != GamePhase.ChoosingRoundTopic)
+            return false;
+
+        var candidateTopics = room.SelectedTopics
+            .Where(topic =>
+                room.Questions.Any(q =>
+                    TopicMatches(q, topic) &&
+                    !room.UsedQuestionIds.Contains(q.Id)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (candidateTopics.Count == 0)
+            return false;
+
+        var chosenTopic = candidateTopics[Random.Shared.Next(candidateTopics.Count)];
+        var question = room.Questions
+            .FirstOrDefault(q =>
+                TopicMatches(q, chosenTopic) &&
+                !room.UsedQuestionIds.Contains(q.Id));
+
+        if (question == null)
+            return false;
+
+        room.CurrentRoundTopic = chosenTopic;
+        room.CurrentQuestion = question;
+        room.UsedQuestionIds.Add(question.Id);
+        room.Phase = GamePhase.CollectingAns;
+        RefreshPhaseDeadline(room);
+        return true;
     }
 
     //start game — now uses all selected topics to filter questions

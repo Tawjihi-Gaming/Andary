@@ -65,7 +65,10 @@ public class GameHub : Hub
         if (room.PhaseDeadlineUtc == null)
             return;
 
-        if (room.Phase != GamePhase.CollectingAns && room.Phase != GamePhase.ChoosingAns)
+        if (room.Phase != GamePhase.ChoosingRoundTopic &&
+            room.Phase != GamePhase.CollectingAns &&
+            room.Phase != GamePhase.ChoosingAns &&
+            room.Phase != GamePhase.ShowingRanking)
             return;
 
         var remaining = room.PhaseDeadlineUtc.Value - DateTime.UtcNow;
@@ -97,6 +100,26 @@ public class GameHub : Hub
         });
     }
 
+    private async Task AdvanceAfterRanking(string roomId, Room room, CancellationToken cancellationToken = default)
+    {
+        if (_game.NextRound(room))
+        {
+            var gameState = _game.GetGameState(room);
+            if (room.Phase == GamePhase.ChoosingRoundTopic)
+                await _hubContext.Clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState, cancellationToken);
+            else
+                await _hubContext.Clients.Group(roomId).SendAsync("GameStarted", gameState, cancellationToken);
+
+            SyncPhaseTimer(roomId, room);
+            return;
+        }
+
+        var endedState = _game.GetGameState(room);
+        await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
+        CancelPhaseTimer(roomId);
+        await _game.SaveGameSession(room);
+    }
+
     private async Task HandlePhaseTimeout(string roomId, CancellationToken cancellationToken)
     {
         if (!_game.TryGetRoom(roomId, out var room) || room == null)
@@ -109,6 +132,25 @@ public class GameHub : Hub
         if (DateTime.UtcNow < room.PhaseDeadlineUtc.Value)
         {
             SyncPhaseTimer(roomId, room);
+            return;
+        }
+
+        if (room.Phase == GamePhase.ChoosingRoundTopic)
+        {
+            if (_game.TryAutoSelectTopicForCurrentRound(room))
+            {
+                var gameState = _game.GetGameState(room);
+                await _hubContext.Clients.Group(roomId).SendAsync("GameStarted", gameState, cancellationToken);
+                SyncPhaseTimer(roomId, room);
+                return;
+            }
+
+            room.Phase = GamePhase.GameEnded;
+            _game.RefreshPhaseDeadline(room);
+            var endedState = _game.GetGameState(room);
+            await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
+            CancelPhaseTimer(roomId);
+            await _game.SaveGameSession(room);
             return;
         }
 
@@ -130,7 +172,11 @@ public class GameHub : Hub
             var gameState = _game.GetGameState(room);
             await _hubContext.Clients.Group(roomId).SendAsync("RoundEnded", gameState, cancellationToken);
             SyncPhaseTimer(roomId, room);
+            return;
         }
+
+        if (room.Phase == GamePhase.ShowingRanking)
+            await AdvanceAfterRanking(roomId, room, cancellationToken);
     }
 
     private async Task BroadcastLeaveResult(string roomId, LeaveRoomResult leaveResult, bool disconnected)
@@ -459,26 +505,7 @@ public class GameHub : Hub
     public async Task NextRound(string roomId)
     {
         var room = _game.GetRoom(roomId);
-        if (_game.NextRound(room))
-        {
-            var gameState = _game.GetGameState(room);
-
-            // If multiple topics → next player chooses topic before round starts
-            if (room.Phase == GamePhase.ChoosingRoundTopic)
-                await Clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState);
-            else
-                await Clients.Group(roomId).SendAsync("GameStarted", gameState);
-            SyncPhaseTimer(roomId, room);
-        }
-        else
-        {
-            var gameState = _game.GetGameState(room);
-            await Clients.Group(roomId).SendAsync("GameEnded", gameState);
-            CancelPhaseTimer(roomId);
-
-            // Save game session to database when game ends
-            await _game.SaveGameSession(room);
-        }
+        await AdvanceAfterRanking(roomId, room);
     }
 
 }

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
+using System.Security.Claims;
 
 namespace Backend.Filters
 {
@@ -7,19 +10,7 @@ namespace Backend.Filters
     {
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            int? playerId = null;
-            foreach (var argument in context.ActionArguments.Values)
-            {
-                if (argument != null)
-                {
-                    var prop = argument.GetType().GetProperty("PlayerId");
-                    if (prop != null)
-                    {
-                        playerId = prop.GetValue(argument) as int?;
-                        break;
-                    }
-                }
-            }
+            var playerId = ExtractPlayerId(context);
 
             if (!playerId.HasValue)
             {
@@ -35,10 +26,12 @@ namespace Backend.Filters
                 return;
             }
 
-            var currentUserIdClaim = context.HttpContext.User.FindFirst("sub");
-            
-            if (currentUserIdClaim == null 
-            || !int.TryParse(currentUserIdClaim.Value, out int currentUserId) 
+            var currentUserIdClaim = context.HttpContext.User.FindFirst("playerId")?.Value
+                ?? context.HttpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? context.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(currentUserIdClaim)
+            || !int.TryParse(currentUserIdClaim, out int currentUserId)
             || currentUserId != playerId.Value)
             {
                 context.Result = new UnauthorizedObjectResult(new 
@@ -47,6 +40,35 @@ namespace Backend.Filters
             }
 
             base.OnActionExecuting(context);
+        }
+
+        private static int? ExtractPlayerId(ActionExecutingContext context)
+        {
+            foreach (var argument in context.ActionArguments.Values)
+            {
+                if (argument == null)
+                    continue;
+
+                if (argument is int argInt)
+                    return argInt;
+
+                var prop = argument.GetType().GetProperty(
+                    "PlayerId",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase
+                );
+
+                if (prop == null)
+                    continue;
+
+                var value = prop.GetValue(argument);
+                if (value is int valueInt)
+                    return valueInt;
+
+                if (value != null && int.TryParse(value.ToString(), out var parsedId))
+                    return parsedId;
+            }
+
+            return null;
         }
     }
 }

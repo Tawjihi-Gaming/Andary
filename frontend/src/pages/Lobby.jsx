@@ -146,9 +146,6 @@ const Lobby = ({ user, onLogout }) => {
     setIsLogoutPopupOpen(false)
     if (onLogout) {
       onLogout()
-    } else {
-      localStorage.removeItem('isAuthenticated')
-      localStorage.removeItem('userData')
     }
     navigate('/login')
   }

@@ -1,6 +1,6 @@
 //Prevent bugs caused by magic strings.
 
-namespace backend.Enums;
+namespace Backend.Enums;
 
 public enum RoomType
 {

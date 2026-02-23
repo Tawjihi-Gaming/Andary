@@ -3,22 +3,26 @@
 using Microsoft.AspNetCore.Mvc;
 using Backend.Services;
 using Backend.Models;
-using backend.Enums;
+using Backend.Enums;
 using Backend.Data;
+using Backend.Filters;
 
 namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ValidatePlayerOwnershipFilter] // Apply player ownership validation globally to all actions in this controller
 public class RoomController : ControllerBase
 {
     private readonly GameManager _game;
     private readonly AppDbContext _context;
+    private readonly QuestionsService _questionsService;
 
-    public RoomController(GameManager game, AppDbContext context)
+    public RoomController(GameManager game, AppDbContext context, QuestionsService questionsService)
     {
         _game = game;
         _context = context;
+        _questionsService = questionsService;
     }
 
     // POST api/room/create
@@ -38,7 +42,8 @@ public class RoomController : ControllerBase
         var creator = new SessionPlayer
         {
             DisplayName = request.PlayerName,
-            AvatarImageName = request.AvatarImageName ?? ""
+            AvatarImageName = request.AvatarImageName ?? "",
+            ClientKey = string.IsNullOrWhiteSpace(request.ClientKey) ? null : request.ClientKey.Trim()
         };
 
         // If the creator is logged in, link their DB account
@@ -54,6 +59,16 @@ public class RoomController : ControllerBase
         }
 
         var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name, creator);
+
+        // Add topics selected during room creation (needed for StartGame)
+        if (request.SelectedTopics != null)
+        {
+            foreach (var topic in request.SelectedTopics.Take(7)) // max 7 topics per room
+            {
+                if (!string.IsNullOrWhiteSpace(topic))
+                    _game.AddTopic(room, topic.Trim());
+            }
+        }
 
         return Ok(new
         {
@@ -72,7 +87,7 @@ public class RoomController : ControllerBase
     {
         Room? room = null;
 
-        // If a code is provided, look up the room by code (join-by-code)
+        // If a code is provided, look up the room by code (works for public/private)
         if (!string.IsNullOrEmpty(request.Code))
         {
             room = _game.GetRoomByCode(request.Code);
@@ -109,7 +124,8 @@ public class RoomController : ControllerBase
         {
             DisplayName = request.PlayerName,
             AvatarImageName = request.AvatarImageName ?? "",
-            ConnectionId = "" // Will be set when the player connects via SignalR
+            ConnectionId = "", // Will be set when the player connects via SignalR
+            ClientKey = string.IsNullOrWhiteSpace(request.ClientKey) ? null : request.ClientKey.Trim()
         };
 
         // If the player is logged in, link their DB account
@@ -124,21 +140,34 @@ public class RoomController : ControllerBase
             sessionPlayer.AvatarImageName = dbPlayer.AvatarImageName;
         }
 
-        if (!_game.JoinRoom(room.RoomId, sessionPlayer))
+        var joinResult = _game.JoinRoom(room.RoomId, sessionPlayer);
+        if (joinResult != JoinRoomResult.Success)
         {
-            return BadRequest(new { error = "Unable to join room. The room may be full (max " + Room.MaxPlayers + " players)." });
+            return joinResult switch
+            {
+                JoinRoomResult.DuplicateAccount => BadRequest(new { error = "This account is already in the room." }),
+                JoinRoomResult.DuplicateGuest => BadRequest(new { error = "This guest session is already in the room." }),
+                JoinRoomResult.RoomFull => BadRequest(new { error = "Unable to join room. The room may be full (max " + Room.MaxPlayers + " players)." }),
+                JoinRoomResult.NotInLobby => BadRequest(new { error = "Unable to join room after the game has started." }),
+                _ => BadRequest(new { error = "Unable to join room." })
+            };
         }
 
         return Ok(new
         {
             roomId = room.RoomId,
+            code = room.Code,
+            isPrivate = room.Type == RoomType.Private,
+            roomType = room.Type.ToString(),
+            name = room.Name,
             sessionId = sessionPlayer.SessionId,
             playerName = sessionPlayer.DisplayName
         });
     }
 
     // GET api/room/{roomId}
-    [HttpGet("{roomId}")]
+    // Room IDs are generated as GUID strings.
+    [HttpGet("{roomId:guid}")]
     public IActionResult GetRoom(string roomId)
     {
         try
@@ -149,6 +178,8 @@ public class RoomController : ControllerBase
                 roomId = room.RoomId,
                 name = room.Name,
                 code = room.Code,
+                isPrivate = room.Type == RoomType.Private,
+                roomType = room.Type.ToString(),
                 ownerSessionId = room.OwnerSessionId,
                 phase = room.Phase.ToString(),
                 players = room.Players.Select(p => new { sessionId = p.SessionId, name = p.DisplayName, score = p.Score, isReady = p.IsReady }),
@@ -159,6 +190,57 @@ public class RoomController : ControllerBase
         catch
         {
             return NotFound(new { error = "Room not found." });
+        }
+    }
+
+    // GET api/room/lobbies
+    // Returns public rooms that are still waiting in lobby phase.
+    [HttpGet("lobbies")]
+    public IActionResult GetPublicLobbies()
+    {
+        var lobbies = _game.GetPublicWaitingRooms()
+            .Select(room =>
+            {
+                var owner = room.Players.FirstOrDefault(p => p.SessionId == room.OwnerSessionId);
+                var topic = room.SelectedTopics.Count > 0
+                    ? string.Join("، ", room.SelectedTopics.Take(2))
+                    : "بدون مواضيع";
+
+                return new
+                {
+                    id = room.RoomId,
+                    roomId = room.RoomId,
+                    name = room.Name,
+                    code = room.Code,
+                    players = room.Players.Count,
+                    maxPlayers = Room.MaxPlayers,
+                    topic,
+                    status = "waiting",
+                    ownerSessionId = room.OwnerSessionId,
+                    ownerName = owner?.DisplayName ?? "Unknown"
+                };
+            })
+            .ToList();
+
+        return Ok(lobbies);
+    }
+
+    // GET api/room/topics
+    [HttpGet("topics")]
+    public IActionResult GetTopics()
+    {
+        try
+        {
+            var topics = _questionsService.GetTopics();
+            return Ok(topics);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                error = "Failed to fetch topics from database.",
+                details = ex.Message
+            });
         }
     }
 }
@@ -172,6 +254,8 @@ public class CreateRoomRequest
     public string? PlayerName { get; set; } // Creator's display name (required)
     public string? AvatarImageName { get; set; } // Creator's avatar
     public int? PlayerId { get; set; } // Optional — set if the creator is logged in
+    public string? ClientKey { get; set; } // Browser identity key (used for guest deduplication)
+    public List<string>? SelectedTopics { get; set; } // Topics chosen at room creation (min 1 to start game)
 }
 
 public class JoinRoomRequest
@@ -180,5 +264,6 @@ public class JoinRoomRequest
     public int? PlayerId { get; set; } // Optional — set if the player is logged in (DB account)
     public string? PlayerName { get; set; } // Display name (required for anonymous, optional for logged-in)
     public string? AvatarImageName { get; set; } // Optional avatar
-    public string? Code { get; set; } // Provide this to join a private room by code
+    public string? ClientKey { get; set; } // Browser identity key (used for guest deduplication)
+    public string? Code { get; set; } // Provide this to join a room by code (public/private)
 }

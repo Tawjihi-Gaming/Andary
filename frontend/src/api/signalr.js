@@ -38,6 +38,24 @@ export const startConnection = async () => {
     if (conn.state === signalR.HubConnectionState.Disconnected) {
       await conn.start()
       console.log('✅ SignalR connected:', conn.connectionId)
+    } else if (conn.state === signalR.HubConnectionState.Connecting || 
+               conn.state === signalR.HubConnectionState.Reconnecting) {
+      // Wait for the connection to finish connecting
+      await new Promise((resolve, reject) => {
+        const maxWait = setTimeout(() => reject(new Error('Connection timeout')), 5000)
+        const check = setInterval(() => {
+          if (conn.state === signalR.HubConnectionState.Connected) {
+            clearInterval(check)
+            clearTimeout(maxWait)
+            resolve()
+          } else if (conn.state === signalR.HubConnectionState.Disconnected) {
+            clearInterval(check)
+            clearTimeout(maxWait)
+            reject(new Error('Connection failed'))
+          }
+        }, 50)
+      })
+      console.log('✅ SignalR connected (waited):', conn.connectionId)
     }
     return conn
   } catch (err) {

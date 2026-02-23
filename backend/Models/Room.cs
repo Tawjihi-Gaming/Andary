@@ -1,6 +1,6 @@
 //Pure data. No behavior.
 
-using backend.Enums;
+using Backend.Enums;
 
 namespace Backend.Models;
 
@@ -18,10 +18,8 @@ public class Room
     //the enum i defined earlier
     public RoomType Type { get; set; }
 
-    //The ? means: nullable (“This value is allowed to be null.”)
-    //Because:
-    // - Public rooms don’t have a code
-    // - Private rooms have a code
+    // Join code shown to players.
+    // Public and private rooms both have a 6-digit numeric code.
     public string? Code { get; set; }
 
     public GamePhase Phase { get; set; } = GamePhase.Lobby;
@@ -64,4 +62,7 @@ public class Room
     //Easy to check if player already submitted
     public Dictionary<string, string> FakeAnswers { get; set; } = new();
     public Dictionary<string, string> ChosenAnswers { get; set; } = new();
+
+    // Track used question IDs so a topic choice never reuses a previously shown question.
+    public HashSet<int> UsedQuestionIds { get; set; } = new();
 }

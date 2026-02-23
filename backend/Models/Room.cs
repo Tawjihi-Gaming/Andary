@@ -7,7 +7,7 @@ namespace Backend.Models;
 public class Room
 {
     public const int MaxPlayers = 6;
-    public const int MinPlayers = 2;
+    public const int MinPlayers = 1;
 
     public string RoomId { get; set; } = "";
 

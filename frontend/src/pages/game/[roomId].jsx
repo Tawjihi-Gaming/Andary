@@ -87,7 +87,7 @@ const Game = ({ user: authenticatedUser }) => {
     const [connectionReady, setConnectionReady] = useState(false)
     const [isReconnecting, setIsReconnecting] = useState(false)
     const [hasSubmittedFake, setHasSubmittedFake] = useState(false)
-    const [selectedAnswer, setSelectedAnswer] = useState(null)
+    const [selectedAnswerIndex, setSelectedAnswerIndex] = useState(null)
     const [isLeavePopupOpen, setIsLeavePopupOpen] = useState(false)
     const [turnTopicOptions, setTurnTopicOptions] = useState([])
 
@@ -115,7 +115,7 @@ const Game = ({ user: authenticatedUser }) => {
             setHasSubmittedFake(false)
         }
         if (phase === 'choosing-answer') {
-            setSelectedAnswer(null)
+            setSelectedAnswerIndex(null)
         }
     }, [phase, question, selectedTopic])
 
@@ -353,7 +353,7 @@ const Game = ({ user: authenticatedUser }) => {
             const conn = connRef.current
             if (conn) {
                 try {
-                    await conn.invoke('LeaveRoom', roomId, sessionId)
+                    await conn.invoke('HandlePlayerExit', roomId, sessionId, false) // false indicates voluntary exit
                 } catch (error) {
                     console.error('Error leaving room:', error)
                 }
@@ -505,9 +505,9 @@ const Game = ({ user: authenticatedUser }) => {
                         {choices.map((choice, i) => (
                             <button
                                 key={i}
-                                onClick={() => { setSelectedAnswer(choice); handleChooseAnswer(choice) }}
+                                onClick={() => { setSelectedAnswerIndex(i); handleChooseAnswer(choice) }}
                                 className={`border font-semibold py-3 px-6 rounded-xl transition-all duration-300 ${
-                                    selectedAnswer === choice
+                                    selectedAnswerIndex === i
                                         ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
                                         : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
                                 }`}

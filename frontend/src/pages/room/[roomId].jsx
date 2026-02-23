@@ -35,7 +35,6 @@ const GameRoom = ({ user }) => {
     const roomName = roomState.roomName || `Room ${roomId}`
     const sessionId = roomState.sessionId
     const timer = roomState.timer || 30
-    const calcTimer = roomState.calcTimer || 20
     const rounds = roomState.rounds || 5
 
     const [connectionStatus, setConnectionStatus] = useState('connecting')
@@ -54,13 +53,12 @@ const GameRoom = ({ user }) => {
     // The current user is the owner if their sessionId matches the room owner
     const isOwner = sessionId && sessionId === roomOwnerId
     const roomTypeLabel = isPrivateRoom ? t('room.private') : t('room.public')
-    const displayedCode = isPrivateRoom && !isOwner ? 'Hidden' : (code || 'N/A')
     const canCopyCode = Boolean(code) && (!isPrivateRoom || isOwner)
 
     // Check if all non-owner players are ready and there's at least one other player
     const allPlayersReady = players.length > 1 && players
         .filter(p => p.sessionId !== roomOwnerId)
-        .every(p => p.isReady)
+        .every(p => p.isReady) || players.length === 1 // If owner is alone, consider all players ready
 
     const handleCopyCode = async () => {
         if (!canCopyCode)
@@ -133,11 +131,10 @@ const GameRoom = ({ user }) => {
             sessionId,
             ownerId: roomOwnerId,
             ownerName: roomOwnerName,
-            timer,
-            calcTimer,
+           // timer,
             rounds,
         })
-    }, [roomId, sessionId, code, isPrivateRoom, roomName, roomOwnerId, roomOwnerName, timer, calcTimer, rounds])
+    }, [roomId, sessionId, code, isPrivateRoom, roomName, roomOwnerId, roomOwnerName, timer, rounds])
 
     useEffect(() => {
         if (!sessionId) {

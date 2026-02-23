@@ -89,7 +89,6 @@
     "loadingTopics": "جاري تحميل المواضيع...",
     "numberOfRounds": "عدد الجولات",
     "answerTime": "وقت الإجابة على السؤال",
-    "calcTime": "وقت حساب النتيجة",
     "createButton": "إنشاء الغرفة",
     "noTopicsError": "لا يمكن إنشاء غرفة بدون مواضيع من قاعدة البيانات",
     "selectTopicError": "يجب اختيار موضوع واحد على الأقل",

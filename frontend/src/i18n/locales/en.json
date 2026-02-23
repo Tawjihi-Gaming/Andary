@@ -89,7 +89,6 @@
     "loadingTopics": "Loading topics from database...",
     "numberOfRounds": "Number of Rounds",
     "answerTime": "Answer Time",
-    "calcTime": "Score Calculation Time",
     "createButton": "Create Room",
     "noTopicsError": "Cannot create room without database topics",
     "selectTopicError": "Please select at least one topic",

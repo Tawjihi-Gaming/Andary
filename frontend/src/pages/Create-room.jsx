@@ -15,7 +15,6 @@ const CreateRoom = ({ user }) => {
   const [selectedTopics, setSelectedTopics] = useState([])
   const [availableTopics, setAvailableTopics] = useState([])
   const [timer, setTimer] = useState(30)
-  const [calcTimer, setCalcTimer] = useState(20)
   const [rounds, setRounds] = useState(5)
   const navigate = useNavigate()
 
@@ -95,7 +94,7 @@ const CreateRoom = ({ user }) => {
         playerId: user?.id || null,
         clientKey: user?.clientKey || null,
         selectedTopics: selectedTopics,
-        timer: timer
+        //timer: timer
       })
       console.log('Room created:', response.data)
       const { roomId, code, sessionId, playerName } = response.data
@@ -112,7 +111,6 @@ const CreateRoom = ({ user }) => {
         ownerId: sessionId,
         ownerName: playerName || user?.username || 'Guest',
         timer,
-        calcTimer,
         rounds,
       })
 
@@ -127,7 +125,6 @@ const CreateRoom = ({ user }) => {
           ownerName: playerName || user?.username || 'Guest',
           roomName: roomName || `Room ${roomId}`,
           timer: timer,
-          calcTimer: calcTimer,
           rounds: rounds,
           topics: selectedTopics
         }

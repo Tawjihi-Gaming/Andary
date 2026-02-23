@@ -89,9 +89,22 @@ const Game = ({ user: authenticatedUser }) => {
     const [hasSubmittedFake, setHasSubmittedFake] = useState(false)
     const [selectedAnswer, setSelectedAnswer] = useState(null)
     const [isLeavePopupOpen, setIsLeavePopupOpen] = useState(false)
+    const [turnTopicOptions, setTurnTopicOptions] = useState([])
 
     const isMyTurn = currentTurn === sessionId
     const questionDirection = getTextDirection(question)
+
+    const getRandomTopics = useCallback((list = [], count = 4) => {
+        const unique = [...new Set(list.filter(Boolean))]
+        if (unique.length <= count) return unique
+
+        const shuffled = [...unique]
+        for (let i = shuffled.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1))
+            ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        }
+        return shuffled.slice(0, count)
+    }, [])
 
     // New round/new question: clear previous fake-answer UI state.
     useEffect(() => {
@@ -105,6 +118,14 @@ const Game = ({ user: authenticatedUser }) => {
             setSelectedAnswer(null)
         }
     }, [phase, question, selectedTopic])
+
+    useEffect(() => {
+        if (phase !== 'topic-selection' || !isMyTurn) {
+            setTurnTopicOptions([])
+            return
+        }
+        setTurnTopicOptions(getRandomTopics(topics, 4))
+    }, [phase, isMyTurn, currentTurn, topics, getRandomTopics])
 
     // Save session to localStorage whenever key data changes
     useEffect(() => {
@@ -396,7 +417,7 @@ const Game = ({ user: authenticatedUser }) => {
                         <>
                             <p className="text-white/80 text-center mb-6">{t('game.yourTurn')}</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {topics.map((topic) => (
+                                {turnTopicOptions.map((topic) => (
                                     <button
                                         key={topic}
                                         onClick={() => handleTopicSelect(topic)}

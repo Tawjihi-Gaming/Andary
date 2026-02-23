@@ -69,7 +69,11 @@
     "noRoomsSub": "لا توجد غرف — أنشئ واحدة لبدء اللعب!",
     "enterCode": "أدخل كود الغرفة (6 أرقام)",
     "invalidCode": "❌ يرجى إدخال كود مكون من 6 أرقام فقط.",
-    "lobbies": "غرف"
+    "lobbies": "غرف",
+    "confirmLogout": "تأكيد الخروج",
+    "cancelLogout" : "إلغاء تسجيل الخروج",
+    "logoutMessage": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "logoutTitle": "تأكيد الخروج"
   },
 
   "createRoom": {

@@ -76,12 +76,6 @@ namespace Backend.Controllers
             return Convert.ToBase64String(bytes);
         }
 
-        private string GenerateSixDigitOtp()
-        {
-            var value = RandomNumberGenerator.GetInt32(0, 1000000);
-            return value.ToString("D6");
-        }
-
         private bool IsHashMatch(string input, string storedHash)
         {
             if (string.IsNullOrWhiteSpace(input) || string.IsNullOrWhiteSpace(storedHash))
@@ -101,7 +95,7 @@ namespace Backend.Controllers
             }
         }
 
-        private async Task SendVerificationCodeAsync(string email, string code)
+        private async Task SendWelcomeEmailAsync(string email)
         {
             var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
                 ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
@@ -122,15 +116,14 @@ namespace Backend.Controllers
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(fromName, fromEmail));
             message.To.Add(MailboxAddress.Parse(email));
-            message.Subject = "Your Andary verification code";
+            message.Subject = "Welcome to Andary";
             message.Body = new TextPart("plain")
             {
                 Text =
                     "Hello,\n\n" +
-                    "Thank you for signing up with Andary. To complete your email verification, please use the one-time verification code below:\n\n" +
-                    $"Verification Code: {code}\n\n" +
-                    "This code is valid for 3 hours. For your security, please do not share this code with anyone.\n\n" +
-                    "If you did not request this verification, you can safely ignore this email.\n\n" +
+                    "Thank you for signing up with Andary." +
+                    "We are happy to have you join our website\n\n" +
+                    "If you did not sign up, you can safely ignore this email.\n\n" +
                     "Best regards,\n" +
                     "The Andary Team"
             };
@@ -397,17 +390,13 @@ namespace Backend.Controllers
 				AvatarImageName = dto.AvatarImageName
 			};
 
-            var otpCode = GenerateSixDigitOtp();
-            authLocal.EmailVerificationTokenHash = HashToken(otpCode);
-            authLocal.EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(3);
-
             await using var transaction = await _db.Database.BeginTransactionAsync();
             try
             {
                 _db.Players.Add(player);
                 await _db.SaveChangesAsync();
 
-                await SendVerificationCodeAsync(authLocal.Email, otpCode);
+                await SendWelcomeEmailAsync(authLocal.Email);
 
                 await transaction.CommitAsync();
             }
@@ -415,88 +404,10 @@ namespace Backend.Controllers
             {
                 await transaction.RollbackAsync();
                 return StatusCode((int)HttpStatusCode.InternalServerError,
-                    new { msg = "Could not complete signup verification email flow" });
+                    new { msg = "Could not complete signup flow" });
             }
 
-            return Ok(new { msg = "Player created. Verification code sent to email." });
-        }
-
-        [HttpPost("verify")]
-        public async Task<IActionResult> Verify(PlayerVerifyDto dto)
-        {
-            if (dto == null || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Code))
-                return BadRequest(new { msg = "Invalid verification data" });
-
-            if (dto.Code.Length != 6 || !dto.Code.All(char.IsDigit))
-                return BadRequest(new { msg = "Code must be a 6-digit number" });
-
-            var player = await _db.Players
-                .Include(p => p.AuthLocal)
-                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
-
-            if (player?.AuthLocal == null)
-                return BadRequest(new { msg = "Invalid email" });
-
-            var authLocal = player.AuthLocal;
-
-            if (authLocal.IsVerified)
-                return Ok(new { msg = "Email is already verified" });
-
-            if (string.IsNullOrEmpty(authLocal.EmailVerificationTokenHash)
-                || authLocal.EmailVerificationTokenExpiresAt == null)
-                return BadRequest(new { msg = "No active verification code" });
-
-            if (authLocal.EmailVerificationTokenExpiresAt <= DateTime.UtcNow)
-                return BadRequest(new { msg = "Verification code expired" });
-
-            if (!IsHashMatch(dto.Code, authLocal.EmailVerificationTokenHash))
-                return BadRequest(new { msg = "Invalid verification code" });
-
-            authLocal.IsVerified = true;
-            authLocal.EmailVerificationTokenHash = null;
-            authLocal.EmailVerificationTokenExpiresAt = null;
-            await _db.SaveChangesAsync();
-
-            return Ok(new { msg = "Email verified successfully" });
-        }
-
-        [HttpPost("resend-verification")]
-        public async Task<IActionResult> ResendVerification(PlayerResendVerificationDto dto)
-        {
-            if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
-                return BadRequest(new { msg = "Invalid resend data" });
-
-            var player = await _db.Players
-                .Include(p => p.AuthLocal)
-                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
-
-            if (player?.AuthLocal == null)
-                return BadRequest(new { msg = "Invalid email" });
-
-            var authLocal = player.AuthLocal;
-
-            if (authLocal.IsVerified)
-                return BadRequest(new { msg = "Email is already verified" });
-
-            var otpCode = GenerateSixDigitOtp();
-            authLocal.EmailVerificationTokenHash = HashToken(otpCode);
-            authLocal.EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(3);
-
-            await using var transaction = await _db.Database.BeginTransactionAsync();
-            try
-            {
-                await _db.SaveChangesAsync();
-                await SendVerificationCodeAsync(authLocal.Email, otpCode);
-                await transaction.CommitAsync();
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                return StatusCode((int)HttpStatusCode.InternalServerError,
-                    new { msg = "Could not resend verification email" });
-            }
-
-            return Ok(new { msg = "Verification code resent" });
+            return Ok(new { msg = "Player created. Welcome email sent to email address." });
         }
 
         [HttpPost("login")]

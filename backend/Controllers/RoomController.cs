@@ -58,7 +58,8 @@ public class RoomController : ControllerBase
             creator.AvatarImageName = dbPlayer.AvatarImageName;
         }
 
-        var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name, creator);
+        var answerTimeSeconds = request.AnswerTimeSeconds ?? 30;
+        var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name, creator, answerTimeSeconds);
 
         // Add topics selected during room creation (needed for StartGame)
         if (request.SelectedTopics != null)
@@ -76,7 +77,8 @@ public class RoomController : ControllerBase
             code = room.Code,
             name = room.Name,
             sessionId = owner.SessionId,
-            playerName = owner.DisplayName
+            playerName = owner.DisplayName,
+            answerTimeSeconds = room.AnswerTimeSeconds
         });
     }
 
@@ -161,7 +163,8 @@ public class RoomController : ControllerBase
             roomType = room.Type.ToString(),
             name = room.Name,
             sessionId = sessionPlayer.SessionId,
-            playerName = sessionPlayer.DisplayName
+            playerName = sessionPlayer.DisplayName,
+            answerTimeSeconds = room.AnswerTimeSeconds
         });
     }
 
@@ -184,7 +187,8 @@ public class RoomController : ControllerBase
                 phase = room.Phase.ToString(),
                 players = room.Players.Select(p => new { sessionId = p.SessionId, name = p.DisplayName, score = p.Score, isReady = p.IsReady }),
                 totalQuestions = room.TotalQuestions,
-                selectedTopics = room.SelectedTopics
+                selectedTopics = room.SelectedTopics,
+                answerTimeSeconds = room.AnswerTimeSeconds
             });
         }
         catch
@@ -217,7 +221,8 @@ public class RoomController : ControllerBase
                     topic,
                     status = "waiting",
                     ownerSessionId = room.OwnerSessionId,
-                    ownerName = owner?.DisplayName ?? "Unknown"
+                    ownerName = owner?.DisplayName ?? "Unknown",
+                    answerTimeSeconds = room.AnswerTimeSeconds
                 };
             })
             .ToList();
@@ -256,6 +261,7 @@ public class CreateRoomRequest
     public int? PlayerId { get; set; } // Optional — set if the creator is logged in
     public string? ClientKey { get; set; } // Browser identity key (used for guest deduplication)
     public List<string>? SelectedTopics { get; set; } // Topics chosen at room creation (min 1 to start game)
+    public int? AnswerTimeSeconds { get; set; } // Per-question timer (seconds)
 }
 
 public class JoinRoomRequest

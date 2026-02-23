@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using Backend.Services;
 using Backend.Models;
 using Backend.Enums;
+using System.Collections.Concurrent;
 
 namespace Backend.Hubs;
 
@@ -11,11 +12,14 @@ public class GameHub : Hub
 {
     private readonly GameManager _game;
     private readonly QuestionsService _questionsService;
+    private readonly IHubContext<GameHub> _hubContext;
+    private static readonly ConcurrentDictionary<string, CancellationTokenSource> _phaseTimers = new();
 
-    public GameHub(GameManager game, QuestionsService questionsService)
+    public GameHub(GameManager game, QuestionsService questionsService, IHubContext<GameHub> hubContext)
     {
         _game = game;
         _questionsService = questionsService;
+        _hubContext = hubContext;
     }
 
     private async Task BroadcastLobbyState(string roomId, Room room)
@@ -35,6 +39,100 @@ public class GameHub : Hub
         await BroadcastLeaveResult(roomId, leaveResult, disconnected);
     }
 
+    private Task SendShowChoices(string roomId, Room room, List<string> choices, CancellationToken cancellationToken = default)
+    {
+        return _hubContext.Clients.Group(roomId).SendAsync("ShowChoices", new
+        {
+            choices,
+            answerTimeSeconds = room.AnswerTimeSeconds,
+            phaseDeadlineUtc = room.PhaseDeadlineUtc
+        }, cancellationToken);
+    }
+
+    private void CancelPhaseTimer(string roomId)
+    {
+        if (_phaseTimers.TryRemove(roomId, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+    }
+
+    private void SyncPhaseTimer(string roomId, Room room)
+    {
+        CancelPhaseTimer(roomId);
+
+        if (room.PhaseDeadlineUtc == null)
+            return;
+
+        if (room.Phase != GamePhase.CollectingAns && room.Phase != GamePhase.ChoosingAns)
+            return;
+
+        var remaining = room.PhaseDeadlineUtc.Value - DateTime.UtcNow;
+        if (remaining < TimeSpan.Zero)
+            remaining = TimeSpan.Zero;
+
+        var cts = new CancellationTokenSource();
+        _phaseTimers[roomId] = cts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(remaining, cts.Token);
+                if (cts.Token.IsCancellationRequested)
+                    return;
+
+                await HandlePhaseTimeout(roomId, cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+            }
+            finally
+            {
+                if (_phaseTimers.TryGetValue(roomId, out var current) && ReferenceEquals(current, cts))
+                    _phaseTimers.TryRemove(roomId, out _);
+                cts.Dispose();
+            }
+        });
+    }
+
+    private async Task HandlePhaseTimeout(string roomId, CancellationToken cancellationToken)
+    {
+        if (!_game.TryGetRoom(roomId, out var room) || room == null)
+            return;
+
+        if (room.PhaseDeadlineUtc == null)
+            return;
+
+        // Deadline moved while this timer was waiting; reschedule against latest value.
+        if (DateTime.UtcNow < room.PhaseDeadlineUtc.Value)
+        {
+            SyncPhaseTimer(roomId, room);
+            return;
+        }
+
+        if (room.Phase == GamePhase.CollectingAns)
+        {
+            room.Phase = GamePhase.ChoosingAns;
+            _game.RefreshPhaseDeadline(room);
+            var choices = _game.BuildAnswerChoices(room);
+            await SendShowChoices(roomId, room, choices, cancellationToken);
+            SyncPhaseTimer(roomId, room);
+            return;
+        }
+
+        if (room.Phase == GamePhase.ChoosingAns)
+        {
+            _game.ScoreRound(room);
+            room.Phase = GamePhase.ShowingRanking;
+            _game.RefreshPhaseDeadline(room);
+            var gameState = _game.GetGameState(room);
+            await _hubContext.Clients.Group(roomId).SendAsync("RoundEnded", gameState, cancellationToken);
+            SyncPhaseTimer(roomId, room);
+        }
+    }
+
     private async Task BroadcastLeaveResult(string roomId, LeaveRoomResult leaveResult, bool disconnected)
     {
         if (!leaveResult.PlayerRemoved)
@@ -50,6 +148,7 @@ public class GameHub : Hub
 
         if (leaveResult.RoomClosed)
         {
+            CancelPhaseTimer(roomId);
             await Clients.Group(roomId).SendAsync("RoomClosed", new
             {
                 message = "The room has been closed.",
@@ -68,7 +167,58 @@ public class GameHub : Hub
         }
 
         if (_game.TryGetRoom(roomId, out var updatedRoom) && updatedRoom != null)
-            await BroadcastLobbyState(roomId, updatedRoom);
+            await BroadcastPostLeaveState(roomId, updatedRoom);
+    }
+
+    private async Task BroadcastPostLeaveState(string roomId, Room room)
+    {
+        if (room.Phase == GamePhase.Lobby)
+        {
+            CancelPhaseTimer(roomId);
+            await BroadcastLobbyState(roomId, room);
+            return;
+        }
+
+        // Active game cannot continue with fewer than the minimum required players.
+        if (room.Phase != GamePhase.GameEnded && room.Players.Count < Room.MinPlayers)
+        {
+            room.Phase = GamePhase.GameEnded;
+            _game.RefreshPhaseDeadline(room);
+            CancelPhaseTimer(roomId);
+            var endedState = _game.GetGameState(room);
+            await Clients.Group(roomId).SendAsync("GameEnded", endedState);
+            await _game.SaveGameSession(room);
+            return;
+        }
+
+        // If a leave unblocks the round, advance immediately instead of waiting for a new submit action.
+        if (room.Phase == GamePhase.CollectingAns && _game.AllFakeAnswersSubmitted(room))
+        {
+            room.Phase = GamePhase.ChoosingAns;
+            _game.RefreshPhaseDeadline(room);
+            var choices = _game.BuildAnswerChoices(room);
+            await SendShowChoices(roomId, room, choices);
+            SyncPhaseTimer(roomId, room);
+            return;
+        }
+
+        if (room.Phase == GamePhase.ChoosingAns && room.ChosenAnswers.Count == room.Players.Count)
+        {
+            _game.ScoreRound(room);
+            room.Phase = GamePhase.ShowingRanking;
+            _game.RefreshPhaseDeadline(room);
+            var roundState = _game.GetGameState(room);
+            await Clients.Group(roomId).SendAsync("RoundEnded", roundState);
+            SyncPhaseTimer(roomId, room);
+            return;
+        }
+
+        var gameState = _game.GetGameState(room);
+        SyncPhaseTimer(roomId, room);
+        if (room.Phase == GamePhase.ChoosingRoundTopic)
+            await Clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState);
+        else
+            await Clients.Group(roomId).SendAsync("GameStateSync", gameState);
     }
 
     // Called by each player after joining a room (via REST API) to register
@@ -102,6 +252,7 @@ public class GameHub : Hub
         {
             var state = _game.GetGameState(room);
             await Clients.Caller.SendAsync("GameStateSync", state);
+            SyncPhaseTimer(roomId, room);
         }
     }
 
@@ -222,6 +373,7 @@ public class GameHub : Hub
             await Clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState);
         else
             await Clients.Group(roomId).SendAsync("GameStarted", gameState);
+        SyncPhaseTimer(roomId, room);
     }
 
     // Per-round topic selection — the designated player picks the topic for this round
@@ -252,6 +404,7 @@ public class GameHub : Hub
 
         var gameState = _game.GetGameState(room);
         await Clients.Group(roomId).SendAsync("GameStarted", gameState);
+        SyncPhaseTimer(roomId, room);
     }
 
     public async Task<object> SubmitFakeAnswer(string roomId, string fake)
@@ -270,9 +423,11 @@ public class GameHub : Hub
         if (_game.AllFakeAnswersSubmitted(room))
         {
             room.Phase = GamePhase.ChoosingAns;
+            _game.RefreshPhaseDeadline(room);
             var choices = _game.BuildAnswerChoices(room);
 
-            await Clients.Group(roomId).SendAsync("ShowChoices", choices);
+            await SendShowChoices(roomId, room, choices);
+            SyncPhaseTimer(roomId, room);
         }
 
         return new
@@ -284,15 +439,20 @@ public class GameHub : Hub
     public async Task ChooseAnswer(string roomId, string answer)
     {
         var room = _game.GetRoom(roomId);
+        if (room.Phase != GamePhase.ChoosingAns)
+            return;
+
         _game.SubmitChosenAnswer(room, Context.ConnectionId, answer);
 
         if (room.ChosenAnswers.Count == room.Players.Count)
         {
             _game.ScoreRound(room);
             room.Phase = GamePhase.ShowingRanking;
+            _game.RefreshPhaseDeadline(room);
 
             var gameState = _game.GetGameState(room);
             await Clients.Group(roomId).SendAsync("RoundEnded", gameState);
+            SyncPhaseTimer(roomId, room);
         }
     }
 
@@ -308,11 +468,13 @@ public class GameHub : Hub
                 await Clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState);
             else
                 await Clients.Group(roomId).SendAsync("GameStarted", gameState);
+            SyncPhaseTimer(roomId, room);
         }
         else
         {
             var gameState = _game.GetGameState(room);
             await Clients.Group(roomId).SendAsync("GameEnded", gameState);
+            CancelPhaseTimer(roomId);
 
             // Save game session to database when game ends
             await _game.SaveGameSession(room);

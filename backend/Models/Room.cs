@@ -7,7 +7,7 @@ namespace Backend.Models;
 public class Room
 {
     public const int MaxPlayers = 6;
-    public const int MinPlayers = 1;
+    public const int MinPlayers = 2;
 
     public string RoomId { get; set; } = "";
 
@@ -40,6 +40,8 @@ public class Room
 
     public int TotalQuestions { get; set; }
     public int CurrentQuestionIndex { get; set; }
+    public int AnswerTimeSeconds { get; set; } = 30;
+    public DateTime? PhaseDeadlineUtc { get; set; }
 
     //A List is:
     //A collection of items in order.

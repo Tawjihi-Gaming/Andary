@@ -34,7 +34,7 @@ const GameRoom = ({ user }) => {
     const isPrivateRoom = Boolean(roomState.isPrivate)
     const roomName = roomState.roomName || `Room ${roomId}`
     const sessionId = roomState.sessionId
-    const timer = roomState.timer || 30
+    const timer = roomState.timer || roomState.answerTimeSeconds || 30
     const rounds = roomState.rounds || 5
 
     const [connectionStatus, setConnectionStatus] = useState('connecting')
@@ -55,10 +55,11 @@ const GameRoom = ({ user }) => {
     const roomTypeLabel = isPrivateRoom ? t('room.private') : t('room.public')
     const canCopyCode = Boolean(code) && (!isPrivateRoom || isOwner)
 
-    // Check if all non-owner players are ready and there's at least one other player
-    const allPlayersReady = players.length > 1 && players
-        .filter(p => p.sessionId !== roomOwnerId)
-        .every(p => p.isReady) || players.length === 1 // If owner is alone, consider all players ready
+    // Need at least 2 players, and all non-owner players must be ready.
+    const allPlayersReady = players.length >= 2 &&
+        players
+            .filter(p => p.sessionId !== roomOwnerId)
+            .every(p => p.isReady)
 
     const handleCopyCode = async () => {
         if (!canCopyCode)
@@ -131,7 +132,7 @@ const GameRoom = ({ user }) => {
             sessionId,
             ownerId: roomOwnerId,
             ownerName: roomOwnerName,
-           // timer,
+            timer,
             rounds,
         })
     }, [roomId, sessionId, code, isPrivateRoom, roomName, roomOwnerId, roomOwnerName, timer, rounds])
@@ -176,9 +177,12 @@ const GameRoom = ({ user }) => {
                     console.log('Game started:', state)
                     setGameState(state)
                     saveGameSessionSnapshot({ roomId, sessionId, user, state })
+                    const syncedTimer = state?.answerTimeSeconds || timer
                     navigate(`/game/${roomId}`, {
                         state: {
                             ...roomState,
+                            timer: syncedTimer,
+                            answerTimeSeconds: syncedTimer,
                             gameState: state,
                         }
                     })
@@ -189,13 +193,24 @@ const GameRoom = ({ user }) => {
                     console.log('Choose round topic:', state)
                     setGameState(state)
                     saveGameSessionSnapshot({ roomId, sessionId, user, state })
+                    const syncedTimer = state?.answerTimeSeconds || timer
                     navigate(`/game/${roomId}`, {
-                        state: { ...roomState, user, roomId, code, sessionId, gameState: state }
+                        state: {
+                            ...roomState,
+                            user,
+                            roomId,
+                            code,
+                            sessionId,
+                            timer: syncedTimer,
+                            answerTimeSeconds: syncedTimer,
+                            gameState: state
+                        }
                     })
                 })
 
                 // Show answer choices
-                connection.on('ShowChoices', (choices) => {
+                connection.on('ShowChoices', (payload) => {
+                    const choices = Array.isArray(payload) ? payload : (payload?.choices || [])
                     console.log('Answer choices:', choices)
                     setGameState(prev => ({ ...prev, choices }))
                 })

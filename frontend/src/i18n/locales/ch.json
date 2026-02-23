@@ -165,6 +165,7 @@
     "fakeAnswerPlaceholder": "输入你的假答案...",
     "fakeAnswerError": "提交假答案失败。请重试。",
     "fakeAnswerConnectionError": "提交假答案失败。请检查连接后重试。",
+    "timeLeft": "剩余时间",
     "chooseCorrectAnswer": "从选项中选择正确答案：",
     "leaderboard": "🏆 排行榜",
     "correctAnswer": "正确答案：",
@@ -173,7 +174,10 @@
     "winner": "获胜者：{{name}}",
     "backToLobby": "返回大厅",
     "leaveRoom": "离开房间",
-    "leaveRoomConfirmation": "你确定要离开房间吗？"
+    "leaveRoomConfirmation": "你确定要离开房间吗？",
+    "playerLeftRoomNotice": "{{name}} 离开了房间。",
+    "playerDisconnectedTemporaryNotice": "{{name}} 已断开连接，等待重新连接...",
+    "playerDisconnectedFinalNotice": "{{name}} 断线后已离开房间。"
   },
 
   "testRoom": {

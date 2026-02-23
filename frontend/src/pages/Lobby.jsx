@@ -57,7 +57,7 @@ const Lobby = ({ user, onLogout }) => {
         clientKey: user?.clientKey || null,
       })
       console.log('Joined room:', response.data)
-      const { roomId: joinedRoomId, code, sessionId, playerName, isPrivate, name } = response.data
+      const { roomId: joinedRoomId, code, sessionId, playerName, isPrivate, name, answerTimeSeconds } = response.data
       saveRoomSession({
         roomId: joinedRoomId,
         roomName: name,
@@ -65,6 +65,8 @@ const Lobby = ({ user, onLogout }) => {
         isPrivate,
         sessionId,
         ownerName: playerName,
+        timer: answerTimeSeconds || 30,
+        answerTimeSeconds: answerTimeSeconds || 30,
       })
       navigate(`/room/${joinedRoomId}`, {
         state: {
@@ -75,6 +77,8 @@ const Lobby = ({ user, onLogout }) => {
           isPrivate: isPrivate,
           sessionId: sessionId,
           ownerName: playerName,
+          timer: answerTimeSeconds || 30,
+          answerTimeSeconds: answerTimeSeconds || 30,
         }
       })
     } catch (err) {
@@ -111,7 +115,7 @@ const Lobby = ({ user, onLogout }) => {
         console.log('Joined room:', response.data)
         setShowJoinModal(false)
         setRoomCode('')
-        const { roomId, code, sessionId, playerName, isPrivate, name } = response.data
+        const { roomId, code, sessionId, playerName, isPrivate, name, answerTimeSeconds } = response.data
         saveRoomSession({
           roomId,
           roomName: name,
@@ -119,6 +123,8 @@ const Lobby = ({ user, onLogout }) => {
           isPrivate,
           sessionId,
           ownerName: playerName,
+          timer: answerTimeSeconds || 30,
+          answerTimeSeconds: answerTimeSeconds || 30,
         })
         navigate(`/room/${roomId}`, {
           state: {
@@ -129,6 +135,8 @@ const Lobby = ({ user, onLogout }) => {
             user: user,
             roomId: roomId,
             roomName: name,
+            timer: answerTimeSeconds || 30,
+            answerTimeSeconds: answerTimeSeconds || 30,
           }
         })
       } catch (err) {

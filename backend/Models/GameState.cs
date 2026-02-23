@@ -25,5 +25,7 @@ namespace Backend.Models
         public string? TopicChooserName { get; set; } // name of the player choosing the next topic
         public string? CurrentPlayerSessionId { get; set; } // sessionId of player whose turn it is (topic chooser when in ChoosingRoundTopic)
         public bool NeedsTopicChoice { get; set; } // true if multiple topics and player must choose
+        public int AnswerTimeSeconds { get; set; } // server-authoritative per-phase answer timer
+        public DateTime? PhaseDeadlineUtc { get; set; } // absolute UTC deadline for current timed phase
     }
 }

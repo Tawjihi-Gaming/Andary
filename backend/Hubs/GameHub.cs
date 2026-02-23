@@ -32,6 +32,11 @@ public class GameHub : Hub
     private async Task HandlePlayerExit(string roomId, string sessionId, bool disconnected)
     {
         var leaveResult = _game.LeaveRoom(roomId, sessionId);
+        await BroadcastLeaveResult(roomId, leaveResult, disconnected);
+    }
+
+    private async Task BroadcastLeaveResult(string roomId, LeaveRoomResult leaveResult, bool disconnected)
+    {
         if (!leaveResult.PlayerRemoved)
             return;
 
@@ -71,18 +76,17 @@ public class GameHub : Hub
     // Uses sessionId (UUID) instead of playerName to identify the player.
     public async Task ConnectToRoom(string roomId, string sessionId)
     {
-        var room = _game.GetRoom(roomId);
-
-        // Link the SignalR connectionId to the session player who joined via API
-        var sessionPlayer = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
-        if (sessionPlayer == null)
+        if (!_game.TryGetRoom(roomId, out var room) || room == null)
             return;
 
-        sessionPlayer.ConnectionId = Context.ConnectionId;
+        if (!_game.TryReconnectPlayer(roomId, sessionId, Context.ConnectionId))
+            return;
 
         // Add this connection to the SignalR group for real-time updates
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Group(roomId).SendAsync("PlayerConnected", sessionPlayer.DisplayName);
+        var sessionPlayer = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (sessionPlayer != null)
+            await Clients.Group(roomId).SendAsync("PlayerConnected", sessionPlayer.DisplayName);
 
         // Keep lobby player list in sync as soon as a connection joins.
         if (room.Phase == GamePhase.Lobby)
@@ -93,6 +97,12 @@ public class GameHub : Hub
     public async Task RejoinRoom(string roomId, string sessionId)
     {
         await ConnectToRoom(roomId, sessionId);
+
+        if (_game.TryGetRoom(roomId, out var room) && room != null)
+        {
+            var state = _game.GetGameState(room);
+            await Clients.Caller.SendAsync("GameStateSync", state);
+        }
     }
 
     // Explicit leave from frontend.
@@ -107,7 +117,23 @@ public class GameHub : Hub
         var player = _game.FindPlayerByConnection(Context.ConnectionId);
         if (player.HasValue)
         {
-            await HandlePlayerExit(player.Value.roomId, player.Value.sessionId, disconnected: true);
+            var roomId = player.Value.roomId;
+            var sessionId = player.Value.sessionId;
+
+            if (_game.MarkDisconnected(roomId, sessionId, out var disconnectedName, out var graceSeconds))
+            {
+                await Clients.Group(roomId).SendAsync("PlayerDisconnected", new
+                {
+                    sessionId,
+                    name = disconnectedName,
+                    temporary = true,
+                    graceSeconds
+                });
+
+                await Task.Delay(TimeSpan.FromSeconds(graceSeconds));
+                var leaveResult = _game.LeaveRoomIfDisconnectExpired(roomId, sessionId);
+                await BroadcastLeaveResult(roomId, leaveResult, disconnected: true);
+            }
         }
 
         await base.OnDisconnectedAsync(exception);

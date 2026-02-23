@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import { saveRoomSession } from '../utils/roomSession'
 
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
@@ -14,23 +15,33 @@ const Lobby = ({ user, onLogout }) => {
   const [lobbiesLoading, setLobbiesLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
     const fetchLobbies = async () => {
       try {
         setLobbiesLoading(true)
         const response = await api.get('/room/lobbies')
         const list = Array.isArray(response.data) ? response.data : []
-        setLobbies(list)
+        if (isMounted) {
+          setLobbies(list)
+        }
       } catch (error) {
         console.error('Error fetching lobbies:', error)
-        setLobbies([])
+        if (isMounted) {
+          setLobbies([])
+        }
       } finally {
-        setLobbiesLoading(false)
+        if (isMounted) {
+          setLobbiesLoading(false)
+        }
       }
     }
 
     fetchLobbies()
-    const intervalId = setInterval(fetchLobbies, 5000)
-    return () => clearInterval(intervalId)
+    const intervalId = setInterval(fetchLobbies, 15000)
+    return () => {
+      isMounted = false
+      clearInterval(intervalId)
+    }
   }, [])
 
   const handleJoinLobby = async (roomId) => {
@@ -45,6 +56,14 @@ const Lobby = ({ user, onLogout }) => {
       })
       console.log('Joined room:', response.data)
       const { roomId: joinedRoomId, code, sessionId, playerName, isPrivate, name } = response.data
+      saveRoomSession({
+        roomId: joinedRoomId,
+        roomName: name,
+        code,
+        isPrivate,
+        sessionId,
+        ownerName: playerName,
+      })
       navigate(`/room/${joinedRoomId}`, {
         state: {
           user: user,
@@ -73,7 +92,7 @@ const Lobby = ({ user, onLogout }) => {
 
   const handleJoinSubmit = async () => {
     const normalizedCode = roomCode.replace(/\D/g, '').slice(0, 6)
-    if (normalizedCode.test(/^\d{6}$/)) {
+    if (!/^\d{6}$/.test(normalizedCode)) {
       setJoinError(t('lobby.invalidCode'))
       return
     }
@@ -91,6 +110,14 @@ const Lobby = ({ user, onLogout }) => {
         setShowJoinModal(false)
         setRoomCode('')
         const { roomId, code, sessionId, playerName, isPrivate, name } = response.data
+        saveRoomSession({
+          roomId,
+          roomName: name,
+          code,
+          isPrivate,
+          sessionId,
+          ownerName: playerName,
+        })
         navigate(`/room/${roomId}`, {
           state: {
             code: code,
@@ -242,7 +269,7 @@ const Lobby = ({ user, onLogout }) => {
 
                     <div className="mb-2 flex items-center justify-between text-sm">
                       <span className="text-white/55">{t('lobby.roomCode')}</span>
-                      <span className="text-game-cyan font-bold tracking-widest">{lobby.code || 'N/A'}</span>
+                      <span className="text-white font-bold tracking-widest">{lobby.code || 'N/A'}</span>
                     </div>
 
                     {/* player count bar */}

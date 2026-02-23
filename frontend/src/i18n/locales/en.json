@@ -144,7 +144,10 @@
     "youAreReady": "✓ You are ready!",
     "waitingForOwner": "Waiting for the room owner to start the game...",
     "cancelReady": "Cancel Ready",
-    "backToLobby": "Back to Lobby"
+    "backToLobby": "Back to Lobby",
+    "closedTitle": "Room Closed",
+    "closedFallbackMessage": "This room has been closed.",
+    "reasonPrefix": "Reason:"
   },
 
   "game": {
@@ -165,7 +168,9 @@
     "nextRound": "Next Round ➡️",
     "gameOver": "🏆 Game Over!",
     "winner": "Winner: {{name}}",
-    "backToLobby": "Back to Lobby"
+    "backToLobby": "Back to Lobby",
+    "leaveRoom": "Leave Room",
+    "leaveRoomConfirmation": "Are you sure you want to leave the room?"
   },
 
   "testRoom": {

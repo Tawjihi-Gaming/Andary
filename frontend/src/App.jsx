@@ -7,7 +7,6 @@ import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
 import Game from './pages/game/[roomId].jsx'
-import TestRoom from './pages/room/TestRoom.jsx'
 import api from './api/axios'
 
 const createClientKey = () => {
@@ -154,10 +153,6 @@ function App() {
               <GameRoom user={user} /> :  // ✅ Change Room to GameRoom
               <Navigate to="/" replace />
           } 
-        />
-        <Route 
-          path="/test-room" 
-          element={<TestRoom />} 
         />
         <Route 
           path="/game/:roomId" 

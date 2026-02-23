@@ -69,7 +69,11 @@
     "noRoomsSub": "No lobbies available — create one to start playing!",
     "enterCode": "Enter room code (6 digits)",
     "invalidCode": "❌ Please enter a 6-digit code only.",
-    "lobbies": "lobbies"
+    "lobbies": "lobbies",
+    "confirmLogout": "Confirm Logout",
+    "cancelLogout" : "Cancel Logout",
+    "logoutMessage": "Are you sure you want to logout?",
+    "logoutTitle": "Confirm Logout"
   },
 
   "createRoom": {

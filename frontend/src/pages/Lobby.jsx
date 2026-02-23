@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import { saveRoomSession } from '../utils/roomSession'
+import GamePopup from '../components/GamePopup'
 
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
@@ -13,6 +14,7 @@ const Lobby = ({ user, onLogout }) => {
   const [joinError, setJoinError] = useState('')
   const [lobbies, setLobbies] = useState([])
   const [lobbiesLoading, setLobbiesLoading] = useState(true)
+  const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -136,6 +138,21 @@ const Lobby = ({ user, onLogout }) => {
     }
   }
 
+  const handleLogout = () => {
+    setIsLogoutPopupOpen(true)
+  }
+
+  const confirmLogout = () => {
+    setIsLogoutPopupOpen(false)
+    if (onLogout) {
+      onLogout()
+    } else {
+      localStorage.removeItem('isAuthenticated')
+      localStorage.removeItem('userData')
+    }
+    navigate('/login')
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden">
 
@@ -170,7 +187,7 @@ const Lobby = ({ user, onLogout }) => {
 
             {/* logout button */}
             <button
-              onClick={onLogout}
+              onClick={handleLogout}
               className="bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-400 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-red-500/30 cursor-pointer"
             >
               {t('lobby.logout')}
@@ -365,6 +382,17 @@ const Lobby = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+
+      <GamePopup
+        open={isLogoutPopupOpen}
+        title={t('lobby.logoutTitle')}
+        message={t('lobby.logoutMessage')}
+        confirmText={t('lobby.confirmLogout')}
+        cancelText={t('lobby.cancelLogout')}
+        showCancel
+        onCancel={() => setIsLogoutPopupOpen(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   )
 }

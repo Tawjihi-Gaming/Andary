@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import GamePopup from '../components/GamePopup'
 
 const XP_PER_LEVEL = 100
 
@@ -33,6 +34,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
+  const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
 
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type })
@@ -173,6 +175,22 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setNewPassword('')
     setConfirmPassword('')
   }
+
+  const handleLogout = () => {
+    setIsLogoutPopupOpen(true)
+  }
+
+  const confirmLogout = () => {
+    setIsLogoutPopupOpen(false)
+    if (onLogout) {
+      onLogout()
+    } else {
+      localStorage.removeItem('isAuthenticated')
+      localStorage.removeItem('userData')
+    }
+    navigate('/login')
+  }
+
 
   return (
     <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] p-4">
@@ -411,7 +429,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* LOGOUT BUTTON */}
           <div className="flex justify-center mt-8">
             <button
-              onClick={onLogout}
+              onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 shadow-lg cursor-pointer"
             >
               {t('profile.logoutButton')}
@@ -419,6 +437,16 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           </div>
         </div>
       </div>
+      <GamePopup
+        open={isLogoutPopupOpen}
+        title={t('lobby.logoutTitle')}
+        message={t('lobby.logoutMessage')}
+        confirmText={t('lobby.confirmLogout')}
+        cancelText={t('lobby.cancelLogout')}
+        showCancel
+        onCancel={() => setIsLogoutPopupOpen(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   )
 }

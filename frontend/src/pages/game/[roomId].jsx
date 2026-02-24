@@ -444,7 +444,13 @@ const Game = ({ user: authenticatedUser }) => {
             if (!result?.success) {
                 setMessage('')
                 setHasSubmittedFake(false)
-                setFakeSubmitError(result?.message || t('game.fakeAnswerError'))
+                const backendMessage = typeof result?.message === 'string' ? result.message.trim() : ''
+                const resolvedTranslation = backendMessage ? t(backendMessage, { defaultValue: '' }) : ''
+                const translatedError =
+                    resolvedTranslation && resolvedTranslation !== backendMessage
+                        ? resolvedTranslation
+                        : t('game.fakeAnswerError')
+                setFakeSubmitError(translatedError)
                 return
             }
 
@@ -457,7 +463,7 @@ const Game = ({ user: authenticatedUser }) => {
             setFakeSubmitError(t('game.fakeAnswerConnectionError'))
             console.error('Error submitting fake answer:', error)
         }
-    }, [roomId, fakeAnswer])
+    }, [roomId, fakeAnswer, t])
 
     const handleChooseAnswer = useCallback(async (answer) => {
         const conn = connRef.current

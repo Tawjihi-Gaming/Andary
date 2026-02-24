@@ -15,6 +15,7 @@ const Lobby = ({ user, onLogout }) => {
   const [lobbies, setLobbies] = useState([])
   const [lobbiesLoading, setLobbiesLoading] = useState(true)
   const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
+  const userAvatar = user?.avatarImageName || user?.avatar || ''
 
   useEffect(() => {
     let isMounted = true
@@ -53,7 +54,7 @@ const Lobby = ({ user, onLogout }) => {
         roomId: roomId,
         playerId: user?.id || null,
         playerName: user?.username || 'Guest',
-        avatarImageName: user?.avatarImageName || '',
+        avatarImageName: userAvatar,
         clientKey: user?.clientKey || null,
       })
       console.log('Joined room:', response.data)
@@ -109,7 +110,7 @@ const Lobby = ({ user, onLogout }) => {
           code: normalizedCode,
           playerId: user?.id || null,
           playerName: user?.username || 'Guest',
-          avatarImageName: user?.avatarImageName || '',
+          avatarImageName: userAvatar,
           clientKey: user?.clientKey || null,
         })
         console.log('Joined room:', response.data)

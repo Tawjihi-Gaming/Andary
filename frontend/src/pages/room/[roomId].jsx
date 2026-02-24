@@ -5,12 +5,21 @@ import { useSignalR } from '../../context/SignalRContext'
 import { loadRoomSession, saveRoomSession, clearRoomSession } from '../../utils/roomSession'
 import GamePopup from '../../components/GamePopup'
 
-const normalizePlayer = (player) => ({
-    avatarUrl: player?.avatarUrl || player?.avatarImageName || '',
-    sessionId: player?.sessionId || '',
-    name: player?.name || player?.displayName || 'Player',
-    isReady: Boolean(player?.isReady),
-})
+const normalizePlayer = (player) => {
+    const normalizedAvatar =
+        player?.avatar ||
+        player?.avatarImageName ||
+        player?.avatarUrl ||
+        ''
+
+    return {
+        avatar: normalizedAvatar,
+        avatarUrl: normalizedAvatar,
+        sessionId: player?.sessionId || '',
+        name: player?.name || player?.displayName || 'Player',
+        isReady: Boolean(player?.isReady),
+    }
+}
 
 const saveGameSessionSnapshot = ({ roomId, sessionId, user, state }) => {
     if (!roomId || !sessionId || !state) return
@@ -360,7 +369,7 @@ const GameRoom = ({ user }) => {
                                 } transition-all duration-300`}
                             >
                                 <div className="flex flex-col items-center gap-1 sm:gap-3">
-                                    <span className="text-4xl sm:text-6xl">👤</span>
+                                    <span className="text-4xl sm:text-6xl">{player?.avatar || '👤'}</span>
                                     <p className="text-white text-xs sm:text-base font-semibold truncate w-full text-center">
                                         {player.name}
                                         {player.sessionId === roomOwnerId && ' 👑'}

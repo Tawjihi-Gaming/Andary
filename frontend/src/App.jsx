@@ -29,9 +29,11 @@ function App() {
     const parsedUser = JSON.parse(savedUser)
     const normalizedUser = {
       ...parsedUser,
+      avatar: parsedUser.avatar || parsedUser.avatarImageName || '👤',
+      avatarImageName: parsedUser.avatarImageName || parsedUser.avatar || '',
       clientKey: parsedUser.clientKey || createClientKey(),
     }
-    if (!parsedUser.clientKey) {
+    if (!parsedUser.clientKey || !parsedUser.avatar || !parsedUser.avatarImageName) {
       localStorage.setItem('userData', JSON.stringify(normalizedUser))
     }
     return normalizedUser
@@ -75,6 +77,8 @@ function App() {
   const handleLogin = (userData) => {
     const normalizedUser = {
       ...userData,
+      avatar: userData.avatar || userData.avatarImageName || '👤',
+      avatarImageName: userData.avatarImageName || userData.avatar || '',
       clientKey: userData.clientKey || createClientKey(),
     }
     localStorage.setItem('isAuthenticated', 'true')
@@ -94,6 +98,8 @@ function App() {
   const handleUpdateUser = (updatedUser) => {
     const normalizedUser = {
       ...updatedUser,
+      avatar: updatedUser.avatar || updatedUser.avatarImageName || '👤',
+      avatarImageName: updatedUser.avatarImageName || updatedUser.avatar || '',
       clientKey: updatedUser.clientKey || user?.clientKey || createClientKey(),
     }
     localStorage.setItem('userData', JSON.stringify(normalizedUser))
@@ -156,7 +162,7 @@ function App() {
           path="/room/:roomId" 
           element={
             isAuthenticated ? 
-              <GameRoom user={user} /> :  // ✅ Change Room to GameRoom
+              <GameRoom user={user} /> : 
               <Navigate to="/" replace />
           } 
         />

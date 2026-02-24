@@ -17,6 +17,7 @@ const CreateRoom = ({ user }) => {
   const [timer, setTimer] = useState(30)
   const [rounds, setRounds] = useState(5)
   const navigate = useNavigate()
+  const userAvatar = user?.avatarImageName || user?.avatar || ''
 
   // Fetch available topics from the backend
   useEffect(() => {
@@ -90,7 +91,7 @@ const CreateRoom = ({ user }) => {
         isPrivate: isPrivate,
         questions: rounds || 10, 
         playerName: user?.username || 'Guest',
-        avatarImageName: user?.avatarImageName || '',
+        avatarImageName: userAvatar,
         playerId: user?.id || null,
         clientKey: user?.clientKey || null,
         selectedTopics: selectedTopics,
@@ -293,7 +294,7 @@ const CreateRoom = ({ user }) => {
 
           {/* Answer Timer Slider */}
           <div>
-            <label className="block text-white/90 font-semibold mb-3 text-base sm:text-lg">
+            <label className="block font-semibold mb-3 text-base sm:text-lg" style={{ color: 'var(--app-text-soft)' }}>
               {t('createRoom.answerTime')}
               <span className="text-game-yellow font-bold ms-2">{timer} {t('common.second')}</span>
             </label>
@@ -307,10 +308,10 @@ const CreateRoom = ({ user }) => {
                 onChange={(e) => setTimer(Number(e.target.value))}
                 className="w-full h-3 bg-white/10 rounded-full appearance-none cursor-pointer slider"
                 style={{
-                  background: `linear-gradient(${isRTL ? 'to left' : 'to right'}, #FACC15 0%, #FACC15 ${((timer - 10) / 110) * 100}%, rgba(255,255,255,0.1) ${((timer - 10) / 110) * 100}%, rgba(255,255,255,0.1) 100%)`
+                  background: `linear-gradient(${isRTL ? 'to left' : 'to right'}, var(--color-game-yellow) 0%, var(--color-game-yellow) ${((timer - 10) / 110) * 100}%, var(--app-card-bg-strong) ${((timer - 10) / 110) * 100}%, var(--app-card-bg-strong) 100%)`
                 }}
               />
-              <div className="flex justify-between text-white/70 text-xs sm:text-sm mt-2">
+              <div className="flex justify-between text-xs sm:text-sm mt-2" style={{ color: 'var(--app-text-muted)' }}>
                 <span>10 {t('common.seconds')}</span>
                 <span>120 {t('common.seconds')}</span>
               </div>

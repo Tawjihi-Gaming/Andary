@@ -185,7 +185,14 @@ public class RoomController : ControllerBase
                 roomType = room.Type.ToString(),
                 ownerSessionId = room.OwnerSessionId,
                 phase = room.Phase.ToString(),
-                players = room.Players.Select(p => new { sessionId = p.SessionId, name = p.DisplayName, score = p.Score, isReady = p.IsReady }),
+                players = room.Players.Select(p => new
+                {
+                    sessionId = p.SessionId,
+                    name = p.DisplayName,
+                    avatarImageName = p.AvatarImageName,
+                    score = p.Score,
+                    isReady = p.IsReady
+                }),
                 totalQuestions = room.TotalQuestions,
                 selectedTopics = room.SelectedTopics,
                 answerTimeSeconds = room.AnswerTimeSeconds

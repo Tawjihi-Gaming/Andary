@@ -397,13 +397,27 @@ const Game = ({ user: authenticatedUser }) => {
     }, [navigate, showLeaveNotice, t, applyTimerState])
 
     const leaveNoticeBanner = leaveNotice ? (
-        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-xl border border-amber-300/35 bg-black/70 px-4 py-2 text-sm font-semibold text-amber-100 shadow-lg backdrop-blur-lg">
+        <div
+            className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-xl px-4 py-2 text-sm font-semibold shadow-lg backdrop-blur-lg"
+            style={{
+                border: '1px solid color-mix(in srgb, var(--color-game-yellow) 45%, transparent)',
+                background: 'color-mix(in srgb, var(--app-card-bg-strong) 92%, transparent)',
+                color: 'color-mix(in srgb, var(--color-game-yellow) 70%, var(--app-text))',
+            }}
+        >
             {leaveNotice}
         </div>
     ) : null
     const showPhaseTimer = TIMED_PHASES.includes(phase) && secondsLeft !== null
     const phaseTimerBanner = showPhaseTimer ? (
-        <div className="absolute top-4 left-4 z-20 rounded-xl border border-cyan-300/30 bg-black/60 px-3 py-1.5 text-xs font-bold text-cyan-100 shadow-lg backdrop-blur-lg sm:text-sm">
+        <div
+            className="absolute top-4 left-4 z-20 rounded-xl px-3 py-1.5 text-xs font-bold shadow-lg backdrop-blur-lg sm:text-sm"
+            style={{
+                border: '1px solid color-mix(in srgb, var(--color-game-cyan) 45%, transparent)',
+                background: 'color-mix(in srgb, var(--app-card-bg-strong) 92%, transparent)',
+                color: 'color-mix(in srgb, var(--color-game-cyan) 75%, var(--app-text))',
+            }}
+        >
             {t('game.timeLeft')}: {secondsLeft} {secondsLeft === 1 ? t('common.second') : t('common.seconds')}
         </div>
     ) : null

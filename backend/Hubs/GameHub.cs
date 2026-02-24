@@ -28,6 +28,7 @@ public class GameHub : Hub
         {
             sessionId = p.SessionId,
             name = p.DisplayName,
+            avatarImageName = p.AvatarImageName,
             isReady = p.IsReady
         });
         await Clients.Group(roomId).SendAsync("LobbyUpdated", lobbyState);

@@ -231,7 +231,7 @@ const Auth = ({ onLogin }) => {
               value={guestName}
               required
               onChange={handleUserName}
-              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:border-game-yellow focus:bg-white/20 transition-all duration-200"
+              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:!border-game-yellow focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
             <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" fill="currentColor" viewBox="0 0 24 24">
@@ -280,7 +280,7 @@ const Auth = ({ onLogin }) => {
               value={email}
               required
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:border-game-cyan focus:bg-white/20 transition-all duration-200"
+              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:!border-game-cyan focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
             <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,7 +295,7 @@ const Auth = ({ onLogin }) => {
               value={password}
               required
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:border-game-blue focus:bg-white/20 transition-all duration-200"
+              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
             <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,7 +313,7 @@ const Auth = ({ onLogin }) => {
                   value={displayName}
                   required
                   onChange={handleDisplayName}
-                  className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:border-game-green focus:bg-white/20 transition-all duration-200"
+                  className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:!border-game-green focus:!bg-white/20 transition-all duration-200"
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
                 <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-green" fill="currentColor" viewBox="0 0 24 24">

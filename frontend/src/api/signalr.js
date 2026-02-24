@@ -25,7 +25,11 @@ export const createConnection = () => {
   })
 
   connection.onclose((error) => {
-    console.error('SignalR connection closed:', error)
+    if (error) {
+      console.error('SignalR connection closed with error:', error)
+    } else {
+      console.log('SignalR connection closed')
+    }
   })
 
   return connection
@@ -76,4 +80,3 @@ export const stopConnection = async () => {
 export const getConnection = () => connection
 
 export default { createConnection, startConnection, stopConnection, getConnection }
-

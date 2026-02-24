@@ -185,16 +185,8 @@
     "leaveRoomConfirmation": "هل أنت متأكد أنك تريد مغادرة الغرفة؟",
     "playerLeftRoomNotice": "{{name}} غادر الغرفة.",
     "playerDisconnectedTemporaryNotice": "انقطع اتصال {{name}}. ننتظر إعادة اتصاله...",
-    "playerDisconnectedFinalNotice": "غادر {{name}} الغرفة بعد انقطاع الاتصال."
-  },
-
-  "testRoom": {
-    "title": "اختبار غرفة اللعب",
-    "players": "اللاعبون",
-    "testTools": "أدوات الاختبار",
-    "addPlayer": "إضافة لاعب",
-    "removePlayer": "حذف لاعب",
-    "copied": "تم النسخ!",
-    "copyRoomCode": "نسخ كود الغرفة"
+    "playerDisconnectedFinalNotice": "غادر {{name}} الغرفة بعد انقطاع الاتصال.",
+    "correctAnswerExplained": "الشرح: {{explanation}}",
+    "noExplanation": "لم يتم تقديم شرح."
   }
 }

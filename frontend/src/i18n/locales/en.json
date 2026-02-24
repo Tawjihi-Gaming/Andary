@@ -173,6 +173,7 @@
       "empty": "Write a fake answer first.",
       "cannotUseCorrectAnswer": "You cannot submit the correct answer as a fake answer."
     },
+    "correctAnswerExplained": "explanation: {{explanation}}",
     "timeLeft": "Time left",
     "chooseCorrectAnswer": "Choose the correct answer from the options:",
     "leaderboard": "🏆 Leaderboard",
@@ -185,16 +186,7 @@
     "leaveRoomConfirmation": "Are you sure you want to leave the room?",
     "playerLeftRoomNotice": "{{name}} left the room.",
     "playerDisconnectedTemporaryNotice": "{{name}} disconnected. Waiting for reconnection...",
-    "playerDisconnectedFinalNotice": "{{name}} left the room after disconnect."
-  },
-
-  "testRoom": {
-    "title": "Test Game Room",
-    "players": "Players",
-    "testTools": "Test Tools",
-    "addPlayer": "Add Player",
-    "removePlayer": "Remove Player",
-    "copied": "Copied!",
-    "copyRoomCode": "Copy Room Code"
+    "playerDisconnectedFinalNotice": "{{name}} left the room after disconnect.",
+    "noExplanation": "No explanation provided."
   }
 }

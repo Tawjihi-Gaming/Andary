@@ -690,6 +690,7 @@ const Game = ({ user: authenticatedUser }) => {
                         <div className="mb-6 bg-white/10 rounded-2xl px-6 py-4 border border-white/20">
                             <p className="text-white/60 text-sm mb-1">{t('game.correctAnswer')}</p>
                             <p className="text-green-300 text-xl font-bold" dir={getTextDirection(roundResult.currentQuestion.correctAnswer)}>{roundResult.currentQuestion.correctAnswer}</p>
+                            <p className="text-white/70 text-sm mt-3">{t('game.correctAnswerExplained', { explanation: roundResult.currentQuestion.explanation || t('game.noExplanation') })}</p>
                         </div>
                     )}
 

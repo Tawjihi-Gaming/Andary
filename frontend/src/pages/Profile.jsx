@@ -15,9 +15,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
 
-  // Mock XP for frontend testing (replace with user?.xp when backend is ready)
-  const MOCK_XP = 720
-  const xp = user?.xp || MOCK_XP
+  const xp = user?.xp || 0
   const level = getLevel(xp)
   const progress = getProgress(xp)
   const progressPercent = (progress / XP_PER_LEVEL) * 100
@@ -29,7 +27,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   const [selectedAvatar, setSelectedAvatar] = useState(
     AVATARS.find(a => a.emoji === user?.avatar) || AVATARS[0]
   )
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -42,126 +39,85 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   }
 
   // Update username
-  // POST /player/:{id}/  {username}
   const handleUpdateUsername = async () => {
-    if (!username.trim())
-    {
-      return
-    }
+    if (!username.trim()) return
     setLoading(true)
-    try
-    {
-    /*
-      API call to update username
-      await api.post('/player/:{id}/', {username})
-    */
+    try {
+      await api.post('/auth/edit', { username })
       onUpdateUser?.({ ...user, username })
       showMessage(t('profile.usernameUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update username error:', error)
-      showMessage(t('profile.usernameUpdateFailed'), 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.usernameUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update email
-  // POST /player/:{id}/  {email}
   const handleUpdateEmail = async () => {
-    if (!email.trim())
-    {
-      return
-    }
+    if (!email.trim()) return
     setLoading(true)
-    try
-    {
-    /*
-      API call to update email
-      await api.post('/player/:{id}/', {email})
-    */
+    try {
+      await api.post('/auth/edit', { email })
       onUpdateUser?.({ ...user, email })
       showMessage(t('profile.emailUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update email error:', error)
-      showMessage(t('profile.emailUpdateFailed'), 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.emailUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update avatar
-  // POST /player/:{id}/  {avatar: selectedAvatar.emoji}
   const handleUpdateAvatar = async () => {
     setLoading(true)
-    try
-    {
-      /*
-      API call to update avatar
-      await api.post('/player/:{id}/', {avatar: selectedAvatar.emoji})
-      */
+    try {
+      await api.post('/auth/edit', { avatarImageName: selectedAvatar.emoji })
       onUpdateUser?.({ ...user, avatar: selectedAvatar.emoji })
       showMessage(t('profile.avatarUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update avatar error:', error)
-      showMessage(t('profile.avatarUpdateFailed'), 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.avatarUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update password
-  // POST /auth/update-password  {currentPassword, newPassword}
   const handleUpdatePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword)
-    {
+    if (!newPassword || !confirmPassword) {
       showMessage(t('profile.fillAllPasswordFields'), 'error')
       return
     }
-    if (newPassword !== confirmPassword)
-    {
+
+    if (newPassword !== confirmPassword) {
       showMessage(t('profile.passwordsDoNotMatch'), 'error')
       return
     }
-    if (newPassword.length < 6)
-    {
+    if (newPassword.length < 6) {
       showMessage(t('profile.passwordMinLength'), 'error')
       return
     }
     setLoading(true)
-    try
-    {
-    /*
-      API call to update password
-      await api.post('/auth/update-password', { currentPassword, newPassword })
-    */
+    try {
+      await api.post('/auth/edit', { password: newPassword })
       showMessage(t('profile.passwordUpdated'))
-      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update password error:', error)
-      showMessage(t('profile.passwordUpdateFailed'), 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.passwordUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
@@ -171,7 +127,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setUsername(user?.username || '')
     setEmail(user?.email || '')
     setSelectedAvatar(AVATARS.find(a => a.emoji === user?.avatar) || AVATARS[0])
-    setCurrentPassword('')
     setNewPassword('')
     setConfirmPassword('')
   }
@@ -180,8 +135,13 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setIsLogoutPopupOpen(true)
   }
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     setIsLogoutPopupOpen(false)
+    try {
+      await api.post('/auth/logout')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
     if (onLogout) {
       onLogout()
     }
@@ -190,17 +150,17 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] p-4">
+    <div className="min-h-screen app-page-bg p-4">
       <div className="max-w-2xl mx-auto">
         {/* back button and language switcher */}
-        <div className="flex items-center justify-between mb-4">
+        <div dir="ltr" className="flex flex-col sm:flex-row sm:items-center sm:justify-between items-start gap-3 mb-4">
+          <LanguageSwitcher />
           <button
             onClick={() => navigate('/lobby')}
             className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium"
           >
             {t('profile.goBack')}
           </button>
-          <LanguageSwitcher />
         </div>
 
         {/* toast message */}
@@ -217,7 +177,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
         )}
 
         {/* profile card */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-2 border-white/20">
+        <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-8 shadow-2xl">
           <h1 className="text-4xl font-extrabold text-white mb-8 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
             {t('profile.title')}
           </h1>
@@ -225,7 +185,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* AVATAR SECTION */}
           <div className="flex flex-col items-center gap-4 mb-8">
             <div
-              className="w-32 h-32 cursor-pointer rounded-full bg-game-yellow flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform pt-2"
+              className="w-32 h-32 cursor-pointer rounded-full bg-game-yellow pt-4 flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform pt-2"
               onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
               title={t('profile.clickToChangeAvatar')}
             >
@@ -313,7 +273,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   {!user?.isGuest && (
                     <button
                       onClick={() => setEditingField('username')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
                       {t('common.edit')}
                     </button>
@@ -356,7 +316,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   {!user?.isGuest && (
                     <button
                       onClick={() => setEditingField('email')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm cursor-pointer"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
                       {t('common.edit')}
                     </button>
@@ -371,13 +331,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                 <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.passwordLabel')}</label>
                 {editingField === 'password' ? (
                   <div className="flex flex-col gap-3">
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
-                      placeholder={t('profile.currentPassword')}
-                    />
                     <input
                       type="password"
                       value={newPassword}
@@ -396,15 +349,15 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                       <button
                         onClick={handleUpdatePassword}
                         disabled={loading}
-                        className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50"
+                        className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                       >
-                        {loading ? '...' : 'تحديث كلمة المرور'}
+                        {loading ? '...' : t('common.save')}
                       </button>
                       <button
                         onClick={handleCancel}
                         className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                       >
-                        إلغاء
+                        {t('common.cancel')}
                       </button>
                     </div>
                   </div>
@@ -413,7 +366,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                     <span className="text-white text-lg">••••••••</span>
                     <button
                       onClick={() => setEditingField('password')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm cursor-pointer"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
                       {t('profile.changePassword')}
                     </button>

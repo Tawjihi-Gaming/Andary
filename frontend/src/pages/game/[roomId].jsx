@@ -53,6 +53,16 @@ const getTextDirection = (value) => {
     return 'rtl'
 }
 
+const getSecondsLeftFromDeadline = (deadlineUtc) => {
+    if (!deadlineUtc) return null
+    const deadlineMs = Date.parse(deadlineUtc)
+    if (Number.isNaN(deadlineMs)) return null
+    return Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000))
+}
+
+const PHASE_DURATION_SECONDS = 15
+const TIMED_PHASES = ['topic-selection', 'collecting-fakes', 'choosing-answer', 'round-result']
+
 const Game = ({ user: authenticatedUser }) => {
     const { roomId } = useParams()
     const location = useLocation()
@@ -61,6 +71,7 @@ const Game = ({ user: authenticatedUser }) => {
     const { stopConnection } = useSignalR()
     const connRef = useRef(null)
     const hasSetup = useRef(false)
+    const leaveNoticeTimeoutRef = useRef(null)
 
     // Try location.state first, fall back to localStorage on refresh
     const savedSession = loadSession()
@@ -68,6 +79,11 @@ const Game = ({ user: authenticatedUser }) => {
     const sessionId = location.state?.sessionId || savedSession?.sessionId || savedRoomSession?.sessionId
     const initialGameState = location.state?.gameState || savedSession?.gameState
     const user = location.state?.user || savedSession?.user || authenticatedUser
+    const initialAnswerTimeSeconds =
+        location.state?.answerTimeSeconds ||
+        savedRoomSession?.answerTimeSeconds ||
+        savedRoomSession?.timer ||
+        PHASE_DURATION_SECONDS
 
     const [phase, setPhase] = useState(initialGameState ? mapPhase(initialGameState.phase) : 'topic-selection')
     const [topics, setTopics] = useState(initialGameState?.selectedTopics || [])
@@ -87,12 +103,32 @@ const Game = ({ user: authenticatedUser }) => {
     const [connectionReady, setConnectionReady] = useState(false)
     const [isReconnecting, setIsReconnecting] = useState(false)
     const [hasSubmittedFake, setHasSubmittedFake] = useState(false)
-    const [selectedAnswer, setSelectedAnswer] = useState(null)
+    const [selectedAnswerIndex, setSelectedAnswerIndex] = useState(null)
     const [isLeavePopupOpen, setIsLeavePopupOpen] = useState(false)
     const [turnTopicOptions, setTurnTopicOptions] = useState([])
+    const [leaveNotice, setLeaveNotice] = useState('')
+    const [answerTimeSeconds, setAnswerTimeSeconds] = useState(
+        initialGameState?.answerTimeSeconds || initialAnswerTimeSeconds
+    )
+    const [phaseDeadlineUtc, setPhaseDeadlineUtc] = useState(initialGameState?.phaseDeadlineUtc || null)
+    const [secondsLeft, setSecondsLeft] = useState(
+        getSecondsLeftFromDeadline(initialGameState?.phaseDeadlineUtc)
+    )
 
     const isMyTurn = currentTurn === sessionId
     const questionDirection = getTextDirection(question)
+
+    const showLeaveNotice = useCallback((noticeText) => {
+        if (!noticeText) return
+
+        setLeaveNotice(noticeText)
+        if (leaveNoticeTimeoutRef.current) {
+            clearTimeout(leaveNoticeTimeoutRef.current)
+        }
+        leaveNoticeTimeoutRef.current = setTimeout(() => {
+            setLeaveNotice('')
+        }, 3500)
+    }, [])
 
     const getRandomTopics = useCallback((list = [], count = 4) => {
         const unique = [...new Set(list.filter(Boolean))]
@@ -106,6 +142,18 @@ const Game = ({ user: authenticatedUser }) => {
         return shuffled.slice(0, count)
     }, [])
 
+    const applyTimerState = useCallback((state) => {
+        if (!state) return
+
+        if (typeof state.answerTimeSeconds === 'number' && state.answerTimeSeconds > 0) {
+            setAnswerTimeSeconds(state.answerTimeSeconds)
+        }
+
+        if (Object.prototype.hasOwnProperty.call(state, 'phaseDeadlineUtc')) {
+            setPhaseDeadlineUtc(state.phaseDeadlineUtc || null)
+        }
+    }, [])
+
     // New round/new question: clear previous fake-answer UI state.
     useEffect(() => {
         if (phase === 'collecting-fakes') {
@@ -115,7 +163,7 @@ const Game = ({ user: authenticatedUser }) => {
             setHasSubmittedFake(false)
         }
         if (phase === 'choosing-answer') {
-            setSelectedAnswer(null)
+            setSelectedAnswerIndex(null)
         }
     }, [phase, question, selectedTopic])
 
@@ -126,6 +174,26 @@ const Game = ({ user: authenticatedUser }) => {
         }
         setTurnTopicOptions(getRandomTopics(topics, 4))
     }, [phase, isMyTurn, currentTurn, topics, getRandomTopics])
+
+    useEffect(() => {
+        if (!phaseDeadlineUtc) {
+            setSecondsLeft(null)
+            return
+        }
+
+        const tick = () => setSecondsLeft(getSecondsLeftFromDeadline(phaseDeadlineUtc))
+        tick()
+        const intervalId = setInterval(tick, 250)
+        return () => clearInterval(intervalId)
+    }, [phaseDeadlineUtc])
+
+    useEffect(() => {
+        return () => {
+            if (leaveNoticeTimeoutRef.current) {
+                clearTimeout(leaveNoticeTimeoutRef.current)
+            }
+        }
+    }, [])
 
     // Save session to localStorage whenever key data changes
     useEffect(() => {
@@ -149,9 +217,11 @@ const Game = ({ user: authenticatedUser }) => {
                 currentQuestion: question ? { questionText: question } : null,
                 choices,
                 scores,
+                answerTimeSeconds,
+                phaseDeadlineUtc,
             }
         })
-    }, [phase, topics, selectedTopic, currentTurn, players, question, choices, scores])
+    }, [phase, topics, selectedTopic, currentTurn, players, question, choices, scores, answerTimeSeconds, phaseDeadlineUtc])
 
     // Setup connection — handles both first load and page refresh
     useEffect(() => {
@@ -202,6 +272,7 @@ const Game = ({ user: authenticatedUser }) => {
                 setPhase('topic-selection')
                 setTopics(state.selectedTopics || [])
                 setCurrentTurn(state.currentPlayerSessionId)
+                applyTimerState(state)
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
@@ -212,6 +283,7 @@ const Game = ({ user: authenticatedUser }) => {
                 setPhase(mapPhase(state.phase))
                 setSelectedTopic(state.currentRoundTopic)
                 setCurrentTurn(state.currentPlayerSessionId)
+                applyTimerState(state)
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
@@ -220,14 +292,20 @@ const Game = ({ user: authenticatedUser }) => {
                 if (state.choices?.length > 0) setChoices(state.choices)
             })
 
-            conn.on('ShowChoices', (data) => {
+            conn.on('ShowChoices', (payload) => {
                 setPhase('choosing-answer')
-                setChoices(data)
+                const incomingChoices = Array.isArray(payload) ? payload : (payload?.choices || [])
+                setChoices(incomingChoices)
+
+                if (!Array.isArray(payload)) {
+                    applyTimerState(payload)
+                }
             })
 
             conn.on('RoundEnded', (state) => {
                 setPhase('round-result')
                 setRoundResult(state)
+                applyTimerState(state)
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
@@ -237,6 +315,7 @@ const Game = ({ user: authenticatedUser }) => {
             conn.on('GameEnded', (state) => {
                 setPhase('finished')
                 clearSession() // Game over — clear saved session
+                applyTimerState(state)
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
@@ -259,12 +338,40 @@ const Game = ({ user: authenticatedUser }) => {
                 setTopics(state.selectedTopics || [])
                 setSelectedTopic(state.currentRoundTopic)
                 setCurrentTurn(state.currentPlayerSessionId)
+                applyTimerState(state)
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
                 }
                 if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
                 if (state.choices?.length > 0) setChoices(state.choices)
+            })
+
+            conn.on('PlayerLeft', (data) => {
+                const departedSessionId = data?.sessionId
+                const departedName = data?.name || t('common.player')
+
+                if (departedSessionId) {
+                    setPlayers(prev => prev.filter(p => p.sessionId !== departedSessionId))
+                }
+
+                showLeaveNotice(t('game.playerLeftRoomNotice', { name: departedName }))
+            })
+
+            conn.on('PlayerDisconnected', (data) => {
+                const departedSessionId = data?.sessionId
+                const departedName = data?.name || t('common.player')
+
+                if (data?.temporary) {
+                    showLeaveNotice(t('game.playerDisconnectedTemporaryNotice', { name: departedName }))
+                    return
+                }
+
+                if (departedSessionId) {
+                    setPlayers(prev => prev.filter(p => p.sessionId !== departedSessionId))
+                }
+
+                showLeaveNotice(t('game.playerDisconnectedFinalNotice', { name: departedName }))
             })
 
             setConnectionReady(true)
@@ -283,9 +390,37 @@ const Game = ({ user: authenticatedUser }) => {
                 conn.off('GameEnded')
                 conn.off('TurnChanged')
                 conn.off('GameStateSync')
+                conn.off('PlayerLeft')
+                conn.off('PlayerDisconnected')
             }
         }
-    }, [navigate])
+    }, [navigate, showLeaveNotice, t, applyTimerState])
+
+    const leaveNoticeBanner = leaveNotice ? (
+        <div
+            className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-xl px-4 py-2 text-sm font-semibold shadow-lg backdrop-blur-lg"
+            style={{
+                border: '1px solid color-mix(in srgb, var(--color-game-yellow) 45%, transparent)',
+                background: 'color-mix(in srgb, var(--app-card-bg-strong) 92%, transparent)',
+                color: 'color-mix(in srgb, var(--color-game-yellow) 70%, var(--app-text))',
+            }}
+        >
+            {leaveNotice}
+        </div>
+    ) : null
+    const showPhaseTimer = TIMED_PHASES.includes(phase) && secondsLeft !== null
+    const phaseTimerBanner = showPhaseTimer ? (
+        <div
+            className="absolute top-4 left-4 z-20 rounded-xl px-3 py-1.5 text-xs font-bold shadow-lg backdrop-blur-lg sm:text-sm"
+            style={{
+                border: '1px solid color-mix(in srgb, var(--color-game-cyan) 45%, transparent)',
+                background: 'color-mix(in srgb, var(--app-card-bg-strong) 92%, transparent)',
+                color: 'color-mix(in srgb, var(--color-game-cyan) 75%, var(--app-text))',
+            }}
+        >
+            {t('game.timeLeft')}: {secondsLeft} {secondsLeft === 1 ? t('common.second') : t('common.seconds')}
+        </div>
+    ) : null
 
     const handleTopicSelect = useCallback(async (topic) => {
         const conn = connRef.current
@@ -345,20 +480,18 @@ const Game = ({ user: authenticatedUser }) => {
     }, [roomId])
 
     const handleLeave = async () => {
+        const conn = connRef.current
+        if (conn) {
+            try {
+                await conn.invoke('LeaveRoom', roomId, sessionId)
+            } catch (error) {
+                console.error('Error leaving room:', error)
+            }
+        }
+
         clearSession()
         clearRoomSession()
         await stopConnection()
-        if (isMyTurn){
-            // If the player leaves during their turn, we should trigger a turn change so the game can continue smoothly for others
-            const conn = connRef.current
-            if (conn) {
-                try {
-                    await conn.invoke('LeaveRoom', roomId, sessionId)
-                } catch (error) {
-                    console.error('Error leaving room:', error)
-                }
-            }
-        }
         navigate('/lobby')
     }
     
@@ -389,8 +522,8 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── RECONNECTING ─────────────────────────────────────────────────────────
     if (isReconnecting || !connectionReady) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/15 text-center">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-2xl text-center">
                     <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-white mb-2">
                         {isReconnecting ? t('game.reconnecting') : t('game.connecting')}
@@ -404,14 +537,16 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── TOPIC SELECTION ──────────────────────────────────────────────────────
     if (phase === 'topic-selection') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
+                {leaveNoticeBanner}
+                {phaseTimerBanner}
                 <button
                     onClick={handleRequestLeave}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
                     <h1 className="text-3xl font-extrabold text-white mb-6 text-center">{t('game.chooseTopic')}</h1>
                     {isMyTurn ? (
                         <>
@@ -442,14 +577,16 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── COLLECTING FAKE ANSWERS ──────────────────────────────────────────────
     if (phase === 'collecting-fakes') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
+                {leaveNoticeBanner}
+                {phaseTimerBanner}
                 <button
                     onClick={handleRequestLeave}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
                     <div className="text-center mb-4">
                         <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
                     </div>
@@ -488,14 +625,16 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── CHOOSING ANSWER (from real + fake) ───────────────────────────────────
     if (phase === 'choosing-answer') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
+                {leaveNoticeBanner}
+                {phaseTimerBanner}
                 <button
                     onClick={handleRequestLeave}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
                     <div className="text-center mb-4">
                         <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
                     </div>
@@ -505,9 +644,9 @@ const Game = ({ user: authenticatedUser }) => {
                         {choices.map((choice, i) => (
                             <button
                                 key={i}
-                                onClick={() => { setSelectedAnswer(choice); handleChooseAnswer(choice) }}
+                                onClick={() => { setSelectedAnswerIndex(i); handleChooseAnswer(choice) }}
                                 className={`border font-semibold py-3 px-6 rounded-xl transition-all duration-300 ${
-                                    selectedAnswer === choice
+                                    selectedAnswerIndex === i
                                         ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
                                         : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
                                 }`}
@@ -529,14 +668,16 @@ const Game = ({ user: authenticatedUser }) => {
         const medals = ['🥇', '🥈', '🥉']
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4 relative hover:bg-gradient-to-br hover:from-[#1E40AF] hover:via-[#2563EB] hover:to-[#3B82F6] transition-colors duration-500">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
+                {leaveNoticeBanner}
+                {phaseTimerBanner}
                 <button
-                    onClick={handleRequestLeave}
+                    onClick={(handleRequestLeave)}
                     className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15 text-center">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl text-center">
                     <h2 className="text-3xl font-bold text-white mb-2">{t('game.leaderboard')}</h2>
 
                     {roundResult?.currentQuestion && (
@@ -592,8 +733,9 @@ const Game = ({ user: authenticatedUser }) => {
     // ─── GAME FINISHED ────────────────────────────────────────────────────────
     if (phase === 'finished') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center p-4">
-                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/15 text-center">
+            <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
+                {leaveNoticeBanner}
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl text-center">
                     <h1 className="text-4xl font-extrabold text-white mb-4">{t('game.gameOver')}</h1>
                     {winner && <p className="text-yellow-300 text-2xl font-bold mb-6">{t('game.winner', { name: winner })}</p>}
                     <div className="flex flex-wrap justify-center gap-3 mb-8">

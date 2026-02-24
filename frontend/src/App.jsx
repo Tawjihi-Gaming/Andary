@@ -8,6 +8,7 @@ import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
 import Game from './pages/game/[roomId].jsx'
 import api from './api/axios'
+import ThemeSwitcher from './components/ThemeSwitcher'
 
 const createClientKey = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -28,9 +29,11 @@ function App() {
     const parsedUser = JSON.parse(savedUser)
     const normalizedUser = {
       ...parsedUser,
+      avatar: parsedUser.avatar || parsedUser.avatarImageName || '👤',
+      avatarImageName: parsedUser.avatarImageName || parsedUser.avatar || '',
       clientKey: parsedUser.clientKey || createClientKey(),
     }
-    if (!parsedUser.clientKey) {
+    if (!parsedUser.clientKey || !parsedUser.avatar || !parsedUser.avatarImageName) {
       localStorage.setItem('userData', JSON.stringify(normalizedUser))
     }
     return normalizedUser
@@ -40,6 +43,10 @@ function App() {
 
   // On app load, check if user has a valid session (JWT cookie)
   useEffect(() => {
+    const savedTheme = localStorage.getItem('andary-theme')
+    const activeTheme = savedTheme === 'dark' ? 'dark' : 'light'
+    document.documentElement.setAttribute('data-theme', activeTheme)
+
     const checkSession = async () => {
       try {
         const res = await api.get('/auth/me')
@@ -70,6 +77,8 @@ function App() {
   const handleLogin = (userData) => {
     const normalizedUser = {
       ...userData,
+      avatar: userData.avatar || userData.avatarImageName || '👤',
+      avatarImageName: userData.avatarImageName || userData.avatar || '',
       clientKey: userData.clientKey || createClientKey(),
     }
     localStorage.setItem('isAuthenticated', 'true')
@@ -89,6 +98,8 @@ function App() {
   const handleUpdateUser = (updatedUser) => {
     const normalizedUser = {
       ...updatedUser,
+      avatar: updatedUser.avatar || updatedUser.avatarImageName || '👤',
+      avatarImageName: updatedUser.avatarImageName || updatedUser.avatar || '',
       clientKey: updatedUser.clientKey || user?.clientKey || createClientKey(),
     }
     localStorage.setItem('userData', JSON.stringify(normalizedUser))
@@ -97,7 +108,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] flex items-center justify-center">
+      <div className="min-h-screen app-page-bg flex items-center justify-center">
         <span className="text-white text-2xl animate-pulse">{t('common.loading')}</span>
       </div>
     )
@@ -105,6 +116,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ThemeSwitcher className="fixed bottom-4 left-4 z-50" />
       <Routes>
         <Route 
           path="/" 
@@ -150,7 +162,7 @@ function App() {
           path="/room/:roomId" 
           element={
             isAuthenticated ? 
-              <GameRoom user={user} /> :  // ✅ Change Room to GameRoom
+              <GameRoom user={user} /> : 
               <Navigate to="/" replace />
           } 
         />

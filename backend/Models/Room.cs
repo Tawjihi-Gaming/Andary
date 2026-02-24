@@ -40,6 +40,8 @@ public class Room
 
     public int TotalQuestions { get; set; }
     public int CurrentQuestionIndex { get; set; }
+    public int AnswerTimeSeconds { get; set; } = 30;
+    public DateTime? PhaseDeadlineUtc { get; set; }
 
     //A List is:
     //A collection of items in order.

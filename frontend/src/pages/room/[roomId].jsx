@@ -127,6 +127,7 @@ const GameRoom = ({ user }) => {
 
     const handleBackToLobby = async () => {
         try {
+            
             const connection = getConnection()
             if (connection) {
                 await connection.invoke('LeaveRoom', roomId, sessionId)

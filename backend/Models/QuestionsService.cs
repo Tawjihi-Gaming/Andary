@@ -24,12 +24,22 @@ namespace Backend.Services
         // Get questions filtered by topic from the database
         public List<Question> GetQuestions(int total, string topicName)
         {
-            var topic = _context.Topics.FirstOrDefault(t => t.Name == topicName);
+            if (total <= 0 || string.IsNullOrWhiteSpace(topicName))
+                return new List<Question>();
+
+            var normalizedTopicName = topicName.Trim();
+            var topic = _context.Topics
+                .AsNoTracking()
+                .ToList()
+                .FirstOrDefault(t => string.Equals(t.Name, normalizedTopicName, StringComparison.OrdinalIgnoreCase));
+
             if (topic == null)
                 return new List<Question>();
 
             return _context.Questions
+                .AsNoTracking()
                 .Where(q => q.TopicId == topic.Id)
+                .OrderBy(_ => Guid.NewGuid())
                 .Take(total)
                 .Select(q => new Question
                 {
@@ -40,25 +50,55 @@ namespace Backend.Services
                     Explanation = q.Explanation,
                     Modifier = q.Modifier,
                     CreatedAt = q.CreatedAt,
-                    TopicName = topicName
+                    TopicName = topic.Name
                 })
                 .ToList();
         }
 
-        // Get questions from multiple topics, distributed evenly
+        // Get questions from selected topics only.
+        // Load up to `total` per topic so players can pick the same topic again in later rounds.
         public List<Question> GetQuestionsFromTopics(int total, List<string> topicNames)
         {
+            if (total <= 0)
+                return new List<Question>();
+
             var allQuestions = new List<Question>();
-            // Distribute questions evenly across topics
-            int perTopic = total / topicNames.Count;
-            int remainder = total % topicNames.Count;
+            var normalizedTopics = (topicNames ?? new List<string>())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Select(t => t.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
-            foreach (var topicName in topicNames)
+            // Match selected topics against DB names in a case-insensitive way.
+            var topicsInDb = _context.Topics
+                .AsNoTracking()
+                .Select(t => new { t.Id, t.Name })
+                .ToList();
+
+            var matchedTopics = topicsInDb
+                .Where(t => normalizedTopics.Contains(t.Name, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var topic in matchedTopics)
             {
-                int count = perTopic + (remainder > 0 ? 1 : 0);
-                if (remainder > 0) remainder--;
+                var questions = _context.Questions
+                    .AsNoTracking()
+                    .Where(q => q.TopicId == topic.Id)
+                    .OrderBy(_ => Guid.NewGuid())
+                    .Take(total)
+                    .Select(q => new Question
+                    {
+                        Id = q.Id,
+                        TopicId = q.TopicId,
+                        QuestionText = q.QuestionText,
+                        CorrectAnswer = q.CorrectAnswer,
+                        Explanation = q.Explanation,
+                        Modifier = q.Modifier,
+                        CreatedAt = q.CreatedAt,
+                        TopicName = topic.Name
+                    })
+                    .ToList();
 
-                var questions = GetQuestions(count, topicName);
                 allQuestions.AddRange(questions);
             }
 

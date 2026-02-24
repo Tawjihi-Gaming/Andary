@@ -12,228 +12,28 @@ using Backend.Models.DTOs;
 using System.Text.Json;
 using System.Net;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 namespace Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public partial class AuthController : ControllerBase
     {
         #region Fields & Constructor
         private readonly AppDbContext _db;
         private readonly GoogleOAuthConfig _googleConfig;
+        private readonly HttpClient _httpClient;
 
-        public AuthController(AppDbContext db, GoogleOAuthConfig googleConfig)
+        public AuthController(AppDbContext db, GoogleOAuthConfig googleConfig, HttpClient httpClient)
         {
             _db = db;
             _googleConfig = googleConfig;
+            _httpClient = httpClient;
         }
-        #endregion
-
-        #region JWT & Refresh Token Helpers
-        private string GenerateJwtToken(Player player)
-        {
-            var key = Environment.GetEnvironmentVariable("JWT_KEY")!;
-			var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")!;
-			var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")!;
-
-            var keyBytes = Encoding.UTF8.GetBytes(key);
-            var securityKey = new SymmetricSecurityKey(keyBytes);
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, player.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
-                signingCredentials: credentials
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        private string GenerateRefreshToken()
-        {
-            var randomBytes = new byte[32];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomBytes);
-            return Convert.ToBase64String(randomBytes);
-        }
-
-        private string HashToken(string token)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
-            return Convert.ToBase64String(bytes);
-        }
-
-        #endregion
-
-        #region Cookie Helpers
-
-        private CookieOptions BuildAuthCookieOptions(DateTime expires)
-        {
-            return new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = expires
-            };
-        }
-
-        private void SetJwtCookie(string token)
-        {
-            if (string.IsNullOrEmpty(token))
-                return;
-            Response.Cookies.Append("jwt", token, BuildAuthCookieOptions(DateTime.UtcNow.AddHours(1)));
-        }
-
-        private void SetRefreshToken(Player player)
-        {
-            if (player == null) return;
-
-            var refreshToken = GenerateRefreshToken();
-
-            player.RefreshToken = HashToken(refreshToken);
-            player.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-
-            Response.Cookies.Append("refreshToken", refreshToken,
-                BuildAuthCookieOptions(player.RefreshTokenExpiryTime.Value));
-        }
-
-        private async Task<IActionResult> SetAuthCookiesAsync(Player player)
-        {
-            if (player == null)
-                return BadRequest(new { msg = "Player is null" });
-
-            var token = GenerateJwtToken(player);
-            SetJwtCookie(token);
-
-            SetRefreshToken(player);
-            await _db.SaveChangesAsync();
-
-            return Ok(new { msg = "Authentication successful" , Id = player.Id, Username = player.Username});
-        }
-
-        #endregion
-
-        #region Google OAuth Helpers
-
-         private Dictionary<string, string> BuildGoogleTokenRequestBody(string code)
-        {
-            if (_googleConfig?.web == null || string.IsNullOrEmpty(code))
-                return new Dictionary<string, string>();
-
-            return new Dictionary<string, string>
-            {
-                { "code", code},
-                { "client_id", _googleConfig.web.client_id ?? "" },
-                { "client_secret", _googleConfig.web.client_secret ?? "" },
-                { "redirect_uri", _googleConfig.web.redirect_uris?.FirstOrDefault() ?? "" },
-                { "grant_type", "authorization_code" }
-            };
-        }
-
-        private async Task<GoogleTokenResponse?> ExchangeCodeForGoogleTokenAsync(string code)
-        {
-            var body = BuildGoogleTokenRequestBody(code);
-            if (body.Count == 0) return null;
-
-            using var httpClient = new HttpClient();
-            var requestContent = new FormUrlEncodedContent(body);
-            var response = await httpClient.PostAsync(_googleConfig.web?.token_uri ?? "", requestContent);
-            if (!response.IsSuccessStatusCode)
-                return null;
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<GoogleTokenResponse>(responseContent);
-        }
-
-        private async Task<IEnumerable<SecurityKey>> GetGoogleSigningKeysAsync()
-        {
-            using var httpClient = new HttpClient();
-			var response = await httpClient.GetAsync(_googleConfig.web.auth_provider_x509_cert_url);
-            if (!response.IsSuccessStatusCode)
-                return Enumerable.Empty<SecurityKey>();
-
-            var jwksJson = await response.Content.ReadAsStringAsync();
-            var jwks = JsonSerializer.Deserialize<JsonWebKeySet>(jwksJson);
-            return jwks?.Keys ?? Enumerable.Empty<SecurityKey>();
-        }
-
-        private async Task<bool> IsGoogleIdTokenValid(JwtSecurityToken jwtToken)
-        {
-            var signingKeys = await GetGoogleSigningKeysAsync();
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = "https://accounts.google.com",
-                ValidAudience = _googleConfig.web?.client_id,
-                IssuerSigningKeys = signingKeys,
-                ClockSkew = TimeSpan.Zero
-            };
-            try
-            {
-                tokenHandler.ValidateToken(jwtToken.RawData, validationParameters, out _);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-
-        }
-
-        private async Task<(string? Email, string? Name, string? GoogleId)> ParseGoogleIdToken(string idToken)
-        {
-            if (string.IsNullOrEmpty(idToken))
-                return (null, null, null);
-
-            var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(idToken);
-
-            var exp = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
-            if (!long.TryParse(exp, out var expSeconds)
-                || DateTimeOffset.FromUnixTimeSeconds(expSeconds) < DateTimeOffset.UtcNow
-                || !await IsGoogleIdTokenValid(jwtToken))
-                return (null, null, null);
-
-            var email = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-            var name = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
-            var googleId = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-
-            return (email, name, googleId);
-        }
-
-        private async Task<Player> GetOrCreateGooglePlayerAsync(string googleId, string? name)
-        {
-            var player = await _db.Players
-                .Include(p => p.AuthOAuths)
-                .FirstOrDefaultAsync(p => p.AuthOAuths.Any(a => a.Provider == "Google"
-                                     && a.ProviderUserId == googleId));
-
-            if (player != null)
-                return player;
-
-            player = new Player { Username = name ?? "Unknown" };
-            player.AuthOAuths.Add(new AuthOAuth { Provider = "Google", ProviderUserId = googleId });
-
-            _db.Players.Add(player);
-            await _db.SaveChangesAsync();
-            return player;
-        }
-
         #endregion
 
         #region Refresh Token Endpoint
@@ -242,7 +42,7 @@ namespace Backend.Controllers
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            if (string.IsNullOrEmpty(refreshToken))
+            if (string.IsNullOrWhiteSpace(refreshToken))
                 return BadRequest(new { msg = "No refresh token provided" });
 
             var hashedToken = HashToken(refreshToken);
@@ -261,6 +61,28 @@ namespace Backend.Controllers
             return Ok(new { msg = "Token refreshed" });
         }
 
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized(new { msg = "Invalid token" });
+
+            var player = await GetPlayerByIdWithAuthAsync(userId.Value);
+            if (player == null)
+                return NotFound(new { msg = "Player not found" });
+
+            return Ok(new
+            {
+                id = player.Id,
+                username = player.Username,
+                email = GetPlayerEmail(player),
+                avatarImageName = player.AvatarImageName,
+                xp = player.Xp
+            });
+        }
+
         #endregion
 
         #region Local Auth Endpoints
@@ -268,14 +90,14 @@ namespace Backend.Controllers
         [HttpPost("signup")]
         public async Task<IActionResult> SignUp(PlayerSignupDto dto)
         {
-            if (dto == null || string.IsNullOrEmpty(dto.Email)
-                || string.IsNullOrEmpty(dto.Username)
-                || string.IsNullOrEmpty(dto.Password)
-				|| string.IsNullOrEmpty(dto.AvatarImageName))
-                return BadRequest(new { msg = "Invalid signup data" });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var existingPlayer = await _db.Players.Include(p => p.AuthLocal)
-                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
+            dto.Email = dto.Email!.Trim().ToLower();
+            dto.Username = dto.Username!.Trim().ToLower();
+            dto.AvatarImageName = dto.AvatarImageName!.Trim().ToLower();
+
+            var existingPlayer = await GetPlayerByEmailAsync(dto.Email);
             if (existingPlayer != null)
                 return BadRequest(new { msg = "Email already used" });
 
@@ -294,29 +116,127 @@ namespace Backend.Controllers
 				AvatarImageName = dto.AvatarImageName
 			};
 
-            _db.Players.Add(player);
+            var otpCode = GenerateSixDigitOtp();
+            authLocal.EmailVerificationTokenHash = HashToken(otpCode);
+            authLocal.EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(3);
+
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                _db.Players.Add(player);
+                await _db.SaveChangesAsync();
+
+                await SendVerificationCodeAsync(authLocal.Email, otpCode);
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    new { msg = "Could not complete signup verification email flow" });
+            }
+
+            return Ok(new { msg = "Player created. Verification code sent to email." });
+        }
+
+        [HttpPost("verify")]
+        public async Task<IActionResult> Verify(PlayerVerifyDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Code))
+                return BadRequest(new { msg = "Invalid verification data" });
+
+            if (dto.Code.Length != 6 || !dto.Code.All(char.IsDigit))
+                return BadRequest(new { msg = "Code must be a 6-digit number" });
+
+            var player = await _db.Players
+                .Include(p => p.AuthLocal)
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
+
+            if (player?.AuthLocal == null)
+                return BadRequest(new { msg = "Invalid email" });
+
+            var authLocal = player.AuthLocal;
+
+            if (authLocal.IsVerified)
+                return Ok(new { msg = "Email is already verified" });
+
+            if (string.IsNullOrEmpty(authLocal.EmailVerificationTokenHash)
+                || authLocal.EmailVerificationTokenExpiresAt == null)
+                return BadRequest(new { msg = "No active verification code" });
+
+            if (authLocal.EmailVerificationTokenExpiresAt <= DateTime.UtcNow)
+                return BadRequest(new { msg = "Verification code expired" });
+
+            if (!IsHashMatch(dto.Code, authLocal.EmailVerificationTokenHash))
+                return BadRequest(new { msg = "Invalid verification code" });
+
+            authLocal.IsVerified = true;
+            authLocal.EmailVerificationTokenHash = null;
+            authLocal.EmailVerificationTokenExpiresAt = null;
             await _db.SaveChangesAsync();
 
-            return Ok(new { msg = "Player created" });
+            return Ok(new { msg = "Email verified successfully" });
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification(PlayerResendVerificationDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest(new { msg = "Invalid resend data" });
+
+            var player = await _db.Players
+                .Include(p => p.AuthLocal)
+                .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
+
+            if (player?.AuthLocal == null)
+                return BadRequest(new { msg = "Invalid email" });
+
+            var authLocal = player.AuthLocal;
+
+            if (authLocal.IsVerified)
+                return BadRequest(new { msg = "Email is already verified" });
+
+            var otpCode = GenerateSixDigitOtp();
+            authLocal.EmailVerificationTokenHash = HashToken(otpCode);
+            authLocal.EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(3);
+
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+                await SendVerificationCodeAsync(authLocal.Email, otpCode);
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    new { msg = "Could not resend verification email" });
+            }
+
+            return Ok(new { msg = "Verification code resent" });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(PlayerLoginDto dto)
         {
-            if (dto == null || string.IsNullOrEmpty(dto.Email) || string.IsNullOrEmpty(dto.Password))
-                return BadRequest(new { msg = "Invalid login data" });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            dto.Email = dto.Email!.Trim().ToLower();
 
             var player = await _db.Players.Include(p => p.AuthLocal)
                 .FirstOrDefaultAsync(p => p.AuthLocal != null && p.AuthLocal.Email == dto.Email);
-            if (player == null)
-                return BadRequest(new { msg = "Invalid email" });
+            if (player == null || player.AuthLocal == null)
+                return BadRequest(new { msg = "Invalid email or password" });
 
             var passwordHasher = new PasswordHasher<AuthLocal>();
             var result = passwordHasher.VerifyHashedPassword(
-                    player.AuthLocal!, player.AuthLocal!.PasswordHash!, dto.Password);
+                    player.AuthLocal, player.AuthLocal.PasswordHash!, dto.Password);
 
             if (result == PasswordVerificationResult.Failed)
-                return BadRequest(new { msg = "Invalid password" });
+                return BadRequest(new { msg = "Invalid email or password" });
 
             return await SetAuthCookiesAsync(player);
         }
@@ -341,23 +261,104 @@ namespace Backend.Controllers
         [HttpGet("google/callback")]
         public async Task<IActionResult> GoogleCallback(string code)
         {
-            if (string.IsNullOrEmpty(code))
-                return Redirect("https://localhost:3000/login?error=no-code");
-
-            var tokenResponse = await ExchangeCodeForGoogleTokenAsync(code);
-            if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.id_token))
-                return Redirect("https://localhost:3000/login?error=token-failed");
-
-            var (email, name, googleId) = await ParseGoogleIdToken(tokenResponse.id_token);
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
-                return Redirect("https://localhost:3000/login?error=invalid-token");
-            var player = await GetOrCreateGooglePlayerAsync(googleId, name);
-            var authResul = await SetAuthCookiesAsync(player);
-            if ((authResul as ObjectResult)?.StatusCode >= 400)
+            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
+            try
             {
-                return Redirect("https://localhost:3000/login?error=auth-failed");
+                if (string.IsNullOrWhiteSpace(code))
+                    return Redirect($"{frontendUrl}/login?error=no-code");
+
+                var tokenResponse = await ExchangeCodeForGoogleTokenAsync(code);
+                if (tokenResponse == null || string.IsNullOrWhiteSpace(tokenResponse.id_token))
+                    return Redirect($"{frontendUrl}/login?error=token-failed");
+
+                var (email, name, googleId) = await ParseGoogleIdToken(tokenResponse.id_token);
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(googleId))
+                    return Redirect($"{frontendUrl}/login?error=invalid-token");
+
+                var player = await GetOrCreateGooglePlayerAsync(googleId, name, email);
+
+                var authResult = await SetAuthCookiesAsync(player);
+                if ((authResult as ObjectResult)?.StatusCode >= 400)
+                {
+                    return Redirect($"{frontendUrl}/login?error=auth-failed");
+                }
+                return Redirect($"{frontendUrl}/lobby");
             }
-            return Redirect("https://localhost:3000/lobby");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Google callback EXCEPTION: {ex}");
+                return Redirect($"{frontendUrl}/login?error=server-error");
+            }
+        }
+        #endregion
+
+        #region Logout Endpoint
+
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized(new { msg = "Invalid token" });
+
+            var player = await _db.Players.FirstOrDefaultAsync(p => p.Id == userId.Value);
+            if (player == null)
+                return NotFound(new { msg = "Player not found" });
+
+            player.RefreshToken = null;
+            player.RefreshTokenExpiryTime = null;
+            await _db.SaveChangesAsync();
+
+            Response.Cookies.Delete("jwt", BuildAuthCookieOptions(DateTime.UtcNow.AddDays(-1)));
+            Response.Cookies.Delete("refreshToken", BuildAuthCookieOptions(DateTime.UtcNow.AddDays(-1)));
+
+            return Ok(new { msg = "Logged out" });
+        }
+
+        #endregion
+
+        #region Edit Player Info Endpoint
+
+        // Frontend: On 401 response, attempt token refresh before redirecting to login
+        [HttpPost("edit")]
+        [Authorize]
+        public async Task<IActionResult> EditPlayerInfo(PlayerEditDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized(new { msg = "Invalid token" });
+
+            var player = await GetPlayerByIdWithAuthAsync(userId.Value);
+            if (player == null)
+                return NotFound(new { msg = "Player not found" });
+
+            bool hasChanges = false;
+            var username = player.Username;
+            hasChanges |= UpdateIfChanged(ref username, dto.Username);
+            player.Username = username;
+
+            var avatar = player.AvatarImageName;
+            hasChanges |= UpdateIfChanged(ref avatar, dto.AvatarImageName);
+            player.AvatarImageName = avatar;
+            
+            var emailUpdateResult = await UpdateEmailAsync(player, dto.Email);
+            if (!emailUpdateResult.status && emailUpdateResult.error != null)
+                return BadRequest(new { msg = emailUpdateResult.error });
+            hasChanges |= emailUpdateResult.status;
+            
+            var passwordUpdateResult = UpdatePassword(player, dto.Password);
+            if (!passwordUpdateResult.status && passwordUpdateResult.error != null)
+                return BadRequest(new { msg = passwordUpdateResult.error });
+            hasChanges |= passwordUpdateResult.status;
+
+            if (hasChanges)
+                await _db.SaveChangesAsync();
+
+            return Ok(new { msg = "Player info updated" });
         }
         #endregion
     }

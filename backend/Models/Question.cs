@@ -1,6 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Backend.Models
 {
     public class Question
@@ -19,12 +19,11 @@ namespace Backend.Models
         public string CorrectAnswer { get; set; } = string.Empty;
         [MaxLength(1000)]
         public string? Explanation { get; set; }
+        [MaxLength(100)]
+        public string? TopicName { get; set; }
         [MaxLength(500)]
         public string? Modifier { get; set; }
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        [NotMapped]
-        public string? TopicName { get; set; }
     }
 }

@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Backend.Models;
-using Backend.Models.DTOs;
-using System.Text.Json;
 
 namespace Backend.Data
 {

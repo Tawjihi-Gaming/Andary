@@ -89,7 +89,6 @@
     "loadingTopics": "Loading topics from database...",
     "numberOfRounds": "Number of Rounds",
     "answerTime": "Answer Time",
-    "calcTime": "Score Calculation Time",
     "createButton": "Create Room",
     "noTopicsError": "Cannot create room without database topics",
     "selectTopicError": "Please select at least one topic",
@@ -166,6 +165,7 @@
     "fakeAnswerPlaceholder": "Write your fake answer...",
     "fakeAnswerError": "Failed to submit fake answer. Try again.",
     "fakeAnswerConnectionError": "Failed to submit fake answer. Check your connection and try again.",
+    "timeLeft": "Time left",
     "chooseCorrectAnswer": "Choose the correct answer from the options:",
     "leaderboard": "🏆 Leaderboard",
     "correctAnswer": "Correct Answer:",
@@ -174,7 +174,10 @@
     "winner": "Winner: {{name}}",
     "backToLobby": "Back to Lobby",
     "leaveRoom": "Leave Room",
-    "leaveRoomConfirmation": "Are you sure you want to leave the room?"
+    "leaveRoomConfirmation": "Are you sure you want to leave the room?",
+    "playerLeftRoomNotice": "{{name}} left the room.",
+    "playerDisconnectedTemporaryNotice": "{{name}} disconnected. Waiting for reconnection...",
+    "playerDisconnectedFinalNotice": "{{name}} left the room after disconnect."
   },
 
   "testRoom": {

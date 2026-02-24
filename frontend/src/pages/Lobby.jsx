@@ -15,6 +15,7 @@ const Lobby = ({ user, onLogout }) => {
   const [lobbies, setLobbies] = useState([])
   const [lobbiesLoading, setLobbiesLoading] = useState(true)
   const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
+  const userAvatar = user?.avatarImageName || user?.avatar || ''
 
   useEffect(() => {
     let isMounted = true
@@ -53,11 +54,11 @@ const Lobby = ({ user, onLogout }) => {
         roomId: roomId,
         playerId: user?.id || null,
         playerName: user?.username || 'Guest',
-        avatarImageName: user?.avatarImageName || '',
+        avatarImageName: userAvatar,
         clientKey: user?.clientKey || null,
       })
       console.log('Joined room:', response.data)
-      const { roomId: joinedRoomId, code, sessionId, playerName, isPrivate, name } = response.data
+      const { roomId: joinedRoomId, code, sessionId, playerName, isPrivate, name, answerTimeSeconds } = response.data
       saveRoomSession({
         roomId: joinedRoomId,
         roomName: name,
@@ -65,6 +66,8 @@ const Lobby = ({ user, onLogout }) => {
         isPrivate,
         sessionId,
         ownerName: playerName,
+        timer: answerTimeSeconds || 30,
+        answerTimeSeconds: answerTimeSeconds || 30,
       })
       navigate(`/room/${joinedRoomId}`, {
         state: {
@@ -75,6 +78,8 @@ const Lobby = ({ user, onLogout }) => {
           isPrivate: isPrivate,
           sessionId: sessionId,
           ownerName: playerName,
+          timer: answerTimeSeconds || 30,
+          answerTimeSeconds: answerTimeSeconds || 30,
         }
       })
     } catch (err) {
@@ -105,13 +110,13 @@ const Lobby = ({ user, onLogout }) => {
           code: normalizedCode,
           playerId: user?.id || null,
           playerName: user?.username || 'Guest',
-          avatarImageName: user?.avatarImageName || '',
+          avatarImageName: userAvatar,
           clientKey: user?.clientKey || null,
         })
         console.log('Joined room:', response.data)
         setShowJoinModal(false)
         setRoomCode('')
-        const { roomId, code, sessionId, playerName, isPrivate, name } = response.data
+        const { roomId, code, sessionId, playerName, isPrivate, name, answerTimeSeconds } = response.data
         saveRoomSession({
           roomId,
           roomName: name,
@@ -119,6 +124,8 @@ const Lobby = ({ user, onLogout }) => {
           isPrivate,
           sessionId,
           ownerName: playerName,
+          timer: answerTimeSeconds || 30,
+          answerTimeSeconds: answerTimeSeconds || 30,
         })
         navigate(`/room/${roomId}`, {
           state: {
@@ -129,6 +136,8 @@ const Lobby = ({ user, onLogout }) => {
             user: user,
             roomId: roomId,
             roomName: name,
+            timer: answerTimeSeconds || 30,
+            answerTimeSeconds: answerTimeSeconds || 30,
           }
         })
       } catch (err) {
@@ -151,10 +160,10 @@ const Lobby = ({ user, onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden">
+    <div className="min-h-screen app-page-bg relative overflow-hidden">
 
       {/* Navbar */}
-      <nav dir="rtl" className="relative z-10 bg-white/5 backdrop-blur-2xl border-b border-white/10 px-3 sm:px-6 py-3">
+      <nav dir="rtl" className="relative z-10 app-glass-card backdrop-blur-2xl px-3 sm:px-6 py-3 border-x-0 border-t-0">
         <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Logo + language switcher */}
           <div className="flex items-center justify-between gap-2">
@@ -174,7 +183,7 @@ const Lobby = ({ user, onLogout }) => {
             {/* user profile */}
             <button
               onClick={() => navigate('/profile')}
-              className="flex items-center gap-2 sm:gap-3 bg-white/5 hover:bg-white/10 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20 group cursor-pointer"
+              className="flex items-center gap-2 sm:gap-3 app-soft-btn px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-full bg-linear-to-br from-game-yellow to-game-orange flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:shadow-game-yellow/20 transition-all">
                 <span className="text-xl pt-1">{user?.avatar}</span>
@@ -188,7 +197,7 @@ const Lobby = ({ user, onLogout }) => {
             {/* logout button */}
             <button
               onClick={handleLogout}
-              className="bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-400 font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-red-500/30 cursor-pointer"
+              className="app-soft-btn hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 cursor-pointer"
             >
               {t('lobby.logout')}
             </button>
@@ -335,7 +344,7 @@ const Lobby = ({ user, onLogout }) => {
       {/* join by code modal */}
       {showJoinModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-linear-to-br from-[#2563EB]/90 to-[#1E3A8A]/90 backdrop-blur-2xl rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/15">
+          <div className="app-modal-card backdrop-blur-2xl rounded-3xl p-8 max-w-md w-full shadow-2xl">
             <div className="w-16 h-16 bg-linear-to-br from-game-cyan to-game-blue rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-game-cyan/20">
               <span className="text-3xl">🔗</span>
             </div>

@@ -5,12 +5,21 @@ import { useSignalR } from '../../context/SignalRContext'
 import { loadRoomSession, saveRoomSession, clearRoomSession } from '../../utils/roomSession'
 import GamePopup from '../../components/GamePopup'
 
-const normalizePlayer = (player) => ({
-    avatarUrl: player?.avatarUrl || player?.avatarImageName || '',
-    sessionId: player?.sessionId || '',
-    name: player?.name || player?.displayName || 'Player',
-    isReady: Boolean(player?.isReady),
-})
+const normalizePlayer = (player) => {
+    const normalizedAvatar =
+        player?.avatar ||
+        player?.avatarImageName ||
+        player?.avatarUrl ||
+        ''
+
+    return {
+        avatar: normalizedAvatar,
+        avatarUrl: normalizedAvatar,
+        sessionId: player?.sessionId || '',
+        name: player?.name || player?.displayName || 'Player',
+        isReady: Boolean(player?.isReady),
+    }
+}
 
 const saveGameSessionSnapshot = ({ roomId, sessionId, user, state }) => {
     if (!roomId || !sessionId || !state) return
@@ -34,8 +43,7 @@ const GameRoom = ({ user }) => {
     const isPrivateRoom = Boolean(roomState.isPrivate)
     const roomName = roomState.roomName || `Room ${roomId}`
     const sessionId = roomState.sessionId
-    const timer = roomState.timer || 30
-    const calcTimer = roomState.calcTimer || 20
+    const timer = roomState.timer || roomState.answerTimeSeconds || 30
     const rounds = roomState.rounds || 5
 
     const [connectionStatus, setConnectionStatus] = useState('connecting')
@@ -54,13 +62,13 @@ const GameRoom = ({ user }) => {
     // The current user is the owner if their sessionId matches the room owner
     const isOwner = sessionId && sessionId === roomOwnerId
     const roomTypeLabel = isPrivateRoom ? t('room.private') : t('room.public')
-    const displayedCode = isPrivateRoom && !isOwner ? 'Hidden' : (code || 'N/A')
     const canCopyCode = Boolean(code) && (!isPrivateRoom || isOwner)
 
-    // Check if all non-owner players are ready and there's at least one other player
-    const allPlayersReady = players.length > 1 && players
-        .filter(p => p.sessionId !== roomOwnerId)
-        .every(p => p.isReady)
+    // Need at least 2 players, and all non-owner players must be ready.
+    const allPlayersReady = players.length >= 2 &&
+        players
+            .filter(p => p.sessionId !== roomOwnerId)
+            .every(p => p.isReady)
 
     const handleCopyCode = async () => {
         if (!canCopyCode)
@@ -134,10 +142,9 @@ const GameRoom = ({ user }) => {
             ownerId: roomOwnerId,
             ownerName: roomOwnerName,
             timer,
-            calcTimer,
             rounds,
         })
-    }, [roomId, sessionId, code, isPrivateRoom, roomName, roomOwnerId, roomOwnerName, timer, calcTimer, rounds])
+    }, [roomId, sessionId, code, isPrivateRoom, roomName, roomOwnerId, roomOwnerName, timer, rounds])
 
     useEffect(() => {
         if (!sessionId) {
@@ -179,9 +186,12 @@ const GameRoom = ({ user }) => {
                     console.log('Game started:', state)
                     setGameState(state)
                     saveGameSessionSnapshot({ roomId, sessionId, user, state })
+                    const syncedTimer = state?.answerTimeSeconds || timer
                     navigate(`/game/${roomId}`, {
                         state: {
                             ...roomState,
+                            timer: syncedTimer,
+                            answerTimeSeconds: syncedTimer,
                             gameState: state,
                         }
                     })
@@ -192,13 +202,24 @@ const GameRoom = ({ user }) => {
                     console.log('Choose round topic:', state)
                     setGameState(state)
                     saveGameSessionSnapshot({ roomId, sessionId, user, state })
+                    const syncedTimer = state?.answerTimeSeconds || timer
                     navigate(`/game/${roomId}`, {
-                        state: { ...roomState, user, roomId, code, sessionId, gameState: state }
+                        state: {
+                            ...roomState,
+                            user,
+                            roomId,
+                            code,
+                            sessionId,
+                            timer: syncedTimer,
+                            answerTimeSeconds: syncedTimer,
+                            gameState: state
+                        }
                     })
                 })
 
                 // Show answer choices
-                connection.on('ShowChoices', (choices) => {
+                connection.on('ShowChoices', (payload) => {
+                    const choices = Array.isArray(payload) ? payload : (payload?.choices || [])
                     console.log('Answer choices:', choices)
                     setGameState(prev => ({ ...prev, choices }))
                 })
@@ -309,8 +330,8 @@ const GameRoom = ({ user }) => {
     }, [roomId, sessionId])
    
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
-            <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl border border-white/15">
+        <div className="min-h-screen app-page-bg relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
+            <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl">
                 <h1 className="text-xl sm:text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
                 <p className="text-white/80 text-center mb-4 text-xs sm:text-sm">
                     {t('room.type')} {roomTypeLabel}
@@ -348,7 +369,7 @@ const GameRoom = ({ user }) => {
                                 } transition-all duration-300`}
                             >
                                 <div className="flex flex-col items-center gap-1 sm:gap-3">
-                                    <span className="text-4xl sm:text-6xl">👤</span>
+                                    <span className="text-4xl sm:text-6xl">{player?.avatar || '👤'}</span>
                                     <p className="text-white text-xs sm:text-base font-semibold truncate w-full text-center">
                                         {player.name}
                                         {player.sessionId === roomOwnerId && ' 👑'}

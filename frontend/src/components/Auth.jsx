@@ -159,7 +159,7 @@ const Auth = ({ onLogin }) => {
   }
 
   return (
-    <div className="auth-card bg-white/10 backdrop-blur-xl rounded-3xl p-6 w-full max-w-md shadow-2xl border-2 border-white/20">
+    <div className="auth-card app-glass-card-strong backdrop-blur-xl rounded-3xl p-6 w-full max-w-md shadow-2xl">
       {/* Toast Message */}
       {message && (
         <div

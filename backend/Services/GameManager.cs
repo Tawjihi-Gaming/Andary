@@ -35,6 +35,10 @@ public class GameManager
 {
     public const int OwnerDisconnectGraceSeconds = 180;
     public const int PlayerDisconnectGraceSeconds = 60;
+    private const int TopicSelectionSeconds = 15;
+    private const int ChoosingAnswerSeconds = 15;
+    private const int LeaderboardSeconds = 5;
+
 
     private readonly Dictionary<string, Room> _rooms = new();
     private readonly IServiceScopeFactory _scopeFactory;
@@ -46,7 +50,7 @@ public class GameManager
     }
 
     // Creates a room and automatically adds the creator as the owner.
-    public (Room room, SessionPlayer owner) CreateRoom(RoomType type, int totalQuestions, string name, SessionPlayer creator)
+    public (Room room, SessionPlayer owner) CreateRoom(RoomType type, int totalQuestions, string name, SessionPlayer creator, int answerTimeSeconds)
     {
         var room = new Room();
         room.RoomId = Guid.NewGuid().ToString();
@@ -56,6 +60,7 @@ public class GameManager
         room.Code = GenerateRoomCode();
 
         room.TotalQuestions = totalQuestions;
+        room.AnswerTimeSeconds = NormalizeAnswerTimeSeconds(answerTimeSeconds);
 
         // Auto-join the creator into the room
         // The owner is always ready by default
@@ -65,6 +70,14 @@ public class GameManager
         _rooms[room.RoomId] = room;
 
         return (room, creator);
+    }
+
+    private static int NormalizeAnswerTimeSeconds(int answerTimeSeconds)
+    {
+        if (answerTimeSeconds <= 0)
+            return 30;
+
+        return Math.Clamp(answerTimeSeconds, 10, 120);
     }
 
     private string GenerateRoomCode()
@@ -344,6 +357,60 @@ public class GameManager
         return room.OwnerSessionId == sessionId;
     }
 
+    public void RefreshPhaseDeadline(Room room)
+    {
+        var phaseDurationSeconds = room.Phase switch
+        {
+            GamePhase.ChoosingRoundTopic => TopicSelectionSeconds,
+            GamePhase.CollectingAns => room.AnswerTimeSeconds,
+            GamePhase.ChoosingAns => ChoosingAnswerSeconds,
+            GamePhase.ShowingRanking => LeaderboardSeconds,
+            _ => 0
+        };
+
+        if (phaseDurationSeconds > 0)
+        {
+            room.PhaseDeadlineUtc = DateTime.UtcNow.AddSeconds(phaseDurationSeconds);
+            return;
+        }
+
+        room.PhaseDeadlineUtc = null;
+    }
+
+    // Auto-pick a valid topic/question for the current round when the chooser times out.
+    public bool TryAutoSelectTopicForCurrentRound(Room room)
+    {
+        if (room.Phase != GamePhase.ChoosingRoundTopic)
+            return false;
+
+        var candidateTopics = room.SelectedTopics
+            .Where(topic =>
+                room.Questions.Any(q =>
+                    TopicMatches(q, topic) &&
+                    !room.UsedQuestionIds.Contains(q.Id)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (candidateTopics.Count == 0)
+            return false;
+
+        var chosenTopic = candidateTopics[Random.Shared.Next(candidateTopics.Count)];
+        var question = room.Questions
+            .FirstOrDefault(q =>
+                TopicMatches(q, chosenTopic) &&
+                !room.UsedQuestionIds.Contains(q.Id));
+
+        if (question == null)
+            return false;
+
+        room.CurrentRoundTopic = chosenTopic;
+        room.CurrentQuestion = question;
+        room.UsedQuestionIds.Add(question.Id);
+        room.Phase = GamePhase.CollectingAns;
+        RefreshPhaseDeadline(room);
+        return true;
+    }
+
     //start game — now uses all selected topics to filter questions
     public void StartGame(Room room, List<Question> questions)
     {
@@ -365,6 +432,7 @@ public class GameManager
             if (room.CurrentQuestion == null)
             {
                 room.Phase = GamePhase.GameEnded;
+                RefreshPhaseDeadline(room);
                 return;
             }
 
@@ -376,6 +444,8 @@ public class GameManager
         {
             room.Phase = GamePhase.ChoosingRoundTopic;
         }
+
+        RefreshPhaseDeadline(room);
     }
 
     // Player selects the topic for the current round (only when multiple topics exist)
@@ -422,6 +492,7 @@ public class GameManager
         room.CurrentQuestion = question;
         room.UsedQuestionIds.Add(question.Id);
         room.Phase = GamePhase.CollectingAns;
+        RefreshPhaseDeadline(room);
         return true;
     }
 
@@ -536,7 +607,11 @@ public class GameManager
         //We need the player’s choice to score them properly.
         foreach (var player in room.Players)
         {
-            var chosen = room.ChosenAnswers[player.ConnectionId];
+            if (string.IsNullOrWhiteSpace(player.ConnectionId))
+                continue;
+
+            if (!room.ChosenAnswers.TryGetValue(player.ConnectionId, out var chosen))
+                continue;
 
             //check if the player chose the correct answer
             if (chosen == room.CurrentQuestion!.CorrectAnswer)
@@ -551,8 +626,9 @@ public class GameManager
                 if (fake.Value == chosen && fake.Key != player.ConnectionId)
                 {
                     //Finds the player who wrote this fake answer.
-                    var owner = room.Players.First(p => p.ConnectionId == fake.Key);
-                    owner.Score += 1;
+                    var owner = room.Players.FirstOrDefault(p => p.ConnectionId == fake.Key);
+                    if (owner != null)
+                        owner.Score += 1;
                 }
             }
         }
@@ -565,6 +641,7 @@ public class GameManager
         if (room.CurrentQuestionIndex >= room.TotalQuestions)
         {
             room.Phase = GamePhase.GameEnded;
+            RefreshPhaseDeadline(room);
             return false;
         }
 
@@ -592,6 +669,7 @@ public class GameManager
             if (room.CurrentQuestion == null)
             {
                 room.Phase = GamePhase.GameEnded;
+                RefreshPhaseDeadline(room);
                 return false;
             }
 
@@ -604,6 +682,7 @@ public class GameManager
             room.Phase = GamePhase.ChoosingRoundTopic;
         }
 
+        RefreshPhaseDeadline(room);
         return true;
     }
 
@@ -620,6 +699,8 @@ public class GameManager
         state.RoomCode = room.Code;
         state.SelectedTopics = room.SelectedTopics;
         state.CurrentRoundTopic = room.CurrentRoundTopic;
+        state.AnswerTimeSeconds = room.AnswerTimeSeconds;
+        state.PhaseDeadlineUtc = room.PhaseDeadlineUtc;
 
         // Tell the frontend who is choosing the topic and whether a choice is needed
         if (room.Players.Count > 0)

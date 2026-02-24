@@ -1,17 +1,48 @@
 //The game brain.
 
-using backend.Enums;
+using Backend.Enums;
 using Backend.Models;
 using Backend.Data;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.RegularExpressions;
+using System.Collections.Concurrent;
 
 namespace Backend.Services;
 
+public enum JoinRoomResult
+{
+    Success,
+    RoomNotFound,
+    NotInLobby,
+    RoomFull,
+    DuplicateAccount,
+    DuplicateGuest
+}
+
+public class LeaveRoomResult
+{
+    public bool PlayerRemoved { get; set; }
+    public bool RoomClosed { get; set; }
+    public bool OwnershipTransferred { get; set; }
+    public string? RemovedSessionId { get; set; }
+    public string? RemovedName { get; set; }
+    public string? NewOwnerSessionId { get; set; }
+    public string? NewOwnerName { get; set; }
+}
+
 public class GameManager
 {
+    public const int OwnerDisconnectGraceSeconds = 180;
+    public const int PlayerDisconnectGraceSeconds = 60;
+    private const int TopicSelectionSeconds = 15;
+    private const int ChoosingAnswerSeconds = 15;
+    private const int LeaderboardSeconds = 5;
+
+
     private readonly Dictionary<string, Room> _rooms = new();
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ConcurrentDictionary<string, DateTime> _disconnectDeadlines = new();
 
     public GameManager(IServiceScopeFactory scopeFactory)
     {
@@ -19,21 +50,17 @@ public class GameManager
     }
 
     // Creates a room and automatically adds the creator as the owner.
-    public (Room room, SessionPlayer owner) CreateRoom(RoomType type, int totalQuestions, string name, SessionPlayer creator)
+    public (Room room, SessionPlayer owner) CreateRoom(RoomType type, int totalQuestions, string name, SessionPlayer creator, int answerTimeSeconds)
     {
         var room = new Room();
         room.RoomId = Guid.NewGuid().ToString();
         room.Name = name;
         room.Type = type;
         room.OwnerSessionId = creator.SessionId;
-
-        if (type == RoomType.Private)
-            //6 digits
-            room.Code = new Random().Next(100000, 999999).ToString();
-        else
-            room.Code = null;
+        room.Code = GenerateRoomCode();
 
         room.TotalQuestions = totalQuestions;
+        room.AnswerTimeSeconds = NormalizeAnswerTimeSeconds(answerTimeSeconds);
 
         // Auto-join the creator into the room
         // The owner is always ready by default
@@ -45,19 +72,193 @@ public class GameManager
         return (room, creator);
     }
 
+    private static int NormalizeAnswerTimeSeconds(int answerTimeSeconds)
+    {
+        if (answerTimeSeconds <= 0)
+            return 30;
+
+        return Math.Clamp(answerTimeSeconds, 10, 120);
+    }
+
+    private string GenerateRoomCode()
+    {
+        string code;
+
+        do
+        {
+            code = Random.Shared.Next(100000, 1000000).ToString();
+        } while (_rooms.Values.Any(r =>
+            !string.IsNullOrWhiteSpace(r.Code) &&
+            string.Equals(r.Code, code, StringComparison.Ordinal)));
+
+        return code;
+    }
+
     //Join an existing room
     // Accepts SessionPlayer (in-memory) instead of Player (DB).
     // Anyone can join — logged-in or anonymous.
-    public bool JoinRoom(string roomId, SessionPlayer sessionPlayer)
+    public JoinRoomResult JoinRoom(string roomId, SessionPlayer sessionPlayer)
+    {
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return JoinRoomResult.RoomNotFound;
+        if (room.Phase != GamePhase.Lobby)
+            return JoinRoomResult.NotInLobby;
+        if (room.Players.Count >= Room.MaxPlayers)
+            return JoinRoomResult.RoomFull;
+
+        // Prevent the same logged-in account from joining the same room multiple times.
+        if (sessionPlayer.PlayerId.HasValue &&
+            room.Players.Any(p => p.PlayerId == sessionPlayer.PlayerId.Value))
+            return JoinRoomResult.DuplicateAccount;
+
+        // Prevent the same guest browser/session from joining the same room multiple times.
+        if (!sessionPlayer.PlayerId.HasValue &&
+            !string.IsNullOrWhiteSpace(sessionPlayer.ClientKey) &&
+            room.Players.Any(p =>
+                !p.PlayerId.HasValue &&
+                !string.IsNullOrWhiteSpace(p.ClientKey) &&
+                string.Equals(p.ClientKey, sessionPlayer.ClientKey, StringComparison.Ordinal)))
+            return JoinRoomResult.DuplicateGuest;
+
+        room.Players.Add(sessionPlayer);
+        return JoinRoomResult.Success;
+    }
+
+    // Remove a player from a room and transfer ownership if needed.
+    public LeaveRoomResult LeaveRoom(string roomId, string sessionId)
+    {
+        var result = new LeaveRoomResult();
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return result;
+
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
+            return result;
+
+        var removedIndex = room.Players.IndexOf(player);
+        var wasOwner = room.OwnerSessionId == player.SessionId;
+
+        room.Players.RemoveAt(removedIndex);
+        result.PlayerRemoved = true;
+        result.RemovedSessionId = player.SessionId;
+        result.RemovedName = player.DisplayName;
+
+        // Remove round data written by this player to avoid stale counts.
+        if (!string.IsNullOrWhiteSpace(player.ConnectionId))
+        {
+            room.FakeAnswers.Remove(player.ConnectionId);
+            room.ChosenAnswers.Remove(player.ConnectionId);
+        }
+
+        if (room.Players.Count == 0)
+        {
+            _rooms.Remove(roomId);
+            result.RoomClosed = true;
+            return result;
+        }
+
+        // Keep chooser index valid after removing a player.
+        if (removedIndex < room.TopicChooserIndex)
+            room.TopicChooserIndex--;
+        if (room.TopicChooserIndex >= room.Players.Count)
+            room.TopicChooserIndex = 0;
+        if (room.TopicChooserIndex < 0)
+            room.TopicChooserIndex = 0;
+
+        if (wasOwner)
+        {
+            var newOwner = room.Players[0];
+            room.OwnerSessionId = newOwner.SessionId;
+            newOwner.IsReady = true;
+            result.OwnershipTransferred = true;
+            result.NewOwnerSessionId = newOwner.SessionId;
+            result.NewOwnerName = newOwner.DisplayName;
+        }
+
+        return result;
+    }
+
+    // Mark a player as temporarily disconnected (refresh/network blip) without removing them yet.
+    public bool MarkDisconnected(string roomId, string sessionId, out string? playerName, out int graceSeconds)
+    {
+        playerName = null;
+        graceSeconds = PlayerDisconnectGraceSeconds;
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return false;
+
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
+            return false;
+
+        graceSeconds = room.OwnerSessionId == sessionId
+            ? OwnerDisconnectGraceSeconds
+            : PlayerDisconnectGraceSeconds;
+        playerName = player.DisplayName;
+        _disconnectDeadlines[$"{roomId}:{sessionId}"] = DateTime.UtcNow.AddSeconds(graceSeconds);
+        return true;
+    }
+
+    // Rebind a session to a new SignalR connection and migrate per-round data keyed by old connection id.
+    public bool TryReconnectPlayer(string roomId, string sessionId, string newConnectionId)
     {
         if (!_rooms.TryGetValue(roomId, out var room))
             return false;
-        if (room.Phase != GamePhase.Lobby)
+
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
             return false;
-        if (room.Players.Count >= Room.MaxPlayers)
-            return false;
-        room.Players.Add(sessionPlayer);
+
+        var oldConnectionId = player.ConnectionId;
+        if (!string.IsNullOrWhiteSpace(oldConnectionId) &&
+            !string.Equals(oldConnectionId, newConnectionId, StringComparison.Ordinal))
+        {
+            if (room.FakeAnswers.TryGetValue(oldConnectionId, out var fake))
+            {
+                room.FakeAnswers.Remove(oldConnectionId);
+                room.FakeAnswers[newConnectionId] = fake;
+            }
+
+            if (room.ChosenAnswers.TryGetValue(oldConnectionId, out var chosen))
+            {
+                room.ChosenAnswers.Remove(oldConnectionId);
+                room.ChosenAnswers[newConnectionId] = chosen;
+            }
+        }
+
+        _disconnectDeadlines.TryRemove($"{roomId}:{sessionId}", out _);
+        player.ConnectionId = newConnectionId;
         return true;
+    }
+
+    // If grace period expired and player did not reconnect, remove them.
+    public LeaveRoomResult LeaveRoomIfDisconnectExpired(string roomId, string sessionId)
+    {
+        var result = new LeaveRoomResult();
+        var key = $"{roomId}:{sessionId}";
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+        {
+            _disconnectDeadlines.TryRemove(key, out _);
+            return result;
+        }
+
+        var player = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
+        if (player == null)
+        {
+            _disconnectDeadlines.TryRemove(key, out _);
+            return result;
+        }
+
+        if (!_disconnectDeadlines.TryGetValue(key, out var deadline))
+            return result;
+
+        if (DateTime.UtcNow < deadline)
+            return result;
+
+        _disconnectDeadlines.TryRemove(key, out _);
+        return LeaveRoom(roomId, sessionId);
     }
 
     //Get room by id
@@ -66,10 +267,41 @@ public class GameManager
         return _rooms[roomId];
     }
 
-    // Get room by its code (used for private room join-by-code)
+    public bool TryGetRoom(string roomId, out Room? room)
+    {
+        return _rooms.TryGetValue(roomId, out room);
+    }
+
+    // Find player by SignalR connection (used for unexpected disconnects).
+    public (string roomId, string sessionId)? FindPlayerByConnection(string connectionId)
+    {
+        foreach (var kv in _rooms)
+        {
+            var player = kv.Value.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+            if (player != null)
+                return (kv.Key, player.SessionId);
+        }
+        return null;
+    }
+
+    // Get room by its code (used for public/private join-by-code)
     public Room? GetRoomByCode(string code)
     {
-        return _rooms.Values.FirstOrDefault(r => r.Code == code);
+        if (string.IsNullOrWhiteSpace(code))
+            return null;
+
+        var normalizedCode = code.Trim();
+        return _rooms.Values.FirstOrDefault(r =>
+            !string.IsNullOrWhiteSpace(r.Code) &&
+            string.Equals(r.Code, normalizedCode, StringComparison.Ordinal));
+    }
+
+    public List<Room> GetPublicWaitingRooms()
+    {
+        return _rooms.Values
+            .Where(r => r.Type == RoomType.Public && r.Phase == GamePhase.Lobby)
+            .OrderByDescending(r => r.Players.Count)
+            .ToList();
     }
 
     // Add a topic to the room's selected topics list (lobby phase)
@@ -125,18 +357,86 @@ public class GameManager
         return room.OwnerSessionId == sessionId;
     }
 
+    public void RefreshPhaseDeadline(Room room)
+    {
+        var phaseDurationSeconds = room.Phase switch
+        {
+            GamePhase.ChoosingRoundTopic => TopicSelectionSeconds,
+            GamePhase.CollectingAns => room.AnswerTimeSeconds,
+            GamePhase.ChoosingAns => ChoosingAnswerSeconds,
+            GamePhase.ShowingRanking => LeaderboardSeconds,
+            _ => 0
+        };
+
+        if (phaseDurationSeconds > 0)
+        {
+            room.PhaseDeadlineUtc = DateTime.UtcNow.AddSeconds(phaseDurationSeconds);
+            return;
+        }
+
+        room.PhaseDeadlineUtc = null;
+    }
+
+    // Auto-pick a valid topic/question for the current round when the chooser times out.
+    public bool TryAutoSelectTopicForCurrentRound(Room room)
+    {
+        if (room.Phase != GamePhase.ChoosingRoundTopic)
+            return false;
+
+        var candidateTopics = room.SelectedTopics
+            .Where(topic =>
+                room.Questions.Any(q =>
+                    TopicMatches(q, topic) &&
+                    !room.UsedQuestionIds.Contains(q.Id)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (candidateTopics.Count == 0)
+            return false;
+
+        var chosenTopic = candidateTopics[Random.Shared.Next(candidateTopics.Count)];
+        var question = room.Questions
+            .FirstOrDefault(q =>
+                TopicMatches(q, chosenTopic) &&
+                !room.UsedQuestionIds.Contains(q.Id));
+
+        if (question == null)
+            return false;
+
+        room.CurrentRoundTopic = chosenTopic;
+        room.CurrentQuestion = question;
+        room.UsedQuestionIds.Add(question.Id);
+        room.Phase = GamePhase.CollectingAns;
+        RefreshPhaseDeadline(room);
+        return true;
+    }
+
     //start game — now uses all selected topics to filter questions
     public void StartGame(Room room, List<Question> questions)
     {
         room.Questions = questions;
         room.CurrentQuestionIndex = 0;
-        room.TopicChooserIndex = 0;
+        room.TopicChooserIndex = Random.Shared.Next(room.Players.Count);
+        room.UsedQuestionIds.Clear();
+        room.FakeAnswers.Clear();
+        room.ChosenAnswers.Clear();
 
         // If only 1 topic selected → no per-round choice needed, go straight to collecting answers
         if (room.SelectedTopics.Count == 1)
         {
-            room.CurrentRoundTopic = room.SelectedTopics[0];
-            room.CurrentQuestion = questions[0];
+            var singleTopic = room.SelectedTopics[0];
+            room.CurrentRoundTopic = singleTopic;
+            room.CurrentQuestion = room.Questions
+                .FirstOrDefault(q => TopicMatches(q, singleTopic));
+
+            if (room.CurrentQuestion == null)
+            {
+                room.Phase = GamePhase.GameEnded;
+                RefreshPhaseDeadline(room);
+                return;
+            }
+
+            room.UsedQuestionIds.Add(room.CurrentQuestion.Id);
             room.Phase = GamePhase.CollectingAns;
         }
         // If multiple topics → first player chooses topic for first round
@@ -144,73 +444,125 @@ public class GameManager
         {
             room.Phase = GamePhase.ChoosingRoundTopic;
         }
+
+        RefreshPhaseDeadline(room);
     }
 
     // Player selects the topic for the current round (only when multiple topics exist)
-    public bool SelectRoundTopic(Room room, string connectionId, string topic)
+    public bool SelectRoundTopic(Room room, string connectionId, string sessionId, string topic)
     {
         if (room.Phase != GamePhase.ChoosingRoundTopic)
             return false;
 
-        // Only the current topic chooser can select
         var chooser = room.Players[room.TopicChooserIndex];
-        if (chooser.ConnectionId != connectionId)
+
+        // Validate caller is the chooser: use sessionId when provided, else fall back to connectionId
+        bool isChooser = false;
+        if (!string.IsNullOrEmpty(sessionId) && chooser.SessionId == sessionId)
+        {
+            isChooser = true;
+            if (string.IsNullOrEmpty(chooser.ConnectionId))
+                chooser.ConnectionId = connectionId; // Update stale connection
+        }
+        else
+        {
+            var caller = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+            isChooser = caller != null && caller.SessionId == chooser.SessionId;
+        }
+
+        if (!isChooser)
             return false;
 
-        // Must be one of the selected topics
-        if (!room.SelectedTopics.Contains(topic))
+        // Must be one of the selected topics (flexible match: trim, ignore case)
+        var matchedTopic = room.SelectedTopics.FirstOrDefault(t =>
+            string.Equals(t?.Trim(), topic?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (matchedTopic == null)
             return false;
 
-        room.CurrentRoundTopic = topic;
+        room.CurrentRoundTopic = matchedTopic;
 
         // Find a question for this topic that hasn't been used yet
-        var usedQuestionIds = new HashSet<int>();
-        for (int i = 0; i < room.CurrentQuestionIndex; i++)
-        {
-            if (i < room.Questions.Count)
-                usedQuestionIds.Add(room.Questions[i].Id);
-        }
-
         var question = room.Questions
-            .Where(q => q.TopicId == GetTopicId(room, topic) && !usedQuestionIds.Contains(q.Id))
+            .Where(q => TopicMatches(q, matchedTopic) && !room.UsedQuestionIds.Contains(q.Id))
             .FirstOrDefault();
-
-        if (question == null)
-        {
-            // Fallback: pick any unused question
-            question = room.Questions
-                .Where(q => !usedQuestionIds.Contains(q.Id))
-                .FirstOrDefault();
-        }
 
         if (question == null)
             return false;
 
         room.CurrentQuestion = question;
+        room.UsedQuestionIds.Add(question.Id);
         room.Phase = GamePhase.CollectingAns;
+        RefreshPhaseDeadline(room);
         return true;
     }
 
-    // Helper: find topicId from the questions already loaded
-    private int GetTopicId(Room room, string topicName)
+    // Compare question topic and selected topic in a tolerant way.
+    private bool TopicMatches(Question q, string topicName)
     {
-        // Look through loaded questions to find the topicId for this topic name
-        // This avoids a DB call during gameplay
-        var q = room.Questions.FirstOrDefault(q => q.TopicName == topicName);
-        return q?.TopicId ?? -1;
+        return string.Equals(q.TopicName?.Trim(), topicName?.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeAnswerForComparison(string answer)
+    {
+        if (string.IsNullOrWhiteSpace(answer))
+            return string.Empty;
+
+        var trimmed = answer.Trim();
+        return Regex.Replace(trimmed, @"\s+", " ").ToUpperInvariant();
     }
 
     //Submit fake answer
+    public bool SubmitFakeAnswer(Room room, string connectionId, string fake, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        if (room.Phase != GamePhase.CollectingAns)
+        {
+            errorMessage = "مرحلة الإجابات المزيفة انتهت.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionId))
+        {
+            errorMessage = "تعذر التعرف على اللاعب.";
+            return false;
+        }
+
+        var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+        if (player == null)
+        {
+            errorMessage = "اللاعب غير موجود في الغرفة.";
+            return false;
+        }
+
+        if (room.CurrentQuestion == null)
+        {
+            errorMessage = "لا يوجد سؤال حالي.";
+            return false;
+        }
+
+        var submittedFakeAnswer = fake?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(submittedFakeAnswer))
+        {
+            errorMessage = "اكتب إجابة مزيفة أولاً.";
+            return false;
+        }
+
+        if (NormalizeAnswerForComparison(submittedFakeAnswer) ==
+            NormalizeAnswerForComparison(room.CurrentQuestion.CorrectAnswer))
+        {
+            errorMessage = "لا يمكنك إرسال الإجابة الصحيحة كإجابة مزيفة.";
+            return false;
+        }
+
+        room.FakeAnswers[connectionId] = submittedFakeAnswer;
+        player.HasSubmittedFake = true;
+        return true;
+    }
+
     public bool SubmitFakeAnswer(Room room, string connectionId, string fake)
     {
-        if (room.Phase != GamePhase.CollectingAns)
-            return false;
-
-        if (fake == room.CurrentQuestion!.CorrectAnswer)
-            return false;
-
-        room.FakeAnswers[connectionId] = fake;
-        return true;
+        return SubmitFakeAnswer(room, connectionId, fake, out _);
     }
 
     // Check if all players submitted fake answers
@@ -255,7 +607,11 @@ public class GameManager
         //We need the player’s choice to score them properly.
         foreach (var player in room.Players)
         {
-            var chosen = room.ChosenAnswers[player.ConnectionId];
+            if (string.IsNullOrWhiteSpace(player.ConnectionId))
+                continue;
+
+            if (!room.ChosenAnswers.TryGetValue(player.ConnectionId, out var chosen))
+                continue;
 
             //check if the player chose the correct answer
             if (chosen == room.CurrentQuestion!.CorrectAnswer)
@@ -270,8 +626,9 @@ public class GameManager
                 if (fake.Value == chosen && fake.Key != player.ConnectionId)
                 {
                     //Finds the player who wrote this fake answer.
-                    var owner = room.Players.First(p => p.ConnectionId == fake.Key);
-                    owner.Score += 1;
+                    var owner = room.Players.FirstOrDefault(p => p.ConnectionId == fake.Key);
+                    if (owner != null)
+                        owner.Score += 1;
                 }
             }
         }
@@ -281,23 +638,42 @@ public class GameManager
     public bool NextRound(Room room)
     {
         room.CurrentQuestionIndex++;
-        if (room.CurrentQuestionIndex >= room.TotalQuestions || room.CurrentQuestionIndex >= room.Questions.Count)
+        if (room.CurrentQuestionIndex >= room.TotalQuestions)
         {
             room.Phase = GamePhase.GameEnded;
+            RefreshPhaseDeadline(room);
             return false;
         }
 
         room.FakeAnswers.Clear();
         room.ChosenAnswers.Clear();
 
-        // Rotate topic chooser to next player
-        room.TopicChooserIndex = (room.TopicChooserIndex + 1) % room.Players.Count;
+        // Randomly select next topic chooser (different from current when possible)
+        if (room.Players.Count > 1)
+        {
+            int next;
+            do { next = Random.Shared.Next(room.Players.Count); }
+            while (next == room.TopicChooserIndex);
+            room.TopicChooserIndex = next;
+        }
 
         // If only 1 topic → auto-pick, go straight to collecting answers
         if (room.SelectedTopics.Count == 1)
         {
             room.CurrentRoundTopic = room.SelectedTopics[0];
-            room.CurrentQuestion = room.Questions[room.CurrentQuestionIndex];
+            room.CurrentQuestion = room.Questions
+                .FirstOrDefault(q =>
+                    TopicMatches(q, room.CurrentRoundTopic) &&
+                    !room.UsedQuestionIds.Contains(q.Id));
+
+            if (room.CurrentQuestion == null)
+            {
+                room.Phase = GamePhase.GameEnded;
+                RefreshPhaseDeadline(room);
+                return false;
+            }
+
+            room.UsedQuestionIds.Add(room.CurrentQuestion.Id);
             room.Phase = GamePhase.CollectingAns;
         }
         // If multiple topics → next player chooses the topic
@@ -306,6 +682,7 @@ public class GameManager
             room.Phase = GamePhase.ChoosingRoundTopic;
         }
 
+        RefreshPhaseDeadline(room);
         return true;
     }
 
@@ -322,10 +699,16 @@ public class GameManager
         state.RoomCode = room.Code;
         state.SelectedTopics = room.SelectedTopics;
         state.CurrentRoundTopic = room.CurrentRoundTopic;
+        state.AnswerTimeSeconds = room.AnswerTimeSeconds;
+        state.PhaseDeadlineUtc = room.PhaseDeadlineUtc;
 
         // Tell the frontend who is choosing the topic and whether a choice is needed
         if (room.Players.Count > 0)
-            state.TopicChooserName = room.Players[room.TopicChooserIndex].DisplayName;
+        {
+            var chooser = room.Players[room.TopicChooserIndex];
+            state.TopicChooserName = chooser.DisplayName;
+            state.CurrentPlayerSessionId = chooser.SessionId;
+        }
         state.NeedsTopicChoice = room.SelectedTopics.Count > 1;
 
         if (room.Phase == GamePhase.ChoosingAns)

@@ -48,8 +48,8 @@
     "modifier": ""
   },
   {
-    "question": "What is the correct sentence: 'She don’t like coffee.' / 'She doesn’t like coffee.'",
-    "answer": "She doesn’t like coffee.",
+    "question": "What is the correct sentence: 'She don’t like coffee.' OR 'She doesn’t like coffee.'",
+    "answer": "She doesn’t like coffee",
     "explanation": "In the negative form of present simple, we use 'doesn't' with third-person singular subjects.",
     "modifier": ""
   },

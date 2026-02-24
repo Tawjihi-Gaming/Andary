@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
+import LanguageSwitcher from '../components/LanguageSwitcher'
+import GamePopup from '../components/GamePopup'
 
 const XP_PER_LEVEL = 100
 
@@ -10,10 +13,9 @@ const getProgress = (xp) => (xp % XP_PER_LEVEL)
 
 const Profile = ({ user, onLogout, onUpdateUser }) => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
-  // Mock XP for frontend testing (replace with user?.xp when backend is ready)
-  const MOCK_XP = 720
-  const xp = user?.xp || MOCK_XP
+  const xp = user?.xp || 0
   const level = getLevel(xp)
   const progress = getProgress(xp)
   const progressPercent = (progress / XP_PER_LEVEL) * 100
@@ -25,11 +27,11 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   const [selectedAvatar, setSelectedAvatar] = useState(
     AVATARS.find(a => a.emoji === user?.avatar) || AVATARS[0]
   )
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
+  const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
 
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type })
@@ -37,126 +39,85 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   }
 
   // Update username
-  // POST /player/:{id}/  {username}
   const handleUpdateUsername = async () => {
-    if (!username.trim())
-    {
-      return
-    }
+    if (!username.trim()) return
     setLoading(true)
-    try
-    {
-    /*
-      API call to update username
-      await api.post('/player/:{id}/', {username})
-    */
+    try {
+      await api.post('/auth/edit', { username })
       onUpdateUser?.({ ...user, username })
-      showMessage('✅ Username updated!')
+      showMessage(t('profile.usernameUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update username error:', error)
-      showMessage('❌ Failed to update username.', 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.usernameUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update email
-  // POST /player/:{id}/  {email}
   const handleUpdateEmail = async () => {
-    if (!email.trim())
-    {
-      return
-    }
+    if (!email.trim()) return
     setLoading(true)
-    try
-    {
-    /*
-      API call to update email
-      await api.post('/player/:{id}/', {email})
-    */
+    try {
+      await api.post('/auth/edit', { email })
       onUpdateUser?.({ ...user, email })
-      showMessage('✅ Email updated!')
+      showMessage(t('profile.emailUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update email error:', error)
-      showMessage('❌ Failed to update email.', 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.emailUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update avatar
-  // POST /player/:{id}/  {avatar: selectedAvatar.emoji}
   const handleUpdateAvatar = async () => {
     setLoading(true)
-    try
-    {
-      /*
-      API call to update avatar
-      await api.post('/player/:{id}/', {avatar: selectedAvatar.emoji})
-      */
+    try {
+      await api.post('/auth/edit', { avatarImageName: selectedAvatar.emoji })
       onUpdateUser?.({ ...user, avatar: selectedAvatar.emoji })
-      showMessage('✅ Avatar updated!')
+      showMessage(t('profile.avatarUpdated'))
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update avatar error:', error)
-      showMessage('❌ Failed to update avatar.', 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.avatarUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
 
   // Update password
-  // POST /auth/update-password  {currentPassword, newPassword}
   const handleUpdatePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword)
-    {
-      showMessage('❌ Please fill all password fields.', 'error')
+    if (!newPassword || !confirmPassword) {
+      showMessage(t('profile.fillAllPasswordFields'), 'error')
       return
     }
-    if (newPassword !== confirmPassword)
-    {
-      showMessage('❌ Passwords do not match.', 'error')
+
+    if (newPassword !== confirmPassword) {
+      showMessage(t('profile.passwordsDoNotMatch'), 'error')
       return
     }
-    if (newPassword.length < 6)
-    {
-      showMessage('❌ Password must be at least 6 characters.', 'error')
+    if (newPassword.length < 6) {
+      showMessage(t('profile.passwordMinLength'), 'error')
       return
     }
     setLoading(true)
-    try
-    {
-    /*
-      API call to update password
-      await api.post('/auth/update-password', { currentPassword, newPassword })
-    */
-      showMessage('✅ Password updated!')
-      setCurrentPassword('')
+    try {
+      await api.post('/auth/edit', { password: newPassword })
+      showMessage(t('profile.passwordUpdated'))
       setNewPassword('')
       setConfirmPassword('')
       setEditingField(null)
-    }
-    catch (error)
-    {
+    } catch (error) {
       console.error('Update password error:', error)
-      showMessage('❌ Failed to update password.', 'error')
-    }
-    finally
-    {
+      const msg = error.response?.data?.msg || t('profile.passwordUpdateFailed')
+      showMessage(msg, 'error')
+    } finally {
       setLoading(false)
     }
   }
@@ -166,21 +127,41 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setUsername(user?.username || '')
     setEmail(user?.email || '')
     setSelectedAvatar(AVATARS.find(a => a.emoji === user?.avatar) || AVATARS[0])
-    setCurrentPassword('')
     setNewPassword('')
     setConfirmPassword('')
   }
 
+  const handleLogout = () => {
+    setIsLogoutPopupOpen(true)
+  }
+
+  const confirmLogout = async () => {
+    setIsLogoutPopupOpen(false)
+    try {
+      await api.post('/auth/logout')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+    if (onLogout) {
+      onLogout()
+    }
+    navigate('/login')
+  }
+
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#2563EB] via-[#3B82F6] to-[#38BDF8] p-4">
+    <div className="min-h-screen app-page-bg p-4">
       <div className="max-w-2xl mx-auto">
-        {/* back button */}
-        <button
-          onClick={() => navigate('/lobby')}
-          className="mb-4 text-white hover:text-game-yellow transition-colors flex items-center gap-2"
-        >
-          ← العودة
-        </button>
+        {/* back button and language switcher */}
+        <div dir="ltr" className="flex flex-col sm:flex-row sm:items-center sm:justify-between items-start gap-3 mb-4">
+          <LanguageSwitcher />
+          <button
+            onClick={() => navigate('/lobby')}
+            className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium"
+          >
+            {t('profile.goBack')}
+          </button>
+        </div>
 
         {/* toast message */}
         {message && (
@@ -196,25 +177,25 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
         )}
 
         {/* profile card */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-2 border-white/20">
+        <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-8 shadow-2xl">
           <h1 className="text-4xl font-extrabold text-white mb-8 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
-            صفحة اللاعب
+            {t('profile.title')}
           </h1>
 
           {/* AVATAR SECTION */}
           <div className="flex flex-col items-center gap-4 mb-8">
             <div
-              className="w-32 h-32 rounded-full bg-game-yellow flex items-center justify-center border-4 border-white shadow-lg cursor-pointer hover:scale-105 transition-transform"
+              className="w-32 h-32 cursor-pointer rounded-full bg-game-yellow pt-4 flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform pt-2"
               onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
-              title="انقر لتغيير الصورة الرمزية"
+              title={t('profile.clickToChangeAvatar')}
             >
               <span className="text-6xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
             </div>
             <button
               onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
-              className="text-white/60 hover:text-game-yellow text-sm transition-colors"
+              className="text-white/60 hover:text-game-yellow text-sm transition-colors cursor-pointer"
             >
-              ✏️ تغيير الصوره الرمزية
+              {t('profile.changeAvatar')}
             </button>
 
             {/* Avatar picker dropdown */}
@@ -225,15 +206,15 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   <button
                     onClick={handleUpdateAvatar}
                     disabled={loading}
-                    className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50"
+                    className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                   >
-                    {loading ? '...' : 'حفظ'}
+                    {loading ? '...' : t('common.save')}
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm"
+                    className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                   >
-                    إلغاء
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -243,8 +224,8 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* LEVEL & XP BAR */}
           <div className="w-full max-w-md mx-auto mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white font-bold text-lg">⭐ المستوى {level}</span>
-              <span className="text-white/70 text-sm">{progress} / {XP_PER_LEVEL} نقاط خبرة</span>
+              <span className="text-white font-bold text-lg">{t('profile.level', { level })}</span>
+              <span className="text-white/70 text-sm">{t('profile.xpProgress', { progress, max: XP_PER_LEVEL })}</span>
             </div>
             <div className="w-full h-5 bg-white/10 rounded-full overflow-hidden border border-white/20">
               <div
@@ -252,7 +233,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <p className="text-white/50 text-xs text-center mt-1">إجمالي نقاط الخبرة: {xp}</p>
+            <p className="text-white/50 text-xs text-center mt-1">{t('profile.totalXp', { xp })}</p>
           </div>
 
           {/* USER INFO FIELDS */}
@@ -260,7 +241,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
             {/* Username field */}
             <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-              <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">اسم المستخدم</label>
+              <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.username')}</label>
               {editingField === 'username' ? (
                 <div className="flex flex-col gap-2">
                   <input
@@ -268,33 +249,33 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
-                    placeholder="أدخل اسم مستخدم جديد"
+                    placeholder={t('profile.enterNewUsername')}
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={handleUpdateUsername}
                       disabled={loading}
-                      className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50"
+                      className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                     >
-                      {loading ? '...' : 'حفظ'}
+                      {loading ? '...' : t('common.save')}
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm"
+                      className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                     >
-                      إلغاء
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
-                  <span className="text-white text-lg font-semibold">{user?.username || 'ضیف'}</span>
+                  <span className="text-white text-lg font-semibold">{user?.username || t('common.guest')}</span>
                   {!user?.isGuest && (
                     <button
                       onClick={() => setEditingField('username')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
-                      ✏️ تعديل
+                      {t('common.edit')}
                     </button>
                   )}
                 </div>
@@ -303,7 +284,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
             {/* Email field */}
             <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-              <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">البريد الإلكتروني</label>
+              <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.emailLabel')}</label>
               {editingField === 'email' ? (
                 <div className="flex flex-col gap-2">
                   <input
@@ -311,33 +292,33 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
-                    placeholder="أدخل بريد إلكتروني جديد"
+                    placeholder={t('profile.enterNewEmail')}
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={handleUpdateEmail}
                       disabled={loading}
-                      className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50"
+                      className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                     >
-                      {loading ? '...' : 'Save'}
+                      {loading ? '...' : t('common.save')}
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm"
+                      className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
-                  <span className="text-white text-lg">{user?.email || 'لا يوجد بريد إلكتروني (ضيف)'}</span>
+                  <span className="text-white text-lg">{user?.email || t('profile.noEmail')}</span>
                   {!user?.isGuest && (
                     <button
                       onClick={() => setEditingField('email')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
-                      ✏️ تعديل
+                      {t('common.edit')}
                     </button>
                   )}
                 </div>
@@ -347,43 +328,36 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             {/* Change Password field */}
             {!user?.isGuest && (
               <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">كلمة المرور</label>
+                <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.passwordLabel')}</label>
                 {editingField === 'password' ? (
                   <div className="flex flex-col gap-3">
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
-                      placeholder="كلمة المرور الحالية"
-                    />
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
-                      placeholder="كلمة المرور الجديدة"
+                      placeholder={t('profile.newPassword')}
                     />
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
-                      placeholder="تأكيد كلمة المرور الجديدة"
+                      placeholder={t('profile.confirmPassword')}
                     />
                     <div className="flex gap-2">
                       <button
                         onClick={handleUpdatePassword}
                         disabled={loading}
-                        className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50"
+                        className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                       >
-                        {loading ? '...' : 'تحديث كلمة المرور'}
+                        {loading ? '...' : t('common.save')}
                       </button>
                       <button
                         onClick={handleCancel}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm"
+                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                       >
-                        إلغاء
+                        {t('common.cancel')}
                       </button>
                     </div>
                   </div>
@@ -392,9 +366,9 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                     <span className="text-white text-lg">••••••••</span>
                     <button
                       onClick={() => setEditingField('password')}
-                      className="text-white/40 hover:text-game-yellow transition-colors text-sm"
+                      className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
-                      🔒 تغيير
+                      {t('profile.changePassword')}
                     </button>
                   </div>
                 )}
@@ -405,14 +379,24 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* LOGOUT BUTTON */}
           <div className="flex justify-center mt-8">
             <button
-              onClick={onLogout}
-              className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 shadow-lg"
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 shadow-lg cursor-pointer"
             >
-              تسجيل الخروج / Logout
+              {t('profile.logoutButton')}
             </button>
           </div>
         </div>
       </div>
+      <GamePopup
+        open={isLogoutPopupOpen}
+        title={t('lobby.logoutTitle')}
+        message={t('lobby.logoutMessage')}
+        confirmText={t('lobby.confirmLogout')}
+        cancelText={t('lobby.cancelLogout')}
+        showCancel
+        onCancel={() => setIsLogoutPopupOpen(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   )
 }

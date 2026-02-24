@@ -25,4 +25,4 @@ RUN mkdir -p /etc/ssl
 COPY nginx/cert.pem /etc/ssl
 COPY nginx/key.pem /etc/ssl
 
-EXPOSE 80 443
+EXPOSE 8080 4443

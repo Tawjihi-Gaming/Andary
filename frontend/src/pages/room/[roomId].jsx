@@ -6,18 +6,29 @@ import { loadRoomSession, saveRoomSession, clearRoomSession } from '../../utils/
 import GamePopup from '../../components/GamePopup'
 
 const normalizePlayer = (player) => {
-    const normalizedAvatar =
+    const rawAvatar =
         player?.avatar ||
         player?.avatarImageName ||
         player?.avatarUrl ||
+        player?.Avatar ||
+        player?.AvatarImageName ||
+        player?.AvatarUrl ||
         ''
+
+    const legacyAvatarMap = {
+        'avatar1.png': '🦊',
+        'avatar2.png': '🐱',
+    }
+
+    const mappedAvatar = legacyAvatarMap[rawAvatar] || rawAvatar
+    const normalizedAvatar = /\.(png|jpe?g|webp|gif|svg)$/i.test(mappedAvatar) ? '👤' : mappedAvatar
 
     return {
         avatar: normalizedAvatar,
         avatarUrl: normalizedAvatar,
-        sessionId: player?.sessionId || '',
-        name: player?.name || player?.displayName || 'Player',
-        isReady: Boolean(player?.isReady),
+        sessionId: player?.sessionId || player?.SessionId || '',
+        name: player?.name || player?.displayName || player?.DisplayName || 'Player',
+        isReady: Boolean(player?.isReady ?? player?.IsReady),
     }
 }
 

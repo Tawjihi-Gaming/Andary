@@ -223,7 +223,7 @@ namespace Backend.Controllers
             player = new Player
             {
                 Username = (name ?? "Unknown").Trim().ToLower(),
-                AvatarImageName = "👤"
+                AvatarImageName = "🦊"
             };
             player.AuthOAuths.Add(new AuthOAuth
             {

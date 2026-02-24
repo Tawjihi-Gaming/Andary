@@ -574,16 +574,16 @@ public class GameManager
     // Build choices (correct + fake)
     public List<string> BuildAnswerChoices(Room room)
     {
-        //Takes all the fake answers submitted by players from the room’s dictionary:
-        //.Values → gives only the answers, ignoring which player submitted them.
-        //.ToList() → converts them into a List<string>, so we can manipulate them easily.
-        //Why it’s needed:
-        //We need a list of all fake answers to show as choices to the players.
-        var answers = room.FakeAnswers.Values.ToList();
+        // Show duplicate fake texts only once in the board.
+        // Scoring still uses room.FakeAnswers (per-player), so all owners of that
+        // same fake answer will get points when it is selected.
+        var answers = room.FakeAnswers.Values
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
 
-        //Adds the correct answer to the list of fake answers.
-        //tells “I promise CurrentQuestion is not null here.”
-        answers.Add(room.CurrentQuestion!.CorrectAnswer);
+        // Add the correct answer once.
+        if (!answers.Contains(room.CurrentQuestion!.CorrectAnswer, StringComparer.Ordinal))
+            answers.Add(room.CurrentQuestion.CorrectAnswer);
 
         //Shuffles the list of answers randomly.
         //OrderBy(_ => Guid.NewGuid()) → creates a new random order.

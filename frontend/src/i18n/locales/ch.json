@@ -163,8 +163,16 @@
     "writeFakeAnswer": "写一个有说服力的假答案来迷惑其他玩家！",
     "fakeAnswerSent": "你的假答案已提交！",
     "fakeAnswerPlaceholder": "输入你的假答案...",
-    "fakeAnswerError": "提交假答案失败。请重试。",
+    "fakeAnswerError": "请提交一个假答案来迷惑其他玩家。",
     "fakeAnswerConnectionError": "提交假答案失败。请检查连接后重试。",
+    "fakeAnswerErrors": {
+      "phaseEnded": "假答案阶段已结束。",
+      "playerUnrecognized": "无法识别玩家。",
+      "playerNotInRoom": "玩家不在该房间中。",
+      "noCurrentQuestion": "当前没有题目。",
+      "empty": "请先填写一个假答案。",
+      "cannotUseCorrectAnswer": "你不能把正确答案作为假答案提交。"
+    },
     "timeLeft": "剩余时间",
     "chooseCorrectAnswer": "从选项中选择正确答案：",
     "leaderboard": "🏆 排行榜",

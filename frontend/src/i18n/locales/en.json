@@ -163,8 +163,16 @@
     "writeFakeAnswer": "Write a convincing fake answer to trick other players!",
     "fakeAnswerSent": "Your fake answer has been submitted!",
     "fakeAnswerPlaceholder": "Write your fake answer...",
-    "fakeAnswerError": "Failed to submit fake answer. Try again.",
+    "fakeAnswerError": "please submit fake answer to fool other players",
     "fakeAnswerConnectionError": "Failed to submit fake answer. Check your connection and try again.",
+    "fakeAnswerErrors": {
+      "phaseEnded": "Fake answer phase has ended.",
+      "playerUnrecognized": "Could not identify player.",
+      "playerNotInRoom": "Player is not in this room.",
+      "noCurrentQuestion": "There is no current question.",
+      "empty": "Write a fake answer first.",
+      "cannotUseCorrectAnswer": "You cannot submit the correct answer as a fake answer."
+    },
     "timeLeft": "Time left",
     "chooseCorrectAnswer": "Choose the correct answer from the options:",
     "leaderboard": "🏆 Leaderboard",

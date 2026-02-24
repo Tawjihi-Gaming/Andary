@@ -278,26 +278,26 @@ input[type="range"].slider::-moz-range-track {
 
 /* Theme-aware overrides for heavily used utility classes */
 .bg-white\/5 {
-  background-color: var(--app-card-bg) !important;
+  background-color: var(--app-card-bg);
 }
 
 .bg-white\/10 {
-  background-color: var(--app-card-bg-strong) !important;
+  background-color: var(--app-card-bg-strong);
 }
 
 .bg-white\/15 {
-  background-color: color-mix(in srgb, var(--app-card-bg-strong) 75%, transparent) !important;
+  background-color: color-mix(in srgb, var(--app-card-bg-strong) 75%, transparent);
 }
 
 .bg-white\/20 {
-  background-color: color-mix(in srgb, var(--app-card-bg-strong) 90%, transparent) !important;
+  background-color: color-mix(in srgb, var(--app-card-bg-strong) 90%, transparent);
 }
 
 .border-white\/10 {
-  border-color: var(--app-card-border-soft) !important;
+  border-color: var(--app-card-border-soft);
 }
 
 .border-white\/15,
 .border-white\/20 {
-  border-color: var(--app-card-border) !important;
+  border-color: var(--app-card-border);
 }

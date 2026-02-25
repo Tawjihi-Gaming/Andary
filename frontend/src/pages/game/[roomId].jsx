@@ -602,21 +602,29 @@ const Game = ({ user: authenticatedUser }) => {
                         <p className="text-green-300 text-center text-lg font-bold">✅ {message}</p>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <input
-                                type="text"
-                                value={fakeAnswer}
-                                onChange={(e) => setFakeAnswer(e.target.value)}
-                                placeholder={t('game.fakeAnswerPlaceholder')}
-                                className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-white/40"
-                                dir={questionDirection}
-                            />
-                            <button
-                                onClick={handleSubmitFake}
-                                disabled={!fakeAnswer.trim()}
-                                className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                {t('common.send')}
-                            </button>
+                            <form
+                                onSubmit={(e) => {
+                                e.preventDefault()
+                                handleSubmitFake()
+                    }}
+                    >
+                    <input
+                        type="text"
+                        value={fakeAnswer}
+                        onChange={(e) => setFakeAnswer(e.target.value)}
+                        disabled={hasSubmittedFake}
+                        placeholder={t('game.fakeAnswerPlaceholder')}
+                        className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-game-cyan focus:border-transparent transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                        dir={getTextDirection(fakeAnswer)}
+                    />
+                    <button
+                        type="submit"
+                        disabled={!fakeAnswer.trim() || hasSubmittedFake}
+                        className="mt-2 w-full bg-game-cyan hover:bg-game-cyan/90 text-white font-bold py-3 px-6 rounded-2xl transition-all duration-300 disabled:bg-game-cyan/50 disabled:cursor-not-allowed"
+                    >
+                        {t('common.send')}
+                    </button>
+                    </form>
                             {fakeSubmitError && (
                                 <p className="text-red-300 text-center font-semibold">{fakeSubmitError}</p>
                             )}
@@ -690,6 +698,7 @@ const Game = ({ user: authenticatedUser }) => {
                         <div className="mb-6 bg-white/10 rounded-2xl px-6 py-4 border border-white/20">
                             <p className="text-white/60 text-sm mb-1">{t('game.correctAnswer')}</p>
                             <p className="text-green-300 text-xl font-bold" dir={getTextDirection(roundResult.currentQuestion.correctAnswer)}>{roundResult.currentQuestion.correctAnswer}</p>
+                            <p className="text-white/70 text-sm mt-3">{t('game.correctAnswerExplained', { explanation: roundResult.currentQuestion.explanation || t('game.noExplanation') })}</p>
                         </div>
                     )}
 
@@ -723,13 +732,6 @@ const Game = ({ user: authenticatedUser }) => {
                             )
                         })}
                     </div>
-
-                    <button
-                        onClick={handleNextRound}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20 hover:border-white/40"
-                    >
-                        {t('game.nextRound')}
-                    </button>
                 </div>
                 {leavePopup}
             </div>

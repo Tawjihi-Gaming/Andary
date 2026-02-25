@@ -16,12 +16,14 @@ i18n
       en: { translation: en },
       ch: { translation: ch },
     },
+    lng: 'ar',
     fallbackLng: 'ar',
+    supportedLngs: ['ar', 'en', 'ch'],
     interpolation: {
       escapeValue: false,
     },
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       caches: ['localStorage'],
       lookupLocalStorage: 'i18nextLng',
     },

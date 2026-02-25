@@ -27,5 +27,7 @@ namespace Backend.Models
         public bool NeedsTopicChoice { get; set; } // true if multiple topics and player must choose
         public int AnswerTimeSeconds { get; set; } // server-authoritative per-phase answer timer
         public DateTime? PhaseDeadlineUtc { get; set; } // absolute UTC deadline for current timed phase
+        public string? RevealedCorrectAnswer { get; set; } // set only when round answer is revealed
+        public string? RevealedExplanation { get; set; } // explanation for the revealed correct answer
     }
 }

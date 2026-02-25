@@ -185,18 +185,20 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* AVATAR SECTION */}
           <div className="flex flex-col items-center gap-4 mb-8">
             <div
-              className="w-32 h-32 cursor-pointer rounded-full bg-game-yellow pt-4 flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform pt-2"
-              onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
-              title={t('profile.clickToChangeAvatar')}
+              className={`w-32 h-32 rounded-full bg-game-yellow pt-4 flex items-center justify-center border-4 border-white shadow-lg transition-transform pt-2 ${!user?.isGuest ? 'cursor-pointer hover:scale-105' : ''}`}
+              onClick={() => !user?.isGuest && setEditingField(editingField === 'avatar' ? null : 'avatar')}
+              title={!user?.isGuest ? t('profile.clickToChangeAvatar') : undefined}
             >
               <span className="text-6xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
             </div>
-            <button
-              onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
-              className="text-white/60 hover:text-game-yellow text-sm transition-colors cursor-pointer"
-            >
-              {t('profile.changeAvatar')}
-            </button>
+            {!user?.isGuest && (
+              <button
+                onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
+                className="text-white/60 hover:text-game-yellow text-sm transition-colors cursor-pointer"
+              >
+                {t('profile.changeAvatar')}
+              </button>
+            )}
 
             {/* Avatar picker dropdown */}
             {editingField === 'avatar' && (
@@ -222,19 +224,21 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           </div>
 
           {/* LEVEL & XP BAR */}
-          <div className="w-full max-w-md mx-auto mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-white font-bold text-lg">{t('profile.level', { level })}</span>
-              <span className="text-white/70 text-sm">{t('profile.xpProgress', { progress, max: XP_PER_LEVEL })}</span>
+          {!user?.isGuest && (
+            <div className="w-full max-w-md mx-auto mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white font-bold text-lg">{t('profile.level', { level })}</span>
+                <span className="text-white/70 text-sm">{t('profile.xpProgress', { progress, max: XP_PER_LEVEL })}</span>
+              </div>
+              <div className="w-full h-5 bg-white/10 rounded-full overflow-hidden border border-white/20">
+                <div
+                  className="h-full bg-linear-to-r from-game-yellow to-game-orange rounded-full transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <p className="text-white/50 text-xs text-center mt-1">{t('profile.totalXp', { xp })}</p>
             </div>
-            <div className="w-full h-5 bg-white/10 rounded-full overflow-hidden border border-white/20">
-              <div
-                className="h-full bg-linear-to-r from-game-yellow to-game-orange rounded-full transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <p className="text-white/50 text-xs text-center mt-1">{t('profile.totalXp', { xp })}</p>
-          </div>
+          )}
 
           {/* USER INFO FIELDS */}
           <div className="space-y-4 max-w-md mx-auto">

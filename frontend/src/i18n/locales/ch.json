@@ -173,6 +173,7 @@
       "empty": "请先填写一个假答案。",
       "cannotUseCorrectAnswer": "你不能把正确答案作为假答案提交。"
     },
+    "correctAnswerExplained": "解释：{{explanation}}",
     "timeLeft": "剩余时间",
     "chooseCorrectAnswer": "从选项中选择正确答案：",
     "leaderboard": "🏆 排行榜",
@@ -185,16 +186,7 @@
     "leaveRoomConfirmation": "你确定要离开房间吗？",
     "playerLeftRoomNotice": "{{name}} 离开了房间。",
     "playerDisconnectedTemporaryNotice": "{{name}} 已断开连接，等待重新连接...",
-    "playerDisconnectedFinalNotice": "{{name}} 断线后已离开房间。"
-  },
-
-  "testRoom": {
-    "title": "测试游戏房间",
-    "players": "玩家",
-    "testTools": "测试工具",
-    "addPlayer": "添加玩家",
-    "removePlayer": "移除玩家",
-    "copied": "已复制！",
-    "copyRoomCode": "复制房间代码"
+    "playerDisconnectedFinalNotice": "{{name}} 断线后已离开房间。",
+    "noExplanation": "没有提供解释。"
   }
 }

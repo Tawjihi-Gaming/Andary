@@ -173,6 +173,7 @@
       "empty": "Write a fake answer first.",
       "cannotUseCorrectAnswer": "You cannot submit the correct answer as a fake answer."
     },
+    "correctAnswerExplained": "explanation: {{explanation}}",
     "timeLeft": "Time left",
     "chooseCorrectAnswer": "Choose the correct answer from the options:",
     "leaderboard": "🏆 Leaderboard",

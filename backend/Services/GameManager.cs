@@ -574,16 +574,16 @@ public class GameManager
     // Build choices (correct + fake)
     public List<string> BuildAnswerChoices(Room room)
     {
-        //Takes all the fake answers submitted by players from the room’s dictionary:
-        //.Values → gives only the answers, ignoring which player submitted them.
-        //.ToList() → converts them into a List<string>, so we can manipulate them easily.
-        //Why it’s needed:
-        //We need a list of all fake answers to show as choices to the players.
-        var answers = room.FakeAnswers.Values.ToList();
+        // Show duplicate fake texts only once in the board.
+        // Scoring still uses room.FakeAnswers (per-player), so all owners of that
+        // same fake answer will get points when it is selected.
+        var answers = room.FakeAnswers.Values
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
 
-        //Adds the correct answer to the list of fake answers.
-        //tells “I promise CurrentQuestion is not null here.”
-        answers.Add(room.CurrentQuestion!.CorrectAnswer);
+        // Add the correct answer once.
+        if (!answers.Contains(room.CurrentQuestion!.CorrectAnswer, StringComparer.Ordinal))
+            answers.Add(room.CurrentQuestion.CorrectAnswer);
 
         //Shuffles the list of answers randomly.
         //OrderBy(_ => Guid.NewGuid()) → creates a new random order.
@@ -686,21 +686,46 @@ public class GameManager
         return true;
     }
 
+    private static bool ShouldRevealRoundAnswer(GamePhase phase)
+    {
+        return phase == GamePhase.ShowingRanking;
+    }
+
+    private static Question BuildQuestionForClient(Question question, bool revealAnswer)
+    {
+        return new Question
+        {
+            Id = question.Id,
+            TopicId = question.TopicId,
+            QuestionText = question.QuestionText,
+            CorrectAnswer = revealAnswer ? question.CorrectAnswer : string.Empty,
+            Explanation = revealAnswer ? question.Explanation : null,
+            TopicName = question.TopicName,
+            Modifier = question.Modifier,
+            CreatedAt = question.CreatedAt
+        };
+    }
+
     // Build GameState for clients
     public GameState GetGameState(Room room)
     {
         var state = new GameState();
+        var revealRoundAnswer = ShouldRevealRoundAnswer(room.Phase);
+
         state.RoomId = room.RoomId;
         state.Phase = room.Phase;
         state.CurrentQuestionIndex = room.CurrentQuestionIndex;
         state.TotalQuestions = room.TotalQuestions;
-        state.CurrentQuestion = room.CurrentQuestion;
+        if (room.CurrentQuestion != null)
+            state.CurrentQuestion = BuildQuestionForClient(room.CurrentQuestion, revealRoundAnswer);
         state.Players = room.Players;
         state.RoomCode = room.Code;
         state.SelectedTopics = room.SelectedTopics;
         state.CurrentRoundTopic = room.CurrentRoundTopic;
         state.AnswerTimeSeconds = room.AnswerTimeSeconds;
         state.PhaseDeadlineUtc = room.PhaseDeadlineUtc;
+        state.RevealedCorrectAnswer = revealRoundAnswer ? room.CurrentQuestion?.CorrectAnswer : null;
+        state.RevealedExplanation = revealRoundAnswer ? room.CurrentQuestion?.Explanation : null;
 
         // Tell the frontend who is choosing the topic and whether a choice is needed
         if (room.Players.Count > 0)

@@ -723,13 +723,6 @@ const Game = ({ user: authenticatedUser }) => {
                             )
                         })}
                     </div>
-
-                    <button
-                        onClick={handleNextRound}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20 hover:border-white/40"
-                    >
-                        {t('game.nextRound')}
-                    </button>
                 </div>
                 {leavePopup}
             </div>

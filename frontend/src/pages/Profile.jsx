@@ -192,12 +192,14 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             >
               <span className="text-5xl sm:text-6xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
             </div>
-            <button
-              onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
-              className="text-white/60 hover:text-game-yellow text-sm transition-colors cursor-pointer"
-            >
-              {t('profile.changeAvatar')}
-            </button>
+            {!user?.isGuest && (
+              <button
+                onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
+                className="text-white/60 hover:text-game-yellow text-sm transition-colors cursor-pointer"
+              >
+                {t('profile.changeAvatar')}
+              </button>
+            )}
 
             {/* Avatar picker dropdown */}
             {editingField === 'avatar' && (
@@ -234,8 +236,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <p className="text-white/50 text-xs text-center mt-1">{t('profile.totalXp', { xp })}</p>
-          </div>
+          )}
 
           {/* USER INFO FIELDS */}
           <div className="space-y-4 max-w-md mx-auto">

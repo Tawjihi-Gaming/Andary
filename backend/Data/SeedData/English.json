@@ -1,122 +1,122 @@
 [
   {
-    "question": "What is the correct form of the verb in this sentence: 'She ____ to the store every day.'",
+    "question": "Choose the correct verb: She ____ to school daily. (Answer in one word. Answer in English.)",
     "answer": "goes",
-    "explanation": "The verb 'goes' is used because the subject 'she' is third-person singular, so we add 'es' to the base verb 'go'.",
+    "explanation": "With third-person singular in present simple, we add -es.",
     "modifier": ""
   },
   {
-    "question": "What article is used before singular nouns starting with a consonant sound?",
-    "answer": "a",
-    "explanation": "'A' is used before singular, countable nouns that start with a consonant sound.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the synonym of the word 'happy'?",
-    "answer": "joyful",
-    "explanation": "'Joyful' is a synonym of 'happy,' meaning both express a state of happiness.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the opposite of the word 'difficult'?",
-    "answer": "easy",
-    "explanation": "'Easy' is the opposite of 'difficult,' meaning something that is not hard to do.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the past tense of the verb 'eat'?",
+    "question": "Write the past tense of eat. (Answer in one word. Answer in English.)",
     "answer": "ate",
-    "explanation": "'Ate' is the past tense of 'eat.'",
+    "explanation": "\"Ate\" is the simple past form of \"eat\".",
     "modifier": ""
   },
   {
-    "question": "What is the correct preposition in the sentence: 'She is interested ____ learning languages.'",
-    "answer": "in",
-    "explanation": "The correct preposition with 'interested' is 'in.' So the sentence should be 'She is interested in learning languages.'",
-    "modifier": ""
-  },
-  {
-    "question": "What is the plural form of the word 'child'?",
+    "question": "Write the plural of child. (Answer in one word. Answer in English.)",
     "answer": "children",
-    "explanation": "The plural form of 'child' is 'children,' which is an irregular plural.",
+    "explanation": "\"Children\" is an irregular plural noun.",
     "modifier": ""
   },
   {
-    "question": "What is the past form of 'run'?",
-    "answer": "ran",
-    "explanation": "The past tense of 'run' is 'ran.' This is an irregular verb.",
+    "question": "Write the opposite of difficult. (Answer in one word. Answer in English.)",
+    "answer": "easy",
+    "explanation": "\"Easy\" is the antonym of \"difficult\".",
     "modifier": ""
   },
   {
-    "question": "What is the correct sentence: 'She don’t like coffee.' OR 'She doesn’t like coffee.'",
-    "answer": "She doesn’t like coffee",
-    "explanation": "In the negative form of present simple, we use 'doesn't' with third-person singular subjects.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the correct possessive form of 'Tom'?",
-    "answer": "Tom’s",
-    "explanation": "The possessive form of a singular noun is formed by adding an apostrophe + 's' (Tom’s).",
-    "modifier": ""
-  },
-  {
-    "question": "What is the meaning of the idiom 'Break the ice'?",
-    "answer": "To start a conversation or make people feel more comfortable.",
-    "explanation": "'Break the ice' means to initiate a conversation or action that makes people feel relaxed.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the opposite of 'early'?",
-    "answer": "late",
-    "explanation": "'Late' is the opposite of 'early,' indicating something happening after the expected time.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the correct question form: '____ you like pizza?'",
-    "answer": "Do",
-    "explanation": "To make a question in the present simple, we use 'Do' for plural subjects or 'I/you/we/they.'",
-    "modifier": ""
-  },
-  {
-    "question": "What is the meaning of the word 'enough' in the sentence: 'I have enough money to buy the book.'?",
-    "answer": "Sufficient",
-    "explanation": "'Enough' means 'sufficient' or 'adequate.' In this case, it refers to having enough money.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the plural of 'fox'?",
-    "answer": "foxes",
-    "explanation": "The plural of 'fox' is formed by adding 'es' to the end of the word, making it 'foxes.'",
-    "modifier": ""
-  },
-  {
-    "question": "What is the meaning of the word 'quickly' in the sentence: 'She runs quickly.'?",
-    "answer": "In a fast manner",
-    "explanation": "'Quickly' is an adverb that describes how the action of running is performed.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the correct form of the verb in: 'He ____ to the party yesterday.'",
-    "answer": "went",
-    "explanation": "'Went' is the past form of the verb 'go,' used for events that happened in the past.",
-    "modifier": ""
-  },
-  {
-    "question": "What is the synonym of the word 'large'?",
+    "question": "Write the synonym of large. (Answer in one word. Answer in English.)",
     "answer": "huge",
-    "explanation": "'Huge' is a synonym for 'large,' both indicating something that is big in size.",
+    "explanation": "\"Huge\" is a valid synonym of \"large\".",
     "modifier": ""
   },
   {
-    "question": "What is the past participle of the verb 'see'?",
+    "question": "Choose the correct preposition: interested ____ math. (Answer in one word. Answer in English.)",
+    "answer": "in",
+    "explanation": "The fixed expression is \"interested in\".",
+    "modifier": ""
+  },
+  {
+    "question": "Write the article used before a consonant sound. (Answer in one word. Answer in English.)",
+    "answer": "a",
+    "explanation": "Use \"a\" before singular countable nouns with consonant sounds.",
+    "modifier": ""
+  },
+  {
+    "question": "Complete the question: ____ you like tea? (Answer in one word. Answer in English.)",
+    "answer": "Do",
+    "explanation": "Use \"Do\" for present simple questions with \"you\".",
+    "modifier": ""
+  },
+  {
+    "question": "Write the past form of run. (Answer in one word. Answer in English.)",
+    "answer": "ran",
+    "explanation": "\"Ran\" is the simple past form of \"run\".",
+    "modifier": ""
+  },
+  {
+    "question": "Write the past participle of see. (Answer in one word. Answer in English.)",
     "answer": "seen",
-    "explanation": "'Seen' is the past participle of 'see,' used with auxiliary verbs like 'have' or 'had.'",
+    "explanation": "\"Seen\" is used with auxiliaries like have/has/had.",
     "modifier": ""
   },
   {
-    "question": "What is the correct form of the verb in: 'They ____ playing football when it started to rain.'",
+    "question": "Write the plural of fox. (Answer in one word. Answer in English.)",
+    "answer": "foxes",
+    "explanation": "Nouns ending in x usually take -es in plural.",
+    "modifier": ""
+  },
+  {
+    "question": "Write the opposite of early. (Answer in one word. Answer in English.)",
+    "answer": "late",
+    "explanation": "\"Late\" is the antonym of \"early\".",
+    "modifier": ""
+  },
+  {
+    "question": "Write one synonym of happy. (Answer in one word. Answer in English.)",
+    "answer": "joyful",
+    "explanation": "\"Joyful\" is a correct synonym of \"happy\".",
+    "modifier": ""
+  },
+  {
+    "question": "Complete: He ____ to the party yesterday. (Answer in one word. Answer in English.)",
+    "answer": "went",
+    "explanation": "Past time marker \"yesterday\" requires simple past.",
+    "modifier": ""
+  },
+  {
+    "question": "Choose the helping verb: They ____ playing when it rained. (Answer in one word. Answer in English.)",
     "answer": "were",
-    "explanation": "We use 'were' in past continuous tense to describe an action in progress in the past.",
+    "explanation": "Past continuous with \"they\" takes \"were\".",
+    "modifier": ""
+  },
+  {
+    "question": "Write the possessive form marker used with singular nouns. (Answer in one word. Answer in English.)",
+    "answer": "'s",
+    "explanation": "Singular possessive is formed by adding apostrophe + s.",
+    "modifier": ""
+  },
+  {
+    "question": "Write one word meaning enough. (Answer in one word. Answer in English.)",
+    "answer": "sufficient",
+    "explanation": "\"Sufficient\" means enough.",
+    "modifier": ""
+  },
+  {
+    "question": "Write one word that means quickly. (Answer in one word. Answer in English.)",
+    "answer": "rapidly",
+    "explanation": "\"Rapidly\" is an adverb meaning quickly.",
+    "modifier": ""
+  },
+  {
+    "question": "Choose the correct negative auxiliary for she in present simple. (Answer in one word. Answer in English.)",
+    "answer": "doesn't",
+    "explanation": "Third-person singular negative in present simple uses \"doesn't\".",
+    "modifier": ""
+  },
+  {
+    "question": "Write one word to start friendly conversation with strangers. (Answer in one word. Answer in English.)",
+    "answer": "greeting",
+    "explanation": "A greeting is commonly used to start social interaction.",
     "modifier": ""
   }
 ]

@@ -374,6 +374,20 @@ const Game = ({ user: authenticatedUser }) => {
                 showLeaveNotice(t('game.playerDisconnectedFinalNotice', { name: departedName }))
             })
 
+            // This event can be broadcast while the shared connection is on the game page.
+            // No game-page behavior depends on owner identity, but registering avoids client warnings.
+            conn.on('OwnershipTransferred', () => {})
+
+            conn.on('RoomClosed', () => {
+                setPhase('finished')
+                setRoundResult(null)
+                setWinner(null)
+                setPhaseDeadlineUtc(null)
+                setSecondsLeft(null)
+                clearSession()
+                clearRoomSession(roomId)
+            })
+
             setConnectionReady(true)
         }
 
@@ -392,9 +406,11 @@ const Game = ({ user: authenticatedUser }) => {
                 conn.off('GameStateSync')
                 conn.off('PlayerLeft')
                 conn.off('PlayerDisconnected')
+                conn.off('OwnershipTransferred')
+                conn.off('RoomClosed')
             }
         }
-    }, [navigate, showLeaveNotice, t, applyTimerState])
+    }, [navigate, roomId, showLeaveNotice, t, applyTimerState])
 
     const leaveNoticeBanner = leaveNotice ? (
         <div

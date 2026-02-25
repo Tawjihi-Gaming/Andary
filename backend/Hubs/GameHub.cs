@@ -204,7 +204,12 @@ public class GameHub : Hub
             return;
         }
 
-        if (leaveResult.OwnershipTransferred)
+        if (leaveResult.OwnershipTransferred &&
+            _game.TryGetRoom(roomId, out var roomAfterLeave) &&
+            roomAfterLeave != null &&
+            roomAfterLeave.Players.Count > 1 &&
+            !string.IsNullOrWhiteSpace(leaveResult.NewOwnerSessionId) &&
+            string.Equals(roomAfterLeave.OwnerSessionId, leaveResult.NewOwnerSessionId, StringComparison.Ordinal))
         {
             await Clients.Group(roomId).SendAsync("OwnershipTransferred", new
             {

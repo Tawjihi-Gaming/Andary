@@ -158,6 +158,15 @@ public class GameManager
             return result;
         }
 
+        // If the owner leaves and only one player remains, close the room
+        // instead of transferring ownership.
+        if (wasOwner && room.Players.Count == 1)
+        {
+            _rooms.Remove(roomId);
+            result.RoomClosed = true;
+            return result;
+        }
+
         // Keep chooser index valid after removing a player.
         if (removedIndex < room.TopicChooserIndex)
             room.TopicChooserIndex--;

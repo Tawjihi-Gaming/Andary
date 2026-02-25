@@ -5,6 +5,7 @@ import api from '../api/axios'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import GamePopup from '../components/GamePopup'
+import LegalFooter from '../components/LegalFooter'
 
 const XP_PER_LEVEL = 100
 
@@ -177,19 +178,19 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
         )}
 
         {/* profile card */}
-        <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-8 shadow-2xl">
-          <h1 className="text-4xl font-extrabold text-white mb-8 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
+        <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-8 shadow-2xl">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-6 sm:mb-8 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
             {t('profile.title')}
           </h1>
 
           {/* AVATAR SECTION */}
-          <div className="flex flex-col items-center gap-4 mb-8">
+          <div className="flex flex-col items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div
-              className="w-32 h-32 cursor-pointer rounded-full bg-game-yellow pt-4 flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform pt-2"
+              className="w-24 h-24 sm:w-32 sm:h-32 cursor-pointer rounded-full bg-game-yellow pt-2 flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform"
               onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
               title={t('profile.clickToChangeAvatar')}
             >
-              <span className="text-6xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
+              <span className="text-5xl sm:text-6xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
             </div>
             <button
               onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
@@ -222,7 +223,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           </div>
 
           {/* LEVEL & XP BAR */}
-          <div className="w-full max-w-md mx-auto mb-8">
+          <div className="w-full max-w-md mx-auto mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-2">
               <span className="text-white font-bold text-lg">{t('profile.level', { level })}</span>
               <span className="text-white/70 text-sm">{t('profile.xpProgress', { progress, max: XP_PER_LEVEL })}</span>
@@ -377,7 +378,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           </div>
 
           {/* LOGOUT BUTTON */}
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center mt-6 sm:mt-8">
             <button
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 shadow-lg cursor-pointer"
@@ -386,6 +387,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             </button>
           </div>
         </div>
+        <LegalFooter />
       </div>
       <GamePopup
         open={isLogoutPopupOpen}

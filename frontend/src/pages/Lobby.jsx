@@ -5,6 +5,7 @@ import api from '../api/axios'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import { saveRoomSession } from '../utils/roomSession'
 import GamePopup from '../components/GamePopup'
+import LegalFooter from '../components/LegalFooter'
 
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
@@ -206,13 +207,13 @@ const Lobby = ({ user, onLogout }) => {
       </nav>
 
       {/* main content */}
-      <div className="relative z-10 max-w-7xl mx-auto p-6">
+      <div className="relative z-10 max-w-7xl mx-auto p-3 sm:p-6">
         {/* welcome section */}
-        <div className="mb-8">
-          <h2 className="text-4xl font-extrabold text-white mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-2">
             {t('lobby.welcome')} <span className="text-game-yellow">{user?.username || 'Player'}</span> 👋
           </h2>
-          <p className="text-white/50 text-lg">{t('lobby.subtitle')}</p>
+          <p className="text-white/50 text-base sm:text-lg">{t('lobby.subtitle')}</p>
         </div>
 
         {/* action cards */}
@@ -220,16 +221,16 @@ const Lobby = ({ user, onLogout }) => {
           {/* create room card */}
           <button
             onClick={handleCreateRoom}
-            className="group relative bg-linear-to-br from-game-yellow/20 to-game-orange/20 hover:from-game-yellow/30 hover:to-game-orange/30 backdrop-blur-xl p-6 rounded-2xl border border-game-yellow/30 hover:border-game-yellow/50 transition-all cursor-pointer duration-300 text-start overflow-hidden"
+            className="group relative bg-linear-to-br from-game-yellow/20 to-game-orange/20 hover:from-game-yellow/30 hover:to-game-orange/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl border border-game-yellow/30 hover:border-game-yellow/50 transition-all cursor-pointer duration-300 text-start overflow-hidden"
           >
             <div className="absolute top-0 end-0 w-32 h-32 bg-game-yellow/10 rounded-full blur-2xl -translate-y-8 ltr:translate-x-8 rtl:-translate-x-8 group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="relative flex items-center gap-4">
-              <div className="w-16 h-16 bg-linear-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-110 transition-transform">
-                <span className="text-3xl pt-2">➕</span>
+            <div className="relative flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-linear-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-110 transition-transform">
+                <span className="text-2xl sm:text-3xl pt-2">➕</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-1">{t('lobby.createRoom')}</h3>
-                <p className="text-white/50 text-sm">{t('lobby.createRoomSub')}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{t('lobby.createRoom')}</h3>
+                <p className="text-white/50 text-xs sm:text-sm">{t('lobby.createRoomSub')}</p>
               </div>
             </div>
           </button>
@@ -237,16 +238,16 @@ const Lobby = ({ user, onLogout }) => {
           {/* join by code card */}
           <button
             onClick={handleJoinByCode}
-            className="group relative bg-linear-to-br from-game-cyan/20 to-game-blue/20 hover:from-game-cyan/30 hover:to-game-blue/30 backdrop-blur-xl p-6 rounded-2xl cursor-pointer border border-game-cyan/30 hover:border-game-cyan/50 transition-all duration-300 text-start overflow-hidden"
+            className="group relative bg-linear-to-br from-game-cyan/20 to-game-blue/20 hover:from-game-cyan/30 hover:to-game-blue/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl cursor-pointer border border-game-cyan/30 hover:border-game-cyan/50 transition-all duration-300 text-start overflow-hidden"
           >
             <div className="absolute top-0 end-0 w-32 h-32 bg-game-cyan/10 rounded-full blur-2xl -translate-y-8 ltr:translate-x-8 rtl:-translate-x-8 group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="relative flex items-center gap-4">
-              <div className="w-16 h-16 bg-linear-to-br from-game-cyan to-game-blue rounded-2xl flex items-center justify-center shadow-lg shadow-game-cyan/20 group-hover:scale-110 transition-transform">
-                <span className="text-3xl pt-2">🔗</span>
+            <div className="relative flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-linear-to-br from-game-cyan to-game-blue rounded-2xl flex items-center justify-center shadow-lg shadow-game-cyan/20 group-hover:scale-110 transition-transform">
+                <span className="text-2xl sm:text-3xl pt-2">🔗</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-1">{t('lobby.joinByCode')}</h3>
-                <p className="text-white/50 text-sm">{t('lobby.joinByCodeSub')}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{t('lobby.joinByCode')}</h3>
+                <p className="text-white/50 text-xs sm:text-sm">{t('lobby.joinByCodeSub')}</p>
               </div>
             </div>
           </button>
@@ -259,8 +260,8 @@ const Lobby = ({ user, onLogout }) => {
               {joinError}
             </div>
           )}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 sm:gap-3">
               {t('lobby.availableRooms')}
               <span className="text-sm font-medium bg-white/10 text-white/60 px-3 py-1 rounded-full">{lobbies.length} {t('lobby.lobbies')}</span>
             </h2>
@@ -279,7 +280,7 @@ const Lobby = ({ user, onLogout }) => {
                 return (
                   <div
                     key={lobby.roomId || lobby.id}
-                    className="group bg-white/5 backdrop-blur-lg rounded-2xl p-5 border border-white/10 hover:border-white/25 hover:bg-white/8 transition-all duration-300"
+                    className="group bg-white/5 backdrop-blur-lg rounded-2xl p-4 sm:p-5 border border-white/10 hover:border-white/25 hover:bg-white/8 transition-all duration-300"
                   >
                     {/* header */}
                     <div className="flex items-start justify-between mb-4">
@@ -332,13 +333,17 @@ const Lobby = ({ user, onLogout }) => {
           )}
 
           {!lobbiesLoading && lobbies.length === 0 && (
-            <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10">
-              <span className="text-6xl mb-4 block">🏠</span>
-              <p className="text-white/50 text-xl mb-2">{t('lobby.noRooms')}</p>
+            <div className="text-center py-10 sm:py-16 bg-white/5 rounded-2xl border border-white/10">
+              <span className="text-4xl sm:text-6xl mb-4 block">🏠</span>
+              <p className="text-white/50 text-lg sm:text-xl mb-2">{t('lobby.noRooms')}</p>
               <p className="text-white/30">{t('lobby.noRoomsSub')}</p>
             </div>
           )}
         </div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6">
+        <LegalFooter />
       </div>
 
       {/* join by code modal */}

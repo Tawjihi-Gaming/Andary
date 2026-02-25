@@ -349,32 +349,7 @@ namespace Backend.Controllers
             return (true, null);
         }
 
-        private string GenerateSixDigitOtp()
-        {
-            var value = RandomNumberGenerator.GetInt32(0, 1000000);
-            return value.ToString("D6");
-        }
-
-        private bool IsHashMatch(string input, string storedHash)
-        {
-            if (string.IsNullOrWhiteSpace(input) || string.IsNullOrWhiteSpace(storedHash))
-                return false;
-
-            try
-            {
-                var inputHash = HashToken(input);
-                var inputHashBytes = Convert.FromBase64String(inputHash);
-                var storedHashBytes = Convert.FromBase64String(storedHash);
-
-                return CryptographicOperations.FixedTimeEquals(inputHashBytes, storedHashBytes);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private async Task SendVerificationCodeAsync(string email, string code)
+        private async Task SendWelcomeEmailAsync(string email)
         {
             var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
                 ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
@@ -395,15 +370,14 @@ namespace Backend.Controllers
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(fromName, fromEmail));
             message.To.Add(MailboxAddress.Parse(email));
-            message.Subject = "Your Andary verification code";
+            message.Subject = "Welcome to Andary";
             message.Body = new TextPart("plain")
             {
                 Text =
                     "Hello,\n\n" +
-                    "Thank you for signing up with Andary. To complete your email verification, please use the one-time verification code below:\n\n" +
-                    $"Verification Code: {code}\n\n" +
-                    "This code is valid for 3 hours. For your security, please do not share this code with anyone.\n\n" +
-                    "If you did not request this verification, you can safely ignore this email.\n\n" +
+                    "Thank you for signing up with Andary." +
+                    "We are happy to have you join our website\n\n" +
+                    "If you did not sign up, you can safely ignore this email.\n\n" +
                     "Best regards,\n" +
                     "The Andary Team"
             };

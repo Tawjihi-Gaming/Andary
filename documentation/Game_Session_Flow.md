@@ -20,11 +20,15 @@ This diagram describes the **complete lifecycle of a game session**, from creati
 Player ──REST──▶ Backend
         Create or Join Game
 
-Backend ──REST──▶ Player
+Backend ──REST──▶ Current Player
         sessionID
         playerID
-        gameConfig
-        lobbySnapshot
+
+Backend ──WS──▶ Current Player
+        update_game_config
+
+Backend ──WS──▶ All Players
+        player_joined
 
 Frontend
 - Caches player info
@@ -45,18 +49,18 @@ Game Session Owner
 - Sets gameConfig (timers, topics, rounds)
 
 Owner ──WS──▶ Backend
-        Update config
+        update_game_config
 
 Backend ──WS──▶ All Players
-        game:configUpdated
+        game_config_updated
 ```
 
 ```
 Players ──WS──▶ Backend
-        player:ready
+        player_ready
 
 Backend ──WS──▶ All Players
-        lobby:update
+        player_ready
 ```
 
 **Transition Condition**:
@@ -86,8 +90,15 @@ Backend ──WS──▶ All Players
 ## Phase 4: Topic Selection
 
 ```
-Current Player ──WS──▶ Backend
+
+Backend ──WS──▶ All Players
+        selecting_topic
+
+Backend ──WS──▶ Current Players
         select_topic
+
+Current Player ──WS──▶ Backend
+        topic_selcted
 
 Backend
 - Validates topic
@@ -105,6 +116,9 @@ Backend ──WS──▶ All Players
 
 Players ──WS──▶ Backend
         submit_fake_answer
+
+Backend ──WS──▶ All Players
+        answers_submitted
 
 Backend
 - Collects fake answers
@@ -148,7 +162,7 @@ Backend
 - Updates player state
 
 Backend ──WS──▶ All Players
-        round_results
+        results
 ```
 
 Frontend

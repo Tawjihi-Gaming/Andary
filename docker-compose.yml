@@ -1,0 +1,54 @@
+
+services:
+
+  backend:
+    container_name: dotnet_backend
+    image: backend:andari
+    build: ./backend
+    networks:
+      - web-net
+    env_file:
+      - backend/.env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    container_name: nginx
+    image: nginx:andari
+    build: 
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "8080:8080"
+      - "4443:4443"
+    networks:
+      - web-net
+    env_file:
+      - .env
+    depends_on:
+      - backend
+
+  db:
+    container_name: db
+    image: db:andari
+    build: ./database
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 5s
+    networks:
+      - web-net
+    env_file:
+      - .env
+
+volumes:
+  pgdata:
+
+networks:
+  web-net:
+    driver: bridge

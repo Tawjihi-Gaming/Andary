@@ -79,7 +79,8 @@ namespace Backend.Controllers
                 username = player.Username,
                 email = GetPlayerEmail(player),
                 avatarImageName = player.AvatarImageName,
-                xp = player.Xp
+                xp = player.Xp,
+                isGoogleUser = player.AuthOAuths?.Any(a => a.Provider == "Google") == true
             });
         }
 

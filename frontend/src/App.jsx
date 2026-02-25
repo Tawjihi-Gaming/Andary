@@ -65,6 +65,7 @@ function App() {
           avatar: res.data.avatarImageName || '👤',
           xp: res.data.xp || 0,
           isGuest: false,
+          isGoogleUser: res.data.isGoogleUser || false,
           clientKey: createClientKey(),
         }
         handleLogin(userData)

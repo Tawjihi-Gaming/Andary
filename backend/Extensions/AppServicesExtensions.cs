@@ -27,6 +27,9 @@ namespace Backend.Extensions
             services.AddSingleton<GameManager>();
             services.AddScoped<QuestionsService>();
 
+            // Friend service
+            services.AddScoped<FriendService>();
+
             // CORS
             services.AddCors(options =>
             {

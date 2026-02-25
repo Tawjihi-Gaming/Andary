@@ -2,6 +2,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSignalR } from '../../context/SignalRContext'
+import api from '../../api/axios'
 import { loadRoomSession, saveRoomSession, clearRoomSession } from '../../utils/roomSession'
 import GamePopup from '../../components/GamePopup'
 
@@ -159,6 +160,30 @@ const GameRoom = ({ user }) => {
     }, [roomId, sessionId, code, isPrivateRoom, roomName, roomOwnerId, roomOwnerName, timer, rounds])
 
     useEffect(() => {
+        if (!roomId) return
+
+        const syncOwnerFromBackend = async () => {
+            try {
+                const response = await api.get(`/room/${roomId}`)
+                const room = response?.data || {}
+                const ownerId = room?.ownerSessionId || ''
+                const owner = (room?.players || []).find((player) => player?.sessionId === ownerId)
+
+                if (ownerId) {
+                    setRoomOwnerId(ownerId)
+                }
+                if (owner?.name) {
+                    setRoomOwnerName(owner.name)
+                }
+            } catch (error) {
+                console.error('Failed to sync room owner:', error)
+            }
+        }
+
+        syncOwnerFromBackend()
+    }, [roomId])
+
+    useEffect(() => {
         if (!sessionId) {
             console.error('No sessionId found — cannot connect to room')
             clearRoomSession()
@@ -273,6 +298,17 @@ const GameRoom = ({ user }) => {
                 connection.on('RoomState', (state) => {
                     console.log('Room state received:', state)
                     setGameState(state)
+                    if (state?.ownerSessionId) {
+                        setRoomOwnerId(state.ownerSessionId)
+                    }
+                    if (state?.ownerName) {
+                        setRoomOwnerName(state.ownerName)
+                    } else if (state?.ownerSessionId && Array.isArray(state.players)) {
+                        const owner = state.players.find((player) => player?.sessionId === state.ownerSessionId)
+                        if (owner?.name || owner?.displayName) {
+                            setRoomOwnerName(owner.name || owner.displayName)
+                        }
+                    }
                     if (state.players) {
                         setPlayers(state.players.map(normalizePlayer))
                     }

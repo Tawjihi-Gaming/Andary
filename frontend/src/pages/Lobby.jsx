@@ -17,6 +17,25 @@ const Lobby = ({ user, onLogout }) => {
   const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
   const userAvatar = user?.avatarImageName || user?.avatar || ''
 
+  const fetchRoomOwnerInfo = async (joinedRoomId) => {
+    try {
+      const roomResponse = await api.get(`/room/${joinedRoomId}`)
+      const roomData = roomResponse?.data || {}
+      const ownerId = roomData?.ownerSessionId || null
+      const ownerPlayer = (roomData?.players || []).find((p) => p?.sessionId === ownerId)
+      return {
+        ownerId,
+        ownerName: ownerPlayer?.name || null,
+      }
+    } catch (error) {
+      console.error('Error fetching owner info:', error)
+      return {
+        ownerId: null,
+        ownerName: null,
+      }
+    }
+  }
+
   useEffect(() => {
     let isMounted = true
     const fetchLobbies = async () => {
@@ -58,14 +77,16 @@ const Lobby = ({ user, onLogout }) => {
         clientKey: user?.clientKey || null,
       })
       console.log('Joined room:', response.data)
-      const { roomId: joinedRoomId, code, sessionId, playerName, isPrivate, name, answerTimeSeconds } = response.data
+      const { roomId: joinedRoomId, code, sessionId, isPrivate, name, answerTimeSeconds } = response.data
+      const { ownerId, ownerName } = await fetchRoomOwnerInfo(joinedRoomId)
       saveRoomSession({
         roomId: joinedRoomId,
         roomName: name,
         code,
         isPrivate,
         sessionId,
-        ownerName: playerName,
+        ownerId,
+        ownerName,
         timer: answerTimeSeconds || 30,
         answerTimeSeconds: answerTimeSeconds || 30,
       })
@@ -77,7 +98,8 @@ const Lobby = ({ user, onLogout }) => {
           code: code,
           isPrivate: isPrivate,
           sessionId: sessionId,
-          ownerName: playerName,
+          ownerId,
+          ownerName,
           timer: answerTimeSeconds || 30,
           answerTimeSeconds: answerTimeSeconds || 30,
         }
@@ -116,14 +138,16 @@ const Lobby = ({ user, onLogout }) => {
         console.log('Joined room:', response.data)
         setShowJoinModal(false)
         setRoomCode('')
-        const { roomId, code, sessionId, playerName, isPrivate, name, answerTimeSeconds } = response.data
+        const { roomId, code, sessionId, isPrivate, name, answerTimeSeconds } = response.data
+        const { ownerId, ownerName } = await fetchRoomOwnerInfo(roomId)
         saveRoomSession({
           roomId,
           roomName: name,
           code,
           isPrivate,
           sessionId,
-          ownerName: playerName,
+          ownerId,
+          ownerName,
           timer: answerTimeSeconds || 30,
           answerTimeSeconds: answerTimeSeconds || 30,
         })
@@ -132,7 +156,8 @@ const Lobby = ({ user, onLogout }) => {
             code: code,
             isPrivate: isPrivate,
             sessionId: sessionId,
-            ownerName: playerName,
+            ownerId,
+            ownerName,
             user: user,
             roomId: roomId,
             roomName: name,

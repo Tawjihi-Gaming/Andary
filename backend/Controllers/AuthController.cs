@@ -200,7 +200,7 @@ namespace Backend.Controllers
                 {
                     return Redirect($"{frontendUrl}/login?error=auth-failed");
                 }
-                return Redirect($"{frontendUrl}/lobby");
+                return Redirect($"{frontendUrl}/lobby?login=oauth");
             }
             catch (Exception ex)
             {

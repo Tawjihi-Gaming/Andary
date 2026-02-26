@@ -308,7 +308,7 @@ const Auth = ({ onLogin }) => {
             <div className="text-end -mt-1">
               <Link
                 to="/forgot-password"
-                className="text-white/70 hover:text-game-yellow text-sm transition-colors"
+                className="text-white/70 flex items-center hover:text-game-yellow text-sm transition-colors"
               >
                 {t('auth.forgotPassword')}
               </Link>

@@ -125,7 +125,11 @@
     "passwordsDoNotMatch": "❌ 两次输入的密码不一致。",
     "passwordMinLength": "❌ 密码至少需要6个字符。",
     "passwordUpdated": "✅ 密码已更新！",
-    "passwordUpdateFailed": "❌ 密码更新失败。"
+    "passwordUpdateFailed": "❌ 密码更新失败。",
+    "googleEmailRestriction": "❌ Google 注册用户无法修改电子邮箱。",
+    "gameHistory": "🎮 游戏记录",
+    "noGameHistory": "还没有玩过游戏。",
+    "rounds": "{{count}} 回合"
   },
 
   "room": {

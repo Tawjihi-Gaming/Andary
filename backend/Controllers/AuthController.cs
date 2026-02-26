@@ -79,7 +79,8 @@ namespace Backend.Controllers
                 username = player.Username,
                 email = GetPlayerEmail(player),
                 avatarImageName = player.AvatarImageName,
-                xp = player.Xp
+                xp = player.Xp,
+                isGoogleUser = player.AuthOAuths?.Any(a => a.Provider == "Google") == true
             });
         }
 
@@ -200,7 +201,7 @@ namespace Backend.Controllers
                 {
                     return Redirect($"{frontendUrl}/login?error=auth-failed");
                 }
-                return Redirect($"{frontendUrl}/lobby");
+                return Redirect($"{frontendUrl}/lobby?login=oauth");
             }
             catch (Exception ex)
             {

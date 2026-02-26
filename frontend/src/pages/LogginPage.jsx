@@ -1,6 +1,7 @@
 import Logo from '../components/Logo.jsx'
 import Auth from '../components/Auth.jsx'
 import LanguageSwitcher from '../components/LanguageSwitcher.jsx'
+import LegalFooter from '../components/LegalFooter.jsx'
 import { motion, useReducedMotion } from 'motion/react'
 
 const floatingOrbs = [
@@ -23,7 +24,7 @@ function LoginPage({ onLogin }) {
           <LanguageSwitcher />
         </div>
       {/* Background */}
-        <div className="absolute inset-0 opacity-70 pointer-events-none">
+        <div className="absolute inset-0 opacity-70 pointer-events-none hidden sm:block">
           <motion.div
             className="absolute -top-24 -left-24 w-72 h-72 bg-game-cyan/25 rounded-full blur-3xl"
             animate={reduceMotion ? undefined : { x: [0, 45, -15, 0], y: [0, 18, -22, 0], scale: [1, 1.08, 0.96, 1] }}
@@ -55,7 +56,7 @@ function LoginPage({ onLogin }) {
           ))}
         </div>
       
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 w-full max-w-6xl z-10">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-16 w-full max-w-6xl z-10">
           {/* Logo - Right Side */}
           <div className="flex flex-col items-center gap-8">
             <Logo/>
@@ -63,6 +64,9 @@ function LoginPage({ onLogin }) {
 
           {/* Auth and Login - Left Side */}
           <Auth onLogin={onLogin} />
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 z-20">
+          <LegalFooter />
         </div>
       </div>
     </>

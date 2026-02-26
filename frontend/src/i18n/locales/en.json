@@ -125,7 +125,11 @@
     "passwordsDoNotMatch": "❌ Passwords do not match.",
     "passwordMinLength": "❌ Password must be at least 6 characters.",
     "passwordUpdated": "✅ Password updated!",
-    "passwordUpdateFailed": "❌ Failed to update password."
+    "passwordUpdateFailed": "❌ Failed to update password.",
+    "googleEmailRestriction": "❌ Google-registered users cannot modify their email.",
+    "gameHistory": "🎮 Game History",
+    "noGameHistory": "No games played yet.",
+    "rounds": "{{count}} rounds"
   },
 
   "room": {
@@ -173,6 +177,7 @@
       "empty": "Write a fake answer first.",
       "cannotUseCorrectAnswer": "You cannot submit the correct answer as a fake answer."
     },
+    "correctAnswerExplained": "explanation: {{explanation}}",
     "timeLeft": "Time left",
     "chooseCorrectAnswer": "Choose the correct answer from the options:",
     "leaderboard": "🏆 Leaderboard",
@@ -196,5 +201,76 @@
     "removePlayer": "Remove Player",
     "copied": "Copied!",
     "copyRoomCode": "Copy Room Code"
+  },
+
+  "legal": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "privacyPolicyTitle": "🔒 Privacy Policy",
+    "termsTitle": "📜 Terms of Service",
+    "lastUpdated": "Last updated",
+    "allRightsReserved": "All rights reserved."
+  },
+
+  "privacy": {
+    "introTitle": "1. Introduction",
+    "introText": "Welcome to Andary. We are committed to protecting your privacy and ensuring a safe experience while using our educational trivia game platform. This Privacy Policy explains how we collect, use, and protect your personal information when you use our service.",
+    "collectTitle": "2. Information We Collect",
+    "collectIntro": "We may collect the following types of information:",
+    "collectItem1": "Account Information: Username, email address, and password when you create an account.",
+    "collectItem2": "Profile Data: Your chosen avatar and display name.",
+    "collectItem3": "Game Data: Your game progress, XP points, scores, and gameplay statistics.",
+    "collectItem4": "Guest Data: If you play as a guest, we only store a temporary display name and avatar for the duration of your session.",
+    "useTitle": "3. How We Use Your Information",
+    "useIntro": "We use the collected information for the following purposes:",
+    "useItem1": "To create and manage your account and game profile.",
+    "useItem2": "To track your game progress, XP, and leaderboard rankings.",
+    "useItem3": "To enable multiplayer game rooms and real-time interactions.",
+    "useItem4": "To improve our platform, fix bugs, and enhance the user experience.",
+    "storageTitle": "4. Data Storage & Security",
+    "storageText": "Your data is stored securely using industry-standard encryption and security measures. Passwords are hashed and never stored in plain text. We use JWT tokens for authentication and HTTPS for all data transfers. Game session data is stored temporarily and cleaned up after games conclude.",
+    "cookiesTitle": "5. Cookies & Local Storage",
+    "cookiesText": "We use HTTP-only cookies for authentication (JWT tokens) and browser local storage to save your preferences such as language settings and theme choices. These are essential for the platform to function correctly and are not used for tracking or advertising purposes.",
+    "thirdPartyTitle": "6. Third-Party Services",
+    "thirdPartyText": "We offer Google OAuth as an optional sign-in method. When you choose to sign in with Google, Google's privacy policy applies to the data they collect. We only receive your basic profile information (name and email) from Google to create your account. We do not sell, trade, or share your personal data with any third parties for advertising or marketing purposes.",
+    "childrenTitle": "7. Children's Privacy",
+    "childrenText": "Andary is an educational platform designed for learners of all ages. We do not knowingly collect personally identifiable information from children under 13 without parental consent. If you believe a child has provided us with personal information, please contact us so we can take appropriate action.",
+    "rightsTitle": "8. Your Rights",
+    "rightsIntro": "You have the following rights regarding your personal data:",
+    "rightsItem1": "Access & Edit: You can view and update your profile information (username, email, avatar, password) at any time from your profile page.",
+    "rightsItem2": "Data Deletion: You can request the deletion of your account and all associated data by contacting us.",
+    "rightsItem3": "Guest Privacy: Guest users leave no permanent data — all session data is removed when the session ends.",
+    "contactText": "If you have any questions or concerns about this Privacy Policy or your personal data, please contact the Andary development team through the platform."
+  },
+
+  "terms": {
+    "acceptTitle": "1. Acceptance of Terms",
+    "acceptText": "By accessing and using Andary, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you should not use the platform. These terms apply to all users, including registered users and guest players.",
+    "descTitle": "2. Description of Service",
+    "descText": "Andary is a multiplayer educational trivia game platform where players can create or join game rooms, answer questions from various academic topics, and compete with other players. The platform supports multiple languages and offers both registered accounts and guest access.",
+    "accountsTitle": "3. User Accounts",
+    "accountsIntro": "When creating an account, you agree to:",
+    "accountsItem1": "Provide accurate and complete information during registration.",
+    "accountsItem2": "Keep your password secure and confidential. You are responsible for all activity under your account.",
+    "accountsItem3": "Not create multiple accounts for abusive or fraudulent purposes.",
+    "guestTitle": "4. Guest Access",
+    "guestText": "Guests can play without creating an account. Guest sessions are temporary, and game data (such as XP or scores) is not permanently saved. Guest users are still bound by these Terms of Service, including the rules of conduct.",
+    "conductTitle": "5. User Conduct",
+    "conductIntro": "When using Andary, you agree not to:",
+    "conductItem1": "Submit offensive, inappropriate, or harmful content as fake answers or usernames.",
+    "conductItem2": "Attempt to exploit, hack, or disrupt the platform, game sessions, or other users' experiences.",
+    "conductItem3": "Use automated tools, bots, or scripts to interact with the platform.",
+    "conductItem4": "Impersonate other users or misrepresent your identity.",
+    "ipTitle": "6. Intellectual Property",
+    "ipText": "All content on Andary, including but not limited to the game design, questions, user interface, graphics, and code, is the property of the Andary development team. You may not copy, modify, distribute, or reproduce any part of the platform without explicit written permission.",
+    "contentTitle": "7. Game Content",
+    "contentText": "Questions and educational content provided on Andary are for entertainment and educational purposes only. While we strive for accuracy, we do not guarantee that all questions and answers are error-free. The platform should not be used as a sole educational resource.",
+    "liabilityTitle": "8. Limitation of Liability",
+    "liabilityText": "Andary is provided 'as is' without warranties of any kind. We are not liable for any damages arising from the use of the platform, including but not limited to data loss, service interruptions, or gameplay issues. We reserve the right to modify, suspend, or discontinue any part of the service at any time.",
+    "terminationTitle": "9. Termination",
+    "terminationText": "We reserve the right to suspend or terminate your account at any time if you violate these Terms of Service. Upon termination, your right to use the platform will immediately cease. Any data associated with your account may be deleted.",
+    "changesTitle": "10. Changes to Terms",
+    "changesText": "We may update these Terms of Service from time to time. Changes will be effective immediately upon posting. Your continued use of the platform after changes constitutes acceptance of the new terms. We encourage you to review these terms periodically.",
+    "contactText": "If you have any questions about these Terms of Service, please contact the Andary development team through the platform."
   }
 }

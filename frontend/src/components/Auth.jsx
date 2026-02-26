@@ -159,7 +159,7 @@ const Auth = ({ onLogin }) => {
   }
 
   return (
-    <div className="auth-card app-glass-card-strong backdrop-blur-xl rounded-3xl p-6 w-full max-w-md shadow-2xl">
+    <div className="auth-card app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 w-full max-w-md shadow-2xl">
       {/* Toast Message */}
       {message && (
         <div
@@ -181,10 +181,10 @@ const Auth = ({ onLogin }) => {
       )}
 
       {/* Tabs (Guest or Loggin)*/}
-      <div className="flex rounded-xl overflow-hidden mb-5 bg-white/10 p-1">
+      <div className="flex rounded-xl overflow-hidden mb-4 sm:mb-5 bg-white/10 p-1">
         <button
           onClick={() => setActiveTab('guest')}
-          className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all duration-300 ${
+          className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-bold text-sm sm:text-base transition-all duration-300 ${
             activeTab === 'guest' ? 'tab-active' : 'tab-inactive hover:bg-white/20'
           }`}
         >
@@ -192,7 +192,7 @@ const Auth = ({ onLogin }) => {
         </button>
         <button
           onClick={() => setActiveTab('signin')}
-          className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all duration-300 ${
+          className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-bold text-sm sm:text-base transition-all duration-300 ${
             activeTab === 'signin' ? 'tab-active' : 'tab-inactive hover:bg-white/20'
           }`}
         >
@@ -231,7 +231,7 @@ const Auth = ({ onLogin }) => {
               value={guestName}
               required
               onChange={handleUserName}
-              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:!border-game-yellow focus:!bg-white/20 transition-all duration-200"
+              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-yellow focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
             <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" fill="currentColor" viewBox="0 0 24 24">
@@ -241,7 +241,7 @@ const Auth = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-lg py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4"
+            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4"
           >
             {t('auth.startPlaying')}
           </button>
@@ -280,7 +280,7 @@ const Auth = ({ onLogin }) => {
               value={email}
               required
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:!border-game-cyan focus:!bg-white/20 transition-all duration-200"
+              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-cyan focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
             <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,7 +295,7 @@ const Auth = ({ onLogin }) => {
               value={password}
               required
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
+              className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
             <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,7 +313,7 @@ const Auth = ({ onLogin }) => {
                   value={displayName}
                   required
                   onChange={handleDisplayName}
-                  className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-4 px-5 pe-12 border-2 border-white/20 focus:!border-game-green focus:!bg-white/20 transition-all duration-200"
+                  className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-green focus:!bg-white/20 transition-all duration-200"
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
                 <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-green" fill="currentColor" viewBox="0 0 24 24">
@@ -328,7 +328,7 @@ const Auth = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-lg py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? t('common.processing') : (isSignUp ? t('auth.createAccount') : t('auth.login'))}

@@ -13,6 +13,7 @@ using System.Security.Cryptography;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Backend.Controllers
 {
@@ -261,7 +262,7 @@ namespace Backend.Controllers
         private async Task<Player?> GetPlayerByEmailAsync(string email)
         {
             email = email.Trim().ToLower();
-            
+
             var playerByLocal = await _db.Players
                 .Include(p => p.AuthLocal)
                 .Include(p => p.AuthOAuths)
@@ -320,14 +321,12 @@ namespace Backend.Controllers
             var currentEmail = GetPlayerEmail(player);
             var activeGoogleOAuth = player.AuthOAuths
                 .FirstOrDefault(a => a.Provider == "Google" && a.Email == currentEmail);
-            
-            if (activeGoogleOAuth != null)
+
+         	if (activeGoogleOAuth != null)
             {
-                var email = activeGoogleOAuth.Email;
-                var changed = UpdateIfChanged(ref email, newEmail);
-                activeGoogleOAuth.Email = email;
-                return (changed, null);
+                return (false, "Google-registered users cannot modify their email.");
             }
+
 
             return (false, null);
         }
@@ -344,49 +343,57 @@ namespace Backend.Controllers
             var verificationResult = hasher.VerifyHashedPassword(player.AuthLocal, player.AuthLocal.PasswordHash!, password);
             if (verificationResult == PasswordVerificationResult.Success)
                 return (false, "New password must be different from the current password");
-            
+
             player.AuthLocal.PasswordHash = hasher.HashPassword(player.AuthLocal, password);
             return (true, null);
         }
 
         private async Task SendWelcomeEmailAsync(string email)
         {
-            var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
-                ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
-
-            var smtpPortRaw = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
-            if (!int.TryParse(smtpPortRaw, out var smtpPort))
-                throw new InvalidOperationException("SMTP_PORT env var is invalid");
-
-            var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER")
-                ?? throw new InvalidOperationException("SMTP_USER env var is missing");
-
-            var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS")
-                ?? throw new InvalidOperationException("SMTP_PASS env var is missing");
-
-            var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpUser;
-            var fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? "Andary";
-
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(fromName, fromEmail));
-            message.To.Add(MailboxAddress.Parse(email));
-            message.Subject = "Welcome to Andary";
-            message.Body = new TextPart("plain")
+            try
             {
-                Text =
-                    "Hello,\n\n" +
-                    "Thank you for signing up with Andary." +
-                    "We are happy to have you join our website\n\n" +
-                    "If you did not sign up, you can safely ignore this email.\n\n" +
-                    "Best regards,\n" +
-                    "The Andary Team"
-            };
+                var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
+                    ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
 
-            using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
-            await smtp.AuthenticateAsync(smtpUser, smtpPass);
-            await smtp.SendAsync(message);
-            await smtp.DisconnectAsync(true);
+                var smtpPortRaw = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
+                if (!int.TryParse(smtpPortRaw, out var smtpPort))
+                    return;
+
+                var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER")
+                    ?? throw new InvalidOperationException("SMTP_USER env var is missing");
+
+                var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS")
+                    ?? throw new InvalidOperationException("SMTP_PASS env var is missing");
+
+                var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpUser;
+                var fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? "Andary";
+
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(fromName, fromEmail));
+                message.To.Add(MailboxAddress.Parse(email));
+                message.Subject = "Welcome to Andary";
+                message.Body = new TextPart("plain")
+                {
+                    Text =
+                        "Hello,\n\n" +
+                        "Thank you for signing up with Andary." +
+                        "We are happy to have you join our website\n\n" +
+                        "If you did not sign up, you can safely ignore this email.\n\n" +
+                        "Best regards,\n" +
+                        "The Andary Team"
+                };
+
+                using var smtp = new SmtpClient();
+                await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(smtpUser, smtpPass);
+                await smtp.SendAsync(message);
+                await smtp.DisconnectAsync(true);
+            }
+            catch
+            {
+                return;
+            }
+
         }
 
         #endregion

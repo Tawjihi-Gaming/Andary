@@ -107,3 +107,4 @@ nunit-*.xml
 .idea
 *.pem
 Migrations/
+obj/

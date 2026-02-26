@@ -7,7 +7,7 @@ const Logo = () => {
         <div className="absolute inset-0 bg-linear-to-r from-game-cyan via-game-blue to-game-purple opacity-50 blur-3xl rounded-full scale-150 animate-pulse"></div>
         
         {/* Custom graduation cap design */}
-        <div className="relative z-10 w-32 h-32 flex items-center justify-center">
+        <div className="relative z-10 w-20 h-20 sm:w-32 sm:h-32 flex items-center justify-center">
           {/* Graduation cap SVG */}
           <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.4))' }}>
             {/* Cap top (mortarboard) */}
@@ -35,15 +35,15 @@ const Logo = () => {
         </div>
         
         {/* Bright decorative elements */}
-        <div className="absolute -top-4 -right-4 text-game-yellow text-3xl animate-bounce">✨</div>
-        <div className="absolute -bottom-2 -left-4 text-game-cyan text-2xl animate-pulse">⭐</div>
-        <div className="absolute top-0 -left-8 text-game-blue text-xl">🎓</div>
-        <div className="absolute -top-2 right-0 text-game-green text-lg animate-bounce delay-300">✨</div>
+        <div className="absolute -top-4 -right-4 text-game-yellow text-xl sm:text-3xl animate-bounce">✨</div>
+        <div className="absolute -bottom-2 -left-4 text-game-cyan text-lg sm:text-2xl animate-pulse">⭐</div>
+        <div className="absolute top-0 -left-8 text-game-blue text-base sm:text-xl">🎓</div>
+        <div className="absolute -top-2 right-0 text-game-green text-sm sm:text-lg animate-bounce delay-300">✨</div>
       </div>
 
       {/* Game name */}
       <div className="mt-6 relative">
-        <h1 className="text-6xl font-extrabold text-white drop-shadow-2xl" style={{ textShadow: '4px 4px 0 #2563EB, 6px 6px 0 #1E3A8A' }}>
+        <h1 className="text-4xl sm:text-6xl font-extrabold text-white drop-shadow-2xl" style={{ textShadow: '4px 4px 0 #2563EB, 6px 6px 0 #1E3A8A' }}>
           Andary<span className="text-game-yellow"></span>
         </h1>
       </div>

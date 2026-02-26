@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios' 
 import { saveRoomSession } from '../utils/roomSession'
+import LegalFooter from '../components/LegalFooter'
 
 const CreateRoom = ({ user }) => {
   const { t, i18n } = useTranslation()
@@ -340,6 +341,9 @@ const CreateRoom = ({ user }) => {
             {t('common.back')}
           </button>
         </form>
+        <div className="w-full sm:w-3/4 max-w-4xl mx-auto mt-6 pb-6">
+          <LegalFooter />
+        </div>
       </div>
     </div>
   )

@@ -7,6 +7,8 @@ import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
 import Game from './pages/game/[roomId].jsx'
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
+import TermsOfService from './pages/TermsOfService.jsx'
 import api from './api/axios'
 import ThemeSwitcher from './components/ThemeSwitcher'
 
@@ -47,6 +49,14 @@ function App() {
     const activeTheme = savedTheme === 'dark' ? 'dark' : 'light'
     document.documentElement.setAttribute('data-theme', activeTheme)
 
+    const searchParams = new URLSearchParams(window.location.search)
+    const isOAuthLoginCallback = searchParams.get('login') === 'oauth'
+
+    if (!isOAuthLoginCallback || isAuthenticated) {
+      setLoading(false)
+      return
+    }
+
     const checkSession = async () => {
       try {
         const res = await api.get('/auth/me')
@@ -57,6 +67,7 @@ function App() {
           avatar: res.data.avatarImageName || '👤',
           xp: res.data.xp || 0,
           isGuest: false,
+          isGoogleUser: res.data.isGoogleUser || false,
           clientKey: createClientKey(),
         }
         handleLogin(userData)
@@ -67,11 +78,7 @@ function App() {
       }
     }
 
-    if (!isAuthenticated) {
-      checkSession()
-    } else {
-      setLoading(false)
-    }
+    checkSession()
   }, [])
 
   const handleLogin = (userData) => {
@@ -174,6 +181,8 @@ function App() {
               <Navigate to="/" replace />
           } 
         />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
       </Routes>
     </BrowserRouter>
   )

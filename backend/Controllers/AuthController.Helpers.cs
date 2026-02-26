@@ -262,7 +262,7 @@ namespace Backend.Controllers
         private async Task<Player?> GetPlayerByEmailAsync(string email)
         {
             email = email.Trim().ToLower();
-            
+
             var playerByLocal = await _db.Players
                 .Include(p => p.AuthLocal)
                 .Include(p => p.AuthOAuths)
@@ -321,14 +321,12 @@ namespace Backend.Controllers
             var currentEmail = GetPlayerEmail(player);
             var activeGoogleOAuth = player.AuthOAuths
                 .FirstOrDefault(a => a.Provider == "Google" && a.Email == currentEmail);
-            
-            if (activeGoogleOAuth != null)
+
+         	if (activeGoogleOAuth != null)
             {
-                var email = activeGoogleOAuth.Email;
-                var changed = UpdateIfChanged(ref email, newEmail);
-                activeGoogleOAuth.Email = email;
-                return (changed, null);
+                return (false, "Google-registered users cannot modify their email.");
             }
+
 
             return (false, null);
         }
@@ -345,7 +343,7 @@ namespace Backend.Controllers
             var verificationResult = hasher.VerifyHashedPassword(player.AuthLocal, player.AuthLocal.PasswordHash!, password);
             if (verificationResult == PasswordVerificationResult.Success)
                 return (false, "New password must be different from the current password");
-            
+
             player.AuthLocal.PasswordHash = hasher.HashPassword(player.AuthLocal, password);
             return (true, null);
         }

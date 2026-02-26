@@ -32,10 +32,15 @@ namespace Backend.Extensions
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
+                    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL")
+                                        ?.Trim()
+                                        .TrimEnd('/');
 
-                    policy.WithOrigins(
-                              frontendUrl ?? "http://localhost:5173")
+                    var origins = new List<string> { "http://localhost:5173" };
+                    if (!string.IsNullOrEmpty(frontendUrl))
+                        origins.Add(frontendUrl);
+
+                    policy.WithOrigins(origins.ToArray())
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();

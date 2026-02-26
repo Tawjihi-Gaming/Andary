@@ -73,7 +73,9 @@
     "confirmLogout": "تأكيد الخروج",
     "cancelLogout" : "إلغاء تسجيل الخروج",
     "logoutMessage": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
-    "logoutTitle": "تأكيد الخروج"
+    "logoutTitle": "تأكيد الخروج",
+    "ok": "حسناً",
+    "cancel": "إلغاء"
   },
 
   "createRoom": {

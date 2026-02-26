@@ -73,7 +73,9 @@
     "confirmLogout": "确认退出",
     "cancelLogout": "取消退出",
     "logoutMessage": "你确定要退出登录吗？",
-    "logoutTitle": "确认退出"
+    "logoutTitle": "确认退出",
+    "ok": "是",
+    "cancel": "否"
   },
 
   "createRoom": {

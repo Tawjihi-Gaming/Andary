@@ -439,6 +439,14 @@ const Lobby = ({ user, onLogout }) => {
         onCancel={() => setIsLogoutPopupOpen(false)}
         onConfirm={confirmLogout}
       />
+      <GamePopup
+        open={!!joinError}
+        title={t('lobby.errorTitle')}
+        message={joinError}
+        confirmText={t('lobby.ok')}
+        showCancel={false}
+        onConfirm={() => navigate('/lobby')}
+      />
     </div>
   )
 }

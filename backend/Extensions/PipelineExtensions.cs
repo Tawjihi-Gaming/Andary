@@ -34,6 +34,8 @@ namespace Backend.Extensions
                 });
             });
 
+            app.UseCors();
+
             app.UseAuthentication();
             app.UseAuthorization();
 

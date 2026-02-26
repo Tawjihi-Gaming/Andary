@@ -2,3 +2,4 @@ obj
 .env
 bin\Debug
 Migrations
+bin

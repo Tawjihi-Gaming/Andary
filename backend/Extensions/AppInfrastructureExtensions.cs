@@ -12,8 +12,6 @@ namespace Backend.Extensions
     {
         public static WebApplication UseAppInfrastructure(this WebApplication app)
         {
-            app.UseCors();
-
             app.MapHub<GameHub>("/gamehub");
 
             SeedDevelopmentData(app);

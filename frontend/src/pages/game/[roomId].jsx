@@ -529,9 +529,9 @@ const Game = ({ user: authenticatedUser }) => {
     if (isReconnecting || !connectionReady) {
         return (
             <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
-                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-2xl text-center">
-                    <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-white mb-2">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full max-w-md shadow-2xl text-center">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
                         {isReconnecting ? t('game.reconnecting') : t('game.connecting')}
                     </h2>
                     <p className="text-white/70">{t('game.pleaseWait')}</p>
@@ -548,21 +548,21 @@ const Game = ({ user: authenticatedUser }) => {
                 {phaseTimerBanner}
                 <button
                     onClick={handleRequestLeave}
-                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
+                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
-                    <h1 className="text-3xl font-extrabold text-white mb-6 text-center">{t('game.chooseTopic')}</h1>
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full max-w-2xl shadow-2xl">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-4 sm:mb-6 text-center">{t('game.chooseTopic')}</h1>
                     {isMyTurn ? (
                         <>
-                            <p className="text-white/80 text-center mb-6">{t('game.yourTurn')}</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <p className="text-white/80 text-center mb-4 sm:mb-6">{t('game.yourTurn')}</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 {turnTopicOptions.map((topic) => (
                                     <button
                                         key={topic}
                                         onClick={() => handleTopicSelect(topic)}
-                                        className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 text-lg"
+                                        className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg"
                                     >
                                         {topic}
                                     </button>
@@ -570,7 +570,7 @@ const Game = ({ user: authenticatedUser }) => {
                             </div>
                         </>
                     ) : (
-                        <p className="text-white/80 text-center text-lg">
+                        <p className="text-white/80 text-center text-base sm:text-lg">
                             ⏳ {t('game.waitingForTopic', { name: getCurrentPlayerName() }).replace('<strong>', '').replace('</strong>', '')}
                         </p>
                     )}
@@ -588,43 +588,35 @@ const Game = ({ user: authenticatedUser }) => {
                 {phaseTimerBanner}
                 <button
                     onClick={handleRequestLeave}
-                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
+                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
-                    <div className="text-center mb-4">
-                        <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full max-w-2xl shadow-2xl">
+                    <div className="text-center mb-3 sm:mb-4">
+                        <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-xs sm:text-sm">🏷️ {selectedTopic}</span>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-6 text-center" dir={questionDirection}>{question}</h2>
-                    <p className="text-white/70 text-center mb-6">{t('game.writeFakeAnswer')}</p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 text-center" dir={questionDirection}>{question}</h2>
+                    <p className="text-white/70 text-center text-sm sm:text-base mb-4 sm:mb-6">{t('game.writeFakeAnswer')}</p>
                     {hasSubmittedFake ? (
-                        <p className="text-green-300 text-center text-lg font-bold">✅ {message}</p>
+                        <p className="text-green-300 text-center text-base sm:text-lg font-bold">✅ {message}</p>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <form
-                                onSubmit={(e) => {
-                                e.preventDefault()
-                                handleSubmitFake()
-                    }}
-                    >
-                    <input
-                        type="text"
-                        value={fakeAnswer}
-                        onChange={(e) => setFakeAnswer(e.target.value)}
-                        disabled={hasSubmittedFake}
-                        placeholder={t('game.fakeAnswerPlaceholder')}
-                        className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-game-cyan focus:border-transparent transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                        dir={getTextDirection(fakeAnswer)}
-                    />
-                    <button
-                        type="submit"
-                        disabled={!fakeAnswer.trim() || hasSubmittedFake}
-                        className="mt-2 w-full bg-game-cyan hover:bg-game-cyan/90 text-white font-bold py-3 px-6 rounded-2xl transition-all duration-300 disabled:bg-game-cyan/50 disabled:cursor-not-allowed"
-                    >
-                        {t('common.send')}
-                    </button>
-                    </form>
+                            <input
+                                type="text"
+                                value={fakeAnswer}
+                                onChange={(e) => setFakeAnswer(e.target.value)}
+                                placeholder={t('game.fakeAnswerPlaceholder')}
+                                className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-2.5 sm:py-3 text-base sm:text-lg focus:outline-none focus:border-white/40"
+                                dir={questionDirection}
+                            />
+                            <button
+                                onClick={handleSubmitFake}
+                                disabled={!fakeAnswer.trim()}
+                                className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                {t('common.send')}
+                            </button>
                             {fakeSubmitError && (
                                 <p className="text-red-300 text-center font-semibold">{fakeSubmitError}</p>
                             )}
@@ -644,22 +636,22 @@ const Game = ({ user: authenticatedUser }) => {
                 {phaseTimerBanner}
                 <button
                     onClick={handleRequestLeave}
-                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
+                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl">
-                    <div className="text-center mb-4">
-                        <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-sm">🏷️ {selectedTopic}</span>
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full max-w-2xl shadow-2xl">
+                    <div className="text-center mb-3 sm:mb-4">
+                        <span className="px-3 py-1 bg-white/10 rounded-full text-white/70 text-xs sm:text-sm">🏷️ {selectedTopic}</span>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-6 text-center" dir={questionDirection}>{question}</h2>
-                    <p className="text-white/70 text-center mb-4">{t('game.chooseCorrectAnswer')}</p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 text-center" dir={questionDirection}>{question}</h2>
+                    <p className="text-white/70 text-center text-sm sm:text-base mb-3 sm:mb-4">{t('game.chooseCorrectAnswer')}</p>
                     <div className="grid grid-cols-1 gap-3">
                         {choices.map((choice, i) => (
                             <button
                                 key={i}
                                 onClick={() => { setSelectedAnswerIndex(i); handleChooseAnswer(choice) }}
-                                className={`border font-semibold py-3 px-6 rounded-xl transition-all duration-300 ${
+                                className={`border font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base ${
                                     selectedAnswerIndex === i
                                         ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
                                         : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
@@ -687,30 +679,29 @@ const Game = ({ user: authenticatedUser }) => {
                 {phaseTimerBanner}
                 <button
                     onClick={(handleRequestLeave)}
-                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-sm font-semibold px-4 py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
+                    className="absolute cursor-pointer top-4 right-4 z-20 bg-white/10 hover:bg-red-500/20 text-white/85 hover:text-red-300 text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-white/20 hover:border-red-400/40 transition-all duration-300"
                 >
                     {t('game.leaveRoom')}
                 </button>
-                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl text-center">
-                    <h2 className="text-3xl font-bold text-white mb-2">{t('game.leaderboard')}</h2>
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full max-w-2xl shadow-2xl text-center">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">{t('game.leaderboard')}</h2>
 
                     {roundResult?.currentQuestion && (
-                        <div className="mb-6 bg-white/10 rounded-2xl px-6 py-4 border border-white/20">
-                            <p className="text-white/60 text-sm mb-1">{t('game.correctAnswer')}</p>
-                            <p className="text-green-300 text-xl font-bold" dir={getTextDirection(roundResult.currentQuestion.correctAnswer)}>{roundResult.currentQuestion.correctAnswer}</p>
-                            <p className="text-white/70 text-sm mt-3">{t('game.correctAnswerExplained', { explanation: roundResult.currentQuestion.explanation || t('game.noExplanation') })}</p>
+                        <div className="mb-4 sm:mb-6 bg-white/10 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20">
+                            <p className="text-white/60 text-xs sm:text-sm mb-1">{t('game.correctAnswer')}</p>
+                            <p className="text-green-300 text-lg sm:text-xl font-bold" dir={getTextDirection(roundResult.currentQuestion.correctAnswer)}>{roundResult.currentQuestion.correctAnswer}</p>
                         </div>
                     )}
 
                     {/* Leaderboard */}
-                    <div className="flex flex-col gap-3 mb-8">
+                    <div className="flex flex-col gap-2 sm:gap-3 mb-6 sm:mb-8">
                         {sortedPlayers.map((p, index) => {
                             const isMe = p.sessionId === sessionId
                             const isFirst = index === 0
                             return (
                                 <div
                                     key={p.sessionId}
-                                    className={`flex items-center justify-between px-5 py-4 rounded-2xl border transition-all duration-300
+                                    className={`flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 rounded-2xl border transition-all duration-300
                                         ${isFirst
                                             ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20'
                                             : isMe
@@ -718,14 +709,14 @@ const Game = ({ user: authenticatedUser }) => {
                                                 : 'bg-white/10 border-white/20'
                                         }`}
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">{medals[index] || `#${index + 1}`}</span>
-                                        <span className={`font-bold text-lg ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <span className="text-xl sm:text-2xl">{medals[index] || `#${index + 1}`}</span>
+                                        <span className={`font-bold text-base sm:text-lg ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
                                             {p.displayName}
                                             {isMe && <span className="text-white/50 text-sm font-normal me-2">({t('common.you')})</span>}
                                         </span>
                                     </div>
-                                    <span className={`text-xl font-extrabold ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
+                                    <span className={`text-base sm:text-xl font-extrabold ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
                                         {scores[p.sessionId] || 0} {t('common.point')}
                                     </span>
                                 </div>
@@ -743,12 +734,12 @@ const Game = ({ user: authenticatedUser }) => {
         return (
             <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
                 {leaveNoticeBanner}
-                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl text-center">
-                    <h1 className="text-4xl font-extrabold text-white mb-4">{t('game.gameOver')}</h1>
-                    {winner && <p className="text-yellow-300 text-2xl font-bold mb-6">{t('game.winner', { name: winner })}</p>}
-                    <div className="flex flex-wrap justify-center gap-3 mb-8">
+                <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full max-w-2xl shadow-2xl text-center">
+                    <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-3 sm:mb-4">{t('game.gameOver')}</h1>
+                    {winner && <p className="text-yellow-300 text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{t('game.winner', { name: winner })}</p>}
+                    <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
                         {players.map(p => (
-                            <div key={p.sessionId} className="px-4 py-2 rounded-xl bg-white/10 text-white font-bold text-sm">
+                            <div key={p.sessionId} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white/10 text-white font-bold text-xs sm:text-sm">
                                 {p.displayName}: {scores[p.sessionId] || 0}
                             </div>
                         ))}

@@ -7,6 +7,8 @@ import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
 import Game from './pages/game/[roomId].jsx'
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
+import TermsOfService from './pages/TermsOfService.jsx'
 import api from './api/axios'
 import ThemeSwitcher from './components/ThemeSwitcher'
 
@@ -179,6 +181,8 @@ function App() {
               <Navigate to="/" replace />
           } 
         />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
       </Routes>
     </BrowserRouter>
   )

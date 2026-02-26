@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from './AvatarPicker'
@@ -302,6 +303,17 @@ const Auth = ({ onLogin }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
+
+          {!isSignUp && (
+            <div className="text-end -mt-1">
+              <Link
+                to="/forgot-password"
+                className="text-white/70 hover:text-game-yellow text-sm transition-colors"
+              >
+                {t('auth.forgotPassword')}
+              </Link>
+            </div>
+          )}
 
           {/* Display Name & Avatar - Only shown for sign up */}
           {isSignUp && (

@@ -180,7 +180,7 @@ namespace Backend.Controllers
         [HttpGet("google/callback")]
         public async Task<IActionResult> GoogleCallback(string code)
         {
-            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
+            var frontendUrl = (Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173").TrimEnd('/');
             try
             {
                 if (string.IsNullOrWhiteSpace(code))

@@ -305,7 +305,7 @@ namespace Backend.Controllers
             {
                 PlayerId = player.Id,
                 TokenHash = HashToken(rawToken),
-                ExpiryDate = DateTime.UtcNow.AddMinutes(5)
+                ExpiryDate = DateTime.UtcNow.AddMinutes(30)
             };
             _db.PasswordResetTokens.Add(resetToken);
             await _db.SaveChangesAsync();

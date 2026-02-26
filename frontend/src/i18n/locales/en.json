@@ -125,7 +125,11 @@
     "passwordsDoNotMatch": "❌ Passwords do not match.",
     "passwordMinLength": "❌ Password must be at least 6 characters.",
     "passwordUpdated": "✅ Password updated!",
-    "passwordUpdateFailed": "❌ Failed to update password."
+    "passwordUpdateFailed": "❌ Failed to update password.",
+    "googleEmailRestriction": "❌ Google-registered users cannot modify their email.",
+    "gameHistory": "🎮 Game History",
+    "noGameHistory": "No games played yet.",
+    "rounds": "{{count}} rounds"
   },
 
   "room": {

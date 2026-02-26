@@ -49,6 +49,14 @@ function App() {
     const activeTheme = savedTheme === 'dark' ? 'dark' : 'light'
     document.documentElement.setAttribute('data-theme', activeTheme)
 
+    const searchParams = new URLSearchParams(window.location.search)
+    const isOAuthLoginCallback = searchParams.get('login') === 'oauth'
+
+    if (!isOAuthLoginCallback || isAuthenticated) {
+      setLoading(false)
+      return
+    }
+
     const checkSession = async () => {
       try {
         const res = await api.get('/auth/me')
@@ -59,6 +67,7 @@ function App() {
           avatar: res.data.avatarImageName || '👤',
           xp: res.data.xp || 0,
           isGuest: false,
+          isGoogleUser: res.data.isGoogleUser || false,
           clientKey: createClientKey(),
         }
         handleLogin(userData)
@@ -69,11 +78,7 @@ function App() {
       }
     }
 
-    if (!isAuthenticated) {
-      checkSession()
-    } else {
-      setLoading(false)
-    }
+    checkSession()
   }, [])
 
   const handleLogin = (userData) => {

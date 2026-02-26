@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
@@ -34,43 +34,156 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   const [message, setMessage] = useState(null)
   const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
 
+  // Game history state
+  const [gameHistory, setGameHistory] = useState([])
+  const [historyPage, setHistoryPage] = useState(1)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [hasMoreHistory, setHasMoreHistory] = useState(true)
+  const [historyInitialized, setHistoryInitialized] = useState(false)
+  const historyObserverRef = useRef(null)
+  const PAGE_SIZE = 10
+
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type })
     setTimeout(() => setMessage(null), 4000)
   }
 
+  // Fetch game history
+  const fetchGameHistory = useCallback(async (page) => {
+    if (!user?.id || historyLoading) return
+    setHistoryLoading(true)
+    try
+    {
+      const res = await api.get('/room/player-game-history', {
+        params: { playerId: user.id, pageNumber: page, pageSize: PAGE_SIZE }
+      })
+      const data = res.data
+      if (page === 1)
+      {
+        setGameHistory(data)
+      }
+      else
+      {
+        setGameHistory(prev => [...prev, ...data])
+      }
+      setHasMoreHistory(data.length === PAGE_SIZE)
+    }
+    catch (error)
+    {
+      if (error.response?.status === 404)
+      {
+        setHasMoreHistory(false)
+      }
+      else
+      {
+        console.error('Fetch game history error:', error)
+      }
+    }
+    finally
+    {
+      setHistoryLoading(false)
+    }
+  }, [user?.id, historyLoading])
+
+  // Load first page on mount
+  useEffect(() => {
+    if (user?.id && !user?.isGuest && !historyInitialized)
+    {
+      setHistoryInitialized(true)
+      fetchGameHistory(1)
+    }
+  }, [user?.id, user?.isGuest, historyInitialized])
+
+  // Infinite scroll observer
+  const lastHistoryRef = useCallback((node) => {
+    if (historyLoading)
+    {
+      return
+    }
+    if (historyObserverRef.current)
+    {
+      historyObserverRef.current.disconnect()
+    }
+    historyObserverRef.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMoreHistory)
+      {
+        const nextPage = historyPage + 1
+        setHistoryPage(nextPage)
+        fetchGameHistory(nextPage)
+      }
+    })
+    if (node)
+    {
+      historyObserverRef.current.observe(node)
+    }
+  }, [historyLoading, hasMoreHistory, historyPage, fetchGameHistory])
+
+  // Format date helper
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-'
+    const d = new Date(dateStr)
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  }
+
+  const formatDuration = (start, end) => {
+    if (!start || !end)
+    {
+      return '-'
+    }
+    const ms = new Date(end) - new Date(start)
+    const mins = Math.floor(ms / 60000)
+    if (mins < 1) return `${Math.floor(ms / 1000)}s`
+    return `${mins}m`
+  }
+
   // Update username
   const handleUpdateUsername = async () => {
-    if (!username.trim()) return
+    if (!username.trim())
+    {
+      return
+    }
     setLoading(true)
-    try {
+    try
+    {
       await api.post('/auth/edit', { username })
       onUpdateUser?.({ ...user, username })
       showMessage(t('profile.usernameUpdated'))
       setEditingField(null)
-    } catch (error) {
+    }
+    catch (error)
+    {
       console.error('Update username error:', error)
       const msg = error.response?.data?.msg || t('profile.usernameUpdateFailed')
       showMessage(msg, 'error')
-    } finally {
+    }
+    finally
+    {
       setLoading(false)
     }
   }
 
   // Update email
   const handleUpdateEmail = async () => {
-    if (!email.trim()) return
+    if (!email.trim())
+    {
+      return
+    }
     setLoading(true)
-    try {
+    try
+    {
       await api.post('/auth/edit', { email })
       onUpdateUser?.({ ...user, email })
       showMessage(t('profile.emailUpdated'))
       setEditingField(null)
-    } catch (error) {
+    }
+    catch (error)
+    {
       console.error('Update email error:', error)
       const msg = error.response?.data?.msg || t('profile.emailUpdateFailed')
       showMessage(msg, 'error')
-    } finally {
+    }
+    finally
+    {
       setLoading(false)
     }
   }
@@ -78,47 +191,60 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   // Update avatar
   const handleUpdateAvatar = async () => {
     setLoading(true)
-    try {
+    try
+    {
       await api.post('/auth/edit', { avatarImageName: selectedAvatar.emoji })
       onUpdateUser?.({ ...user, avatar: selectedAvatar.emoji })
       showMessage(t('profile.avatarUpdated'))
       setEditingField(null)
-    } catch (error) {
+    }
+    catch (error)
+    {
       console.error('Update avatar error:', error)
       const msg = error.response?.data?.msg || t('profile.avatarUpdateFailed')
       showMessage(msg, 'error')
-    } finally {
+    }
+    finally
+    {
       setLoading(false)
     }
   }
 
   // Update password
   const handleUpdatePassword = async () => {
-    if (!newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword)
+    {
       showMessage(t('profile.fillAllPasswordFields'), 'error')
       return
     }
 
-    if (newPassword !== confirmPassword) {
+    if (newPassword !== confirmPassword)
+    {
       showMessage(t('profile.passwordsDoNotMatch'), 'error')
       return
     }
-    if (newPassword.length < 6) {
+    if (newPassword.length < 6)
+    {
       showMessage(t('profile.passwordMinLength'), 'error')
       return
     }
     setLoading(true)
-    try {
+    try
+    {
       await api.post('/auth/edit', { password: newPassword })
       showMessage(t('profile.passwordUpdated'))
       setNewPassword('')
       setConfirmPassword('')
       setEditingField(null)
-    } catch (error) {
+    }
+    catch (error)
+    {
       console.error('Update password error:', error)
       const msg = error.response?.data?.msg || t('profile.passwordUpdateFailed')
       showMessage(msg, 'error')
-    } finally {
+    }
+    finally
+    {
       setLoading(false)
     }
   }
@@ -225,16 +351,19 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           </div>
 
           {/* LEVEL & XP BAR */}
-          <div className="w-full max-w-md mx-auto mb-6 sm:mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-white font-bold text-lg">{t('profile.level', { level })}</span>
-              <span className="text-white/70 text-sm">{t('profile.xpProgress', { progress, max: XP_PER_LEVEL })}</span>
-            </div>
-            <div className="w-full h-5 bg-white/10 rounded-full overflow-hidden border border-white/20">
-              <div
-                className="h-full bg-linear-to-r from-game-yellow to-game-orange rounded-full transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
+          {!user?.isGuest && (
+            <div className="w-full max-w-md mx-auto mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white font-bold text-lg">{t('profile.level', { level })}</span>
+                <span className="text-white/70 text-sm">{t('profile.xpProgress', { progress, max: XP_PER_LEVEL })}</span>
+              </div>
+              <div className="w-full h-5 bg-white/10 rounded-full overflow-hidden border border-white/20">
+                <div
+                  className="h-full bg-linear-to-r from-game-yellow to-game-orange rounded-full transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <p className="text-white/50 text-xs text-center mt-1">{t('profile.totalXp', { xp })}</p>
             </div>
           )}
 
@@ -323,6 +452,9 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                       {t('common.edit')}
                     </button>
                   )}
+                  {user?.isGoogleUser && (
+                    <span className="text-white/30 text-xs text-center mr-10">{t('profile.googleEmailRestriction')}</span>
+                  )}
                 </div>
               )}
             </div>
@@ -377,6 +509,52 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
               </div>
             )}
           </div>
+
+            {/* GAME HISTORY SECTION */}
+          {!user?.isGuest && (
+            <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-8 shadow-2xl mt-6">
+              <h2 className="text-2xl font-extrabold text-white mb-6 text-center" style={{ textShadow: '2px 2px 0 #2563EB' }}>
+                {t('profile.gameHistory')}
+              </h2>
+  
+              {gameHistory.length === 0 && !historyLoading ? (
+                <p className="text-white/50 text-center text-sm">{t('profile.noGameHistory')}</p>
+              ) : (
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                  {gameHistory.map((game, index) => {
+                    const isLast = index === gameHistory.length - 1
+                    const rankEmoji = game.finalRank === 1 ? '🥇' : game.finalRank === 2 ? '🥈' : game.finalRank === 3 ? '🥉' : `#${game.finalRank}`
+                    return (
+                      <div
+                        key={game.gameSessionId}
+                        ref={isLast ? lastHistoryRef : null}
+                        className="bg-white/5 rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{rankEmoji}</span>
+                            <span className="text-white font-bold text-lg">
+                              {game.finalScore} {t('common.point')}
+                            </span>
+                          </div>
+                          <span className="text-white/40 text-xs">{formatDate(game.startDate)}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-white/50 text-xs">
+                          <span>🎯 {t('profile.rounds', { count: game.totalRounds })}</span>
+                          <span>⏱️ {formatDuration(game.startDate, game.endDate)}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {historyLoading && (
+                    <div className="text-center py-3">
+                      <span className="text-white/40 text-sm">{t('common.loading')}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* LOGOUT BUTTON */}
           <div className="flex justify-center mt-6 sm:mt-8">

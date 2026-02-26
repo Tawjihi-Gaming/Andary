@@ -1,4 +1,5 @@
 import * as signalR from '@microsoft/signalr'
+import { GAME_HUB_URL } from './config'
 
 let connection = null
 
@@ -7,7 +8,7 @@ export const createConnection = () => {
   if (connection) return connection
 
   connection = new signalR.HubConnectionBuilder()
-    .withUrl('/gamehub', {
+    .withUrl(GAME_HUB_URL, {
       skipNegotiation: true,
       transport: signalR.HttpTransportType.WebSockets
     })

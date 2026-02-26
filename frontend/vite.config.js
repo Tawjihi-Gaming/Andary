@@ -5,18 +5,20 @@ import path from 'path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(process.cwd(), '..'), '')
+  const backendUri = env.VITE_BACKEND_URI || env.BACKEND_URI
 
   return {
     plugins: [react(), tailwindcss()],
+    envPrefix: ['VITE_', 'BACKEND_'],
     server: {
       proxy: {
         '/api': {
-          target: env.BACKEND_URI,
+          target: backendUri,
           changeOrigin: true,
           secure: false,
         },
         '/gamehub': {
-          target: env.BACKEND_URI,
+          target: backendUri,
           changeOrigin: true,
           secure: false,
           ws: true,

@@ -199,9 +199,9 @@ const GameRoom = ({ user }) => {
                 setConnectionStatus('connected')
 
                 // Player joined notification
-                connection.on('PlayerConnected', (playerName) => {
-                    console.log('Player joined:', playerName)
-                })
+                // connection.on('PlayerConnected', (playerName) => {
+                //     console.log('Player joined:', playerName)
+                // })
 
                 // Lobby state updated (player list with ready status)
                 connection.on('LobbyUpdated', (lobbyState) => {
@@ -359,7 +359,7 @@ const GameRoom = ({ user }) => {
         return () => {
             const conn = getConnection()
             if (conn) {
-                conn.off('PlayerConnected')
+                //conn.off('PlayerConnected')
                 conn.off('LobbyUpdated')
                 conn.off('AllPlayersReady')
                 conn.off('GameStarted')

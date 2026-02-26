@@ -17,7 +17,12 @@ export const createConnection = () => {
 
   // Handle reconnection events
   connection.onreconnecting((error) => {
-    console.warn('SignalR reconnecting...', error)
+    if (error) {
+      console.error('SignalR connection lost due to error:', error)
+    } else {
+      console.warn('SignalR connection lost, attempting to reconnect...')
+    }
+
   })
 
   connection.onreconnected((connectionId) => {

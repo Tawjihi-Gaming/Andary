@@ -247,11 +247,6 @@ const Game = ({ user: authenticatedUser }) => {
                     if (!conn || conn.state !== 'Connected') {
                         throw new Error('Failed to reconnect')
                     }
-
-                    // Rejoin the room after reconnect
-                    await conn.invoke('RejoinRoom', roomId, sessionId)
-                    console.log('[Game] ✅ Rejoined room after refresh')
-                    setIsReconnecting(false)
                 } catch (err) {
                     console.error('[Game] Reconnect failed:', err)
                     clearSession()
@@ -288,8 +283,8 @@ const Game = ({ user: authenticatedUser }) => {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
                 }
-                if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
-                if (state.choices?.length > 0) setChoices(state.choices)
+                setQuestion(state.currentQuestion?.questionText || null)
+                setChoices(state.choices || [])
             })
 
             conn.on('ShowChoices', (payload) => {
@@ -343,8 +338,8 @@ const Game = ({ user: authenticatedUser }) => {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
                 }
-                if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
-                if (state.choices?.length > 0) setChoices(state.choices)
+                setQuestion(state.currentQuestion?.questionText || null)
+                setChoices(state.choices || [])
             })
 
             conn.on('PlayerLeft', (data) => {
@@ -387,6 +382,23 @@ const Game = ({ user: authenticatedUser }) => {
                 clearSession()
                 clearRoomSession(roomId)
             })
+
+            // Important: invoke after handlers are registered so the sync event is not missed on refresh.
+            try {
+                await conn.invoke('RejoinRoom', roomId, sessionId)
+                console.log('[Game] ✅ Rejoined room and requested current state')
+            } catch (error) {
+                console.error('[Game] Rejoin failed:', error)
+                clearSession()
+                if (savedRoomSession?.sessionId) {
+                    navigate(`/room/${roomId}`)
+                } else {
+                    navigate('/lobby')
+                }
+                return
+            } finally {
+                setIsReconnecting(false)
+            }
 
             setConnectionReady(true)
         }

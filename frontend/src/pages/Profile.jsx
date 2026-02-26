@@ -137,10 +137,12 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
   const confirmLogout = async () => {
     setIsLogoutPopupOpen(false)
-    try {
-      await api.post('/auth/logout')
-    } catch (error) {
-      console.error('Logout error:', error)
+    if (!user?.isGuest) {
+      try {
+        await api.post('/auth/logout')
+      } catch (error) {
+        console.error('Logout error:', error)
+      }
     }
     if (onLogout) {
       onLogout()

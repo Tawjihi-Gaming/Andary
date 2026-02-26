@@ -207,7 +207,6 @@ public class GameHub : Hub
         if (leaveResult.OwnershipTransferred &&
             _game.TryGetRoom(roomId, out var roomAfterLeave) &&
             roomAfterLeave != null &&
-            roomAfterLeave.Players.Count > 1 &&
             !string.IsNullOrWhiteSpace(leaveResult.NewOwnerSessionId) &&
             string.Equals(roomAfterLeave.OwnerSessionId, leaveResult.NewOwnerSessionId, StringComparison.Ordinal))
         {
@@ -287,8 +286,6 @@ public class GameHub : Hub
         // Add this connection to the SignalR group for real-time updates
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         var sessionPlayer = room.Players.FirstOrDefault(p => p.SessionId == sessionId);
-        if (sessionPlayer != null)
-            await Clients.Group(roomId).SendAsync("PlayerConnected", sessionPlayer.DisplayName);
 
         // Keep lobby player list in sync as soon as a connection joins.
         if (room.Phase == GamePhase.Lobby)

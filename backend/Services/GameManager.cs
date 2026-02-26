@@ -33,7 +33,7 @@ public class LeaveRoomResult
 
 public class GameManager
 {
-    public const int OwnerDisconnectGraceSeconds = 180;
+    public const int OwnerDisconnectGraceSeconds = 120;
     public const int PlayerDisconnectGraceSeconds = 60;
     private const int TopicSelectionSeconds = 15;
     private const int ChoosingAnswerSeconds = 15;
@@ -152,15 +152,6 @@ public class GameManager
         }
 
         if (room.Players.Count == 0)
-        {
-            _rooms.Remove(roomId);
-            result.RoomClosed = true;
-            return result;
-        }
-
-        // If the owner leaves and only one player remains, close the room
-        // instead of transferring ownership.
-        if (wasOwner && room.Players.Count == 1)
         {
             _rooms.Remove(roomId);
             result.RoomClosed = true;

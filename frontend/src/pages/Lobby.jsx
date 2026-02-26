@@ -178,10 +178,13 @@ const Lobby = ({ user, onLogout }) => {
 
   const confirmLogout = async () => {
     setIsLogoutPopupOpen(false)
-    try {
-      await api.post('/auth/logout')
-    } catch (error) {
-      console.error('Logout error:', error)
+    if (!user?.isGuest) {
+      try {
+        console.log('Logging out user:', user)
+        await api.post('/auth/logout')
+      } catch (error) {
+        console.error('Logout error:', error)
+      }
     }
     if (onLogout) {
       onLogout()

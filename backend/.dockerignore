@@ -1,0 +1,4 @@
+obj
+.env
+bin\Debug
+Migrations

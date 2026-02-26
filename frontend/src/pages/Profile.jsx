@@ -416,7 +416,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             {/* Email field */}
             <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
               <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.emailLabel')}</label>
-              {editingField === 'email' ? (
+              {editingField === 'email' && !user?.isGoogleUser ? (
                 <div className="flex flex-col gap-2">
                   <input
                     type="email"
@@ -442,9 +442,10 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   </div>
                 </div>
               ) : (
+                <>
                 <div className="flex items-center justify-between">
                   <span className="text-white text-lg">{user?.email || t('profile.noEmail')}</span>
-                  {!user?.isGuest && (
+                  {!user?.isGuest && !user?.isGoogleUser && (
                     <button
                       onClick={() => setEditingField('email')}
                       className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
@@ -452,10 +453,11 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                       {t('common.edit')}
                     </button>
                   )}
-                  {user?.isGoogleUser && (
-                    <span className="text-white/30 text-xs text-center mr-10">{t('profile.googleEmailRestriction')}</span>
-                  )}
                 </div>
+                {user?.isGoogleUser && (
+                  <p className="text-white/30 text-xs mt-2">{t('profile.googleEmailRestriction')}</p>
+                )}
+                </>
               )}
             </div>
 
@@ -537,11 +539,9 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                               {game.finalScore} {t('common.point')}
                             </span>
                           </div>
-                          <span className="text-white/40 text-xs">{formatDate(game.startDate)}</span>
                         </div>
                         <div className="flex items-center gap-4 text-white/50 text-xs">
                           <span>🎯 {t('profile.rounds', { count: game.totalRounds })}</span>
-                          <span>⏱️ {formatDuration(game.startDate, game.endDate)}</span>
                         </div>
                       </div>
                     )

@@ -22,5 +22,6 @@ namespace Backend.Models
         public AuthLocal? AuthLocal { get; set; } 
         public ICollection<AuthOAuth> AuthOAuths { get; set; } = new List<AuthOAuth>();
         public ICollection<GameParticipant> GameParticipants { get; set; } = new List<GameParticipant>();
+        public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
     }
 }

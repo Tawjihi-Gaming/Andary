@@ -48,7 +48,7 @@ namespace Backend.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private string GenerateRefreshToken()
+        private string GenerateToken()
         {
             var randomBytes = new byte[32];
             using var rng = RandomNumberGenerator.Create();
@@ -90,7 +90,7 @@ namespace Backend.Controllers
         {
             if (player == null) return;
 
-            var refreshToken = GenerateRefreshToken();
+            var refreshToken = GenerateToken();
 
             player.RefreshToken = HashToken(refreshToken);
             player.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
@@ -340,7 +340,10 @@ namespace Backend.Controllers
 
             if (player.AuthLocal == null)
                 return (false, "Can't update password for OAuth user");
-
+            
+            if (player.AuthLocal.PasswordHash == null)
+                return (false, "Password hash missing, cannot update password");
+            
             var hasher = new PasswordHasher<AuthLocal>();
             var verificationResult = hasher.VerifyHashedPassword(player.AuthLocal, player.AuthLocal.PasswordHash!, password);
             if (verificationResult == PasswordVerificationResult.Success)
@@ -395,7 +398,57 @@ namespace Backend.Controllers
             {
                 return;
             }
+        }
 
+        private async Task SendResetEmail(Player player, string token)
+        {
+            try
+            {
+                var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
+                    ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
+
+                var smtpPortRaw = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
+                if (!int.TryParse(smtpPortRaw, out var smtpPort))
+                    return;
+
+                var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER")
+                    ?? throw new InvalidOperationException("SMTP_USER env var is missing");
+
+                var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS")
+                    ?? throw new InvalidOperationException("SMTP_PASS env var is missing");
+
+                var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpUser;
+                var fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? "Andary";
+
+                var resetLink = $"{Environment.GetEnvironmentVariable("FRONTEND_URL")}/reset-password?token={Uri.EscapeDataString(token)}";
+
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(fromName, fromEmail));
+                message.To.Add(MailboxAddress.Parse(player.AuthLocal!.Email!));
+                message.Subject = "Password Reset Request";
+                message.Body = new TextPart("plain")
+                {
+                    Text =
+                        $"Hello {player.Username},\n\n" +
+                        "We received a request to reset your password. " +
+                        "You can reset your password by clicking the link below:\n\n" +
+                        $"{resetLink}\n\n" +
+                        "If you did not request a password reset, you can safely ignore this email.\n\n" +
+                        "Best regards,\n" +
+                        "The Andary Team"
+                };
+
+                using var smtp = new SmtpClient();
+                await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(smtpUser, smtpPass);
+                await smtp.SendAsync(message);
+                await smtp.DisconnectAsync(true);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"Failed to send reset email to {player.AuthLocal?.Email}: {ex.Message}");
+                return;
+            }
         }
 
         #endregion

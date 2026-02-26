@@ -5,8 +5,8 @@ const LegalFooter = () => {
   const { t } = useTranslation()
 
   return (
-    <footer className="relative z-10 py-4 mt-8">
-      <div className="flex items-center justify-center gap-3 text-sm text-white/40">
+    <footer className="flex flex-col items-center mt-10 w-full max-w-md mx-auto py-4 sm:py-5">
+        <div className="flex items-center justify-center gap-3 text-sm text-white/40">
         <Link
           to="/privacy-policy"
           className="hover:text-game-yellow transition-colors duration-200"

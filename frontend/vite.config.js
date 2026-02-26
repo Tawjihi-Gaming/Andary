@@ -5,11 +5,14 @@ import path from 'path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(process.cwd(), '..'), '')
-  const backendUri = env.VITE_BACKEND_URI || env.BACKEND_URI
+  const backendUri = env.VITE_BACKEND_URI || env.BACKEND_URI || process.env.VITE_BACKEND_URI || process.env.BACKEND_URI || ''
 
   return {
     plugins: [react(), tailwindcss()],
     envPrefix: ['VITE_', 'BACKEND_'],
+    define: {
+      'import.meta.env.VITE_BACKEND_URI': JSON.stringify(backendUri),
+    },
     server: {
       proxy: {
         '/api': {

@@ -1,4 +1,4 @@
-const backendUri = (import.meta.env.VITE_BACKEND_URI || import.meta.env.BACKEND_URI || '')
+const backendUri = (import.meta.env.VITE_BACKEND_URI || '')
   .trim()
   .replace(/\/+$/, '')
 

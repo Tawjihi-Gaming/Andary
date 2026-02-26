@@ -64,16 +64,7 @@ const ForgotPassword = () => {
       </div>
 
       <div className="w-full max-w-md app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 shadow-2xl z-10">
-        <div dir="ltr" className="flex items-center justify-between gap-3 mb-5">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium"
-          >
-            ← {t('common.back')}
-          </button>
-        </div>
-
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white text-center mb-2" style={{ textShadow: '3px 3px 0 #2563EB' }}>
+        <h1 className="text-2xl sm:text-3xl font-extrabold m-1 text-white text-center mb-2" style={{ textShadow: '3px 3px 0 #2563EB' }}>
           {t('auth.forgotPasswordTitle')}
         </h1>
         <p className="text-white/80 text-center text-sm mb-6">{t('auth.forgotPasswordSubtitle')}</p>

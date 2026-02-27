@@ -25,6 +25,7 @@ namespace Backend.Models
         public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
         public ICollection<FriendRequest> SentRequests { get; set; } = new List<FriendRequest>();
         public ICollection<FriendRequest> ReceivedRequests { get; set; } = new List<FriendRequest>();
-        public ICollection<Friend> Friendships { get; set; } = new List<Friend>();
+        public ICollection<Friend> FriendshipsAsPlayer1 { get; set; } = new List<Friend>();
+        public ICollection<Friend> FriendshipsAsPlayer2 { get; set; } = new List<Friend>();
     }
 }

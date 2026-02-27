@@ -68,6 +68,32 @@ namespace Backend.Data
 			modelBuilder.Entity<AuthOAuth>()
 			.HasIndex(a => new { a.Provider, a.ProviderUserId })
 			.IsUnique();
+
+			// Friend (self-referencing many-to-many via join entity)
+			modelBuilder.Entity<Friend>()
+				.HasOne(f => f.Player1)
+				.WithMany(p => p.FriendshipsAsPlayer1)
+				.HasForeignKey(f => f.Player1Id)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<Friend>()
+				.HasOne(f => f.Player2)
+				.WithMany(p => p.FriendshipsAsPlayer2)
+				.HasForeignKey(f => f.Player2Id)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			// FriendRequest (self-referencing)
+			modelBuilder.Entity<FriendRequest>()
+				.HasOne(fr => fr.Sender)
+				.WithMany(p => p.SentRequests)
+				.HasForeignKey(fr => fr.SenderId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<FriendRequest>()
+				.HasOne(fr => fr.Receiver)
+				.WithMany(p => p.ReceivedRequests)
+				.HasForeignKey(fr => fr.ReceiverId)
+				.OnDelete(DeleteBehavior.Restrict);
 		}
     }
 }

@@ -20,7 +20,7 @@ export const createConnection = () => {
     if (error) {
       console.error('SignalR connection lost due to error:', error)
     } else {
-      console.warn('SignalR connection lost, attempting to reconnect...')
+      console.log('SignalR connection lost, attempting to reconnect...')
     }
 
   })

@@ -92,7 +92,14 @@
     "confirmLogout": "Confirm Logout",
     "cancelLogout" : "Cancel Logout",
     "logoutMessage": "Are you sure you want to logout?",
-    "logoutTitle": "Confirm Logout"
+    "logoutTitle": "Confirm Logout",
+    "ok": "Yes",
+    "cancel": "No",
+    "errorTitle": "Error",
+    "roomFullError": "Room is full. You cannot join this room.",
+    "roomNotFound": "Room not found. Please check the code and try again.",
+    "unableToJoin": "Unable to join room. Please try again.",
+    "roomCodeError": "Invalid room code"
   },
 
   "createRoom": {

@@ -44,9 +44,17 @@ function App() {
     return normalizedUser
   })
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    // Block rendering when there's any auth work to do:
+    // 1. OAuth callback that needs code exchange
+    // 2. Returning user whose cached session needs server validation
+    const params = new URLSearchParams(window.location.search)
+    const isOAuthCallback = params.get('login') === 'oauth' && localStorage.getItem('isAuthenticated') !== 'true'
+    const hasCachedSession = localStorage.getItem('isAuthenticated') === 'true'
+    return isOAuthCallback || hasCachedSession
+  })
 
-  // On app load, check if user has a valid session (JWT cookie)
+  // On app load, handle OAuth code exchange OR silently validate existing session
   useEffect(() => {
     const savedTheme = localStorage.getItem('andary-theme')
     const activeTheme = savedTheme === 'dark' ? 'dark' : 'light'
@@ -56,40 +64,65 @@ function App() {
     const isOAuthLoginCallback = searchParams.get('login') === 'oauth'
     const oauthCode = searchParams.get('code')
 
-    if (!isOAuthLoginCallback || isAuthenticated) {
-      setLoading(false)
+    // --- OAuth code exchange flow (loading screen is shown) ---
+    if (isOAuthLoginCallback && !isAuthenticated) {
+      const exchangeAndFetch = async () => {
+        try {
+          if (oauthCode) {
+            await api.post('/auth/exchange-code', { code: oauthCode })
+            window.history.replaceState({}, '', window.location.pathname)
+          }
+
+          const res = await api.get('/auth/me')
+          const userData = {
+            id: res.data.id,
+            username: res.data.username,
+            email: res.data.email,
+            avatar: res.data.avatarImageName || '👤',
+            xp: res.data.xp || 0,
+            isGuest: false,
+            isGoogleUser: res.data.isGoogleUser || false,
+            clientKey: createClientKey(),
+          }
+          handleLogin(userData)
+        } catch {
+          // OAuth exchange failed — drop to login page
+        } finally {
+          setLoading(false)
+        }
+      }
+      exchangeAndFetch()
       return
     }
 
-    const checkSession = async () => {
-      try {
-        // Exchange the one-time OAuth code for auth cookies, then fetch the user
-        if (oauthCode) {
-          await api.post('/auth/exchange-code', { code: oauthCode })
-          // Clean code from URL to prevent replay
-          window.history.replaceState({}, '', window.location.pathname)
+    // --- Returning authenticated user: validate session before rendering ---
+    if (isAuthenticated) {
+      const validateSession = async () => {
+        try {
+          const res = await api.get('/auth/me')
+          // Refresh cached user data with server truth
+          const freshUser = {
+            id: res.data.id,
+            username: res.data.username,
+            email: res.data.email,
+            avatar: res.data.avatarImageName || '👤',
+            avatarImageName: res.data.avatarImageName || '👤',
+            xp: res.data.xp || 0,
+            isGuest: false,
+            isGoogleUser: res.data.isGoogleUser || false,
+            clientKey: user?.clientKey || createClientKey(),
+          }
+          localStorage.setItem('userData', JSON.stringify(freshUser))
+          setUser(freshUser)
+        } catch {
+          // JWT expired and no valid session — log out
+          handleLogout()
+        } finally {
+          setLoading(false)
         }
-
-        const res = await api.get('/auth/me')
-        const userData = {
-          id: res.data.id,
-          username: res.data.username,
-          email: res.data.email,
-          avatar: res.data.avatarImageName || '👤',
-          xp: res.data.xp || 0,
-          isGuest: false,
-          isGoogleUser: res.data.isGoogleUser || false,
-          clientKey: createClientKey(),
-        }
-        handleLogin(userData)
-      } catch {
-        // No valid session, that's fine
-      } finally {
-        setLoading(false)
       }
+      validateSession()
     }
-
-    checkSession()
   }, [])
 
   const handleLogin = (userData) => {

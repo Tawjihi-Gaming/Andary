@@ -101,9 +101,8 @@ function App() {
   const handleLogout = async () => {
     try {
       await apiLogout()
-    } catch (err) {
+    } catch {
       // If logout fails (e.g. already expired), still clear local state
-      console.warn('Logout API call failed:', err)
     }
     localStorage.removeItem('isAuthenticated')
     localStorage.removeItem('userData')

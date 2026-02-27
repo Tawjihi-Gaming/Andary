@@ -159,6 +159,13 @@ const Friends = ({ user }) => {
         : 'text-white/50 hover:text-white/80 hover:bg-white/5'
     }`
 
+    const handleFriendInputChange = (e) => {
+      if (e.target.value.length > 6) return
+      if (!/^\d*$/.test(e.target.value)) return
+    setAddFriendId(e.target.value)
+  }
+
+
   return (
     <div className="min-h-screen app-page-bg relative overflow-hidden">
       {/* Navbar */}
@@ -227,23 +234,23 @@ const Friends = ({ user }) => {
             <div className="mb-6 p-4 sm:p-6 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10">
               <h3 className="text-lg font-bold text-white mb-3">{t('friends.addFriend')}</h3>
               <div className="flex gap-3">
+                <form onSubmit={(e) => { e.preventDefault(); handleSendRequest(); }} className="flex gap-3 flex-1">
                 <input
-                  type="number"
+                  type="text"
                   placeholder={t('friends.enterPlayerId')}
                   value={addFriendId}
-                  onChange={(e) => setAddFriendId(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendRequest()}
+                  onChange={handleFriendInputChange}
                   className="flex-1 bg-white/10 text-white placeholder:text-white/30 rounded-2xl py-3 px-4 border border-white/15 focus:border-game-purple/50 focus:bg-white/15 focus:shadow-lg focus:shadow-game-purple/10 transition-all duration-300"
                   dir="ltr"
                   min="1"
                 />
                 <button
-                  onClick={handleSendRequest}
                   disabled={addFriendLoading || !addFriendId.trim()}
                   className="bg-linear-to-r from-game-purple to-game-blue hover:from-purple-400 hover:to-blue-500 text-white font-bold px-6 py-3 rounded-2xl transition-all duration-300 shadow-lg shadow-game-purple/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
                 >
                   {addFriendLoading ? t('common.processing') : t('common.send')}
                 </button>
+              </form>
               </div>
               <p className="text-white/30 text-xs mt-2">{t('friends.yourId')}: <span className="text-game-yellow font-bold">{user?.id}</span></p>
             </div>

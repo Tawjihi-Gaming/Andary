@@ -39,38 +39,61 @@ const Lobby = ({ user, onLogout }) => {
   }
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
+    let unloading = false;
+
+    const onBeforeUnload = () => {
+      unloading = true;
+      isMounted = false;
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+
     const fetchLobbies = async () => {
       try {
-        setLobbiesLoading(true)
-        const response = await api.get('/room/lobbies',{
+        const response = await api.get('/room/lobbies', {
           params: {
-            wait: isFirstLoad ? false : true
+            wait: isFirstLoad ? false : true,
+          },
+        });
+
+        setIsFirstLoad(false);
+
+        if (response.status !== 204) {
+          const list = Array.isArray(response.data) ? response.data : [];
+          if (isMounted) {
+            if (list.length > 0 || isFirstLoad) {
+              setLobbies(list);
+            }
           }
-        })
-        setIsFirstLoad(false)
-        const list = Array.isArray(response.data) ? response.data : []
-        if (isMounted) {
-          setLobbies(list)
         }
       } catch (error) {
-        console.error('Error fetching lobbies:', error)
-        if (isMounted) {
-          setLobbies([])
+        // ignore aborted/canceled requests (refresh/unload or manual cancel)
+        const isAbort =
+          error?.name === 'CanceledError' ||
+          error?.code === 'ERR_CANCELED' ||
+          error?.message?.toLowerCase()?.includes('aborted') ||
+          (error.isAxiosError && error?.response === undefined && unloading);
+        if (!isAbort) {
+          console.error('Error fetching lobbies:', error);
         }
       } finally {
         if (isMounted) {
-          setLobbiesLoading(false)
+          setLobbiesLoading(false);
+          // schedule next poll only if not unloading
+          setTimeout(() => {
+            if (isMounted && !unloading) fetchLobbies();
+          }, 3000);
         }
       }
-    }
+    };
 
-    fetchLobbies()
-    const intervalId = setInterval(fetchLobbies, 15000)
+    fetchLobbies();
+
     return () => {
-      isMounted = false
-      clearInterval(intervalId)
-    }
+      isMounted = false;
+      unloading = true;
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
   }, [isFirstLoad])
 
   const handleJoinLobby = async (roomId) => {

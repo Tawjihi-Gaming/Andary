@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect,useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import LanguageSwitcher from '../components/LanguageSwitcher'
@@ -11,7 +11,6 @@ const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [showJoinModal, setShowJoinModal] = useState(false)
-  const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [roomCode, setRoomCode] = useState('')
   const [joinError, setJoinError] = useState('')
   const [lobbies, setLobbies] = useState([])
@@ -38,63 +37,53 @@ const Lobby = ({ user, onLogout }) => {
     }
   }
 
+  const firstLoadRef = useRef(true);
+
   useEffect(() => {
     let isMounted = true;
-    let unloading = false;
-
-    const onBeforeUnload = () => {
-      unloading = true;
-      isMounted = false;
-    };
+    const onBeforeUnload = () => { isMounted = false; };
     window.addEventListener('beforeunload', onBeforeUnload);
 
     const fetchLobbies = async () => {
       try {
         const response = await api.get('/room/lobbies', {
-          params: {
-            wait: isFirstLoad ? false : true,
-          },
+          params: { wait: firstLoadRef.current ? false : true },
         });
 
-        setIsFirstLoad(false);
+        // mark that first load has completed (use ref so effect doesn't re-run)
+        firstLoadRef.current = false;
 
-        if (response.status !== 204) {
+        if (response.status === 204) {
+          // server says "no change" -> don't mutate current lobbies
+        } else {
           const list = Array.isArray(response.data) ? response.data : [];
           if (isMounted) {
-            if (list.length > 0 || isFirstLoad) {
-              setLobbies(list);
-            }
+            // replace state with server payload (empty array clears all rooms)
+            setLobbies(list);
           }
         }
       } catch (error) {
-        // ignore aborted/canceled requests (refresh/unload or manual cancel)
+        // ignore aborts/cancels, log others
         const isAbort =
           error?.name === 'CanceledError' ||
           error?.code === 'ERR_CANCELED' ||
-          error?.message?.toLowerCase()?.includes('aborted') ||
-          (error.isAxiosError && error?.response === undefined && unloading);
-        if (!isAbort) {
-          console.error('Error fetching lobbies:', error);
-        }
+          error?.message?.toLowerCase()?.includes('aborted');
+        if (!isAbort) console.error('Error fetching lobbies:', error);
       } finally {
         if (isMounted) {
           setLobbiesLoading(false);
-          // schedule next poll only if not unloading
-          setTimeout(() => {
-            if (isMounted && !unloading) fetchLobbies();
-          }, 3000);
+          // schedule next long-poll only while mounted
+          setTimeout(() => { if (isMounted) fetchLobbies(); }, 300);
         }
       }
     };
 
     fetchLobbies();
-
     return () => {
       isMounted = false;
-      unloading = true;
       window.removeEventListener('beforeunload', onBeforeUnload);
     };
-  }, [isFirstLoad])
+  }, []);
 
   const handleJoinLobby = async (roomId) => {
     setJoinError('')

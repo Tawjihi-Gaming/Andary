@@ -11,11 +11,48 @@ using System.Security.Claims;
 using Backend.Models.Configs;
 using System.Text.Json;
 using System.Security.Cryptography;
+using System.Collections.Concurrent;
 
 namespace Backend.Controllers
 {
     public partial class AuthController
     {
+        #region OAuth Code Exchange Store
+
+        // In-memory store for short-lived one-time OAuth authorization codes.
+        // Key = code, Value = (PlayerId, Expiry)
+        private static readonly ConcurrentDictionary<string, (int PlayerId, DateTime Expiry)> _oauthCodes = new();
+
+        private string GenerateOAuthCode(int playerId)
+        {
+            // Clean up expired codes opportunistically
+            foreach (var kvp in _oauthCodes)
+            {
+                if (kvp.Value.Expiry < DateTime.UtcNow)
+                    _oauthCodes.TryRemove(kvp.Key, out _);
+            }
+
+            var code = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            _oauthCodes[code] = (playerId, DateTime.UtcNow.AddMinutes(2));
+            return code;
+        }
+
+        private static int? ValidateAndConsumeOAuthCode(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return null;
+
+            if (!_oauthCodes.TryRemove(code, out var entry))
+                return null;
+
+            if (entry.Expiry < DateTime.UtcNow)
+                return null;
+
+            return entry.PlayerId;
+        }
+
+        #endregion
+
         #region JWT & Refresh Token Helpers
 
         private string GenerateJwtToken(Player player)

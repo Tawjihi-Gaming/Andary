@@ -184,18 +184,35 @@ namespace Backend.Controllers
 
                 var player = await GetOrCreateGooglePlayerAsync(googleId, name, email);
 
-                var authResult = await SetAuthCookiesAsync(player);
-                if ((authResult as ObjectResult)?.StatusCode >= 400)
-                {
-                    return Redirect($"{frontendUrl}/login?error=auth-failed");
-                }
-                return Redirect($"{frontendUrl}/lobby?login=oauth");
+                // Generate a short-lived one-time code instead of setting cookies
+                // during the redirect (cookies set on redirects are often blocked
+                // cross-domain by modern browsers).
+                var oauthCode = GenerateOAuthCode(player.Id);
+                var encodedCode = Uri.EscapeDataString(oauthCode);
+                return Redirect($"{frontendUrl}/lobby?login=oauth&code={encodedCode}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Google callback EXCEPTION: {ex}");
                 return Redirect($"{frontendUrl}/login?error=server-error");
             }
+        }
+
+        [HttpPost("exchange-code")]
+        public async Task<IActionResult> ExchangeOAuthCode([FromBody] OAuthCodeDto dto)
+        {
+            var playerId = ValidateAndConsumeOAuthCode(dto.Code);
+            if (playerId == null)
+                return BadRequest(new { msg = "Invalid or expired code" });
+
+            var player = await _db.Players
+                .Include(p => p.AuthLocal)
+                .Include(p => p.AuthOAuths)
+                .FirstOrDefaultAsync(p => p.Id == playerId.Value);
+            if (player == null)
+                return NotFound(new { msg = "Player not found" });
+
+            return await SetAuthCookiesAsync(player);
         }
         #endregion
 

@@ -54,6 +54,7 @@ function App() {
 
     const searchParams = new URLSearchParams(window.location.search)
     const isOAuthLoginCallback = searchParams.get('login') === 'oauth'
+    const oauthCode = searchParams.get('code')
 
     if (!isOAuthLoginCallback || isAuthenticated) {
       setLoading(false)
@@ -62,6 +63,13 @@ function App() {
 
     const checkSession = async () => {
       try {
+        // Exchange the one-time OAuth code for auth cookies, then fetch the user
+        if (oauthCode) {
+          await api.post('/auth/exchange-code', { code: oauthCode })
+          // Clean code from URL to prevent replay
+          window.history.replaceState({}, '', window.location.pathname)
+        }
+
         const res = await api.get('/auth/me')
         const userData = {
           id: res.data.id,

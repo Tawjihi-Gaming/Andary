@@ -123,8 +123,13 @@ const Lobby = ({ user, onLogout }) => {
         }
       })
     } catch (err) {
-      console.error('Error joining room:', err)
-      setJoinError(err?.response?.data?.error || 'Unable to join room.')
+      if (err?.response?.status === 404) {
+        setJoinError(t('lobby.roomNotFound'))
+      } else if (err?.response?.data?.error?.toLowerCase()?.includes('full')) {
+        setJoinError(t('lobby.roomFullError'))
+      } else {
+        setJoinError(err?.response?.data?.error || t('lobby.unableToJoin'))
+      }
     }
   }
 
@@ -184,8 +189,16 @@ const Lobby = ({ user, onLogout }) => {
           }
         })
       } catch (err) {
-        console.error('Error joining room:', err)
-        setJoinError(err?.response?.data?.error || 'Unable to join room.')
+        //console.error('Error joining room:', err)
+        if (err?.response?.data?.error?.toLowerCase()?.includes('full')) {
+          setJoinError(t('lobby.roomFullError'))
+        } else if (err?.response?.status === 404) {
+          setJoinError(t('lobby.roomNotFound'))
+        } else if (err?.response?.data?.error?.toLowerCase()?.includes('code')) {
+          setJoinError(t('lobby.roomCodeError'))
+        } else {
+          setJoinError(err?.response?.data?.error || t('lobby.unableToJoin'))
+        }
       }
     }
   }
@@ -390,7 +403,7 @@ const Lobby = ({ user, onLogout }) => {
         message={joinError}
         confirmText={t('lobby.ok')}
         showCancel={false}
-        onConfirm={() => navigate('/lobby')}
+        onConfirm={() => setJoinError('')}
       />
     </div>
   )

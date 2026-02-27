@@ -94,7 +94,12 @@
     "logoutMessage": "你确定要退出登录吗？",
     "logoutTitle": "确认退出",
     "ok": "是",
-    "cancel": "否"
+    "cancel": "否",
+    "errorTitle": "错误",
+    "roomFullError": "房间已满。你无法加入这个房间。",
+    "roomNotFound": "房间未找到。请检查代码并重试。",
+    "unableToJoin": "无法加入房间。请重试。",
+    "roomCodeError": "无效的房间代码"
   },
 
   "createRoom": {

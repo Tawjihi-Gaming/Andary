@@ -33,8 +33,8 @@ public class LeaveRoomResult
 
 public class GameManager
 {
-    public const int OwnerDisconnectGraceSeconds = 120;
-    public const int PlayerDisconnectGraceSeconds = 60;
+    public const int OwnerDisconnectGraceSeconds = 10;
+    public const int PlayerDisconnectGraceSeconds = 10;
     private const int TopicSelectionSeconds = 15;
     private const int ChoosingAnswerSeconds = 15;
     private const int LeaderboardSeconds = 5;

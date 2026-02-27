@@ -85,6 +85,47 @@ sign-in an existing player.
 }
 ```
 
+#### POST /api/auth/forgot-password
+
+Request a password reset link.
+
+**Request:**
+
+```json
+{
+  "email": "123@gmail.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "msg": "If an account with that email exists, a reset link has been sent"
+}
+```
+
+#### POST /api/auth/reset-password
+
+Reset password using the token from the reset link.
+
+**Request:**
+
+```json
+{
+  "token": "reset-token-from-email",
+  "newPassword": "newStrongPassword123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "msg": "Password has been reset"
+}
+```
+
 ### lobby
 
 #### GET /api/lobby

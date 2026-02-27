@@ -10,6 +10,8 @@ import Game from './pages/game/[roomId].jsx'
 import Friends from './pages/Friends.jsx'
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
 import TermsOfService from './pages/TermsOfService.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
+import ResetPassword from './pages/ResetPassword.jsx'
 import api from './api/axios'
 import ThemeSwitcher from './components/ThemeSwitcher'
 
@@ -141,6 +143,22 @@ function App() {
               <Navigate to="/lobby" replace /> : 
               <LoginPage onLogin={handleLogin} />
           } 
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            isAuthenticated ?
+              <Navigate to="/lobby" replace /> :
+              <ForgotPassword />
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            isAuthenticated ?
+              <Navigate to="/lobby" replace /> :
+              <ResetPassword />
+          }
         />
         <Route 
           path="/lobby" 

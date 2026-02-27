@@ -43,7 +43,26 @@
     "googleLoginError": "❌ An error occurred during Google login.",
     "accountCreated": "✅ Account created successfully! You can now sign in.",
     "loginSuccess": "✅ Logged in successfully!",
-    "authError": "An error occurred. Please try again."
+    "authError": "An error occurred. Please try again.",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordTitle": "🔑 Forgot Password",
+    "forgotPasswordSubtitle": "Enter your email and we will send you a reset link.",
+    "sendResetLink": "📩 Send Reset Link",
+    "backToLogin": "Back to Login",
+    "forgotPasswordSuccess": "If an account with that email exists, a reset link has been sent",
+    "forgotPasswordEmailRequired": "Email is required",
+    "forgotPasswordError": "Failed to send reset link. Please try again.",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "resetPasswordTitle": "🔒 Reset Password",
+    "resetPasswordSubtitle": "Enter your new password to complete the reset.",
+    "resetPasswordButton": "✅ Reset Password",
+    "resetPasswordSuccess": "Password has been reset",
+    "resetPasswordError": "Failed to reset password. Please try again.",
+    "resetPasswordInvalidToken": "Invalid or expired token",
+    "resetPasswordMissingToken": "Invalid or missing reset token.",
+    "resetPasswordMinLength": "Password must be at least 6 characters.",
+    "resetPasswordMismatch": "Passwords do not match."
   },
 
   "avatar": {

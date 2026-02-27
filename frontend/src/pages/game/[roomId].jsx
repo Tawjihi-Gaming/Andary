@@ -247,11 +247,6 @@ const Game = ({ user: authenticatedUser }) => {
                     if (!conn || conn.state !== 'Connected') {
                         throw new Error('Failed to reconnect')
                     }
-
-                    // Rejoin the room after reconnect
-                    await conn.invoke('RejoinRoom', roomId, sessionId)
-                    console.log('[Game] ✅ Rejoined room after refresh')
-                    setIsReconnecting(false)
                 } catch (err) {
                     console.error('[Game] Reconnect failed:', err)
                     clearSession()
@@ -288,8 +283,8 @@ const Game = ({ user: authenticatedUser }) => {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
                 }
-                if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
-                if (state.choices?.length > 0) setChoices(state.choices)
+                setQuestion(state.currentQuestion?.questionText || null)
+                setChoices(state.choices || [])
             })
 
             conn.on('ShowChoices', (payload) => {
@@ -343,8 +338,8 @@ const Game = ({ user: authenticatedUser }) => {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
                 }
-                if (state.currentQuestion) setQuestion(state.currentQuestion.questionText)
-                if (state.choices?.length > 0) setChoices(state.choices)
+                setQuestion(state.currentQuestion?.questionText || null)
+                setChoices(state.choices || [])
             })
 
             conn.on('PlayerLeft', (data) => {
@@ -374,6 +369,37 @@ const Game = ({ user: authenticatedUser }) => {
                 showLeaveNotice(t('game.playerDisconnectedFinalNotice', { name: departedName }))
             })
 
+            // This event can be broadcast while the shared connection is on the game page.
+            // No game-page behavior depends on owner identity, but registering avoids client warnings.
+            conn.on('OwnershipTransferred', () => {})
+
+            conn.on('RoomClosed', () => {
+                setPhase('finished')
+                setRoundResult(null)
+                setWinner(null)
+                setPhaseDeadlineUtc(null)
+                setSecondsLeft(null)
+                clearSession()
+                clearRoomSession(roomId)
+            })
+
+            // Important: invoke after handlers are registered so the sync event is not missed on refresh.
+            try {
+                await conn.invoke('RejoinRoom', roomId, sessionId)
+                console.log('[Game] ✅ Rejoined room and requested current state')
+            } catch (error) {
+                console.error('[Game] Rejoin failed:', error)
+                clearSession()
+                if (savedRoomSession?.sessionId) {
+                    navigate(`/room/${roomId}`)
+                } else {
+                    navigate('/lobby')
+                }
+                return
+            } finally {
+                setIsReconnecting(false)
+            }
+
             setConnectionReady(true)
         }
 
@@ -392,9 +418,11 @@ const Game = ({ user: authenticatedUser }) => {
                 conn.off('GameStateSync')
                 conn.off('PlayerLeft')
                 conn.off('PlayerDisconnected')
+                conn.off('OwnershipTransferred')
+                conn.off('RoomClosed')
             }
         }
-    }, [navigate, showLeaveNotice, t, applyTimerState])
+    }, [navigate, roomId, showLeaveNotice, t, applyTimerState])
 
     const leaveNoticeBanner = leaveNotice ? (
         <div

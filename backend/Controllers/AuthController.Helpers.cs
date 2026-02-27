@@ -38,7 +38,7 @@ namespace Backend.Controllers
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(1),
+                expires: DateTime.UtcNow.AddHours(2),
                 signingCredentials: credentials
             );
 
@@ -80,7 +80,7 @@ namespace Backend.Controllers
         {
             if (string.IsNullOrWhiteSpace(token))
                 return;
-            Response.Cookies.Append("jwt", token, BuildAuthCookieOptions(DateTime.UtcNow.AddHours(1)));
+            Response.Cookies.Append("jwt", token, BuildAuthCookieOptions(DateTime.UtcNow.AddHoursLogginPage));
         }
 
         private void SetRefreshToken(Player player)

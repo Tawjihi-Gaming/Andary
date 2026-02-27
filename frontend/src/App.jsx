@@ -221,7 +221,7 @@ function App() {
           path="/friends" 
           element={
             isAuthenticated ? 
-              <Friends user={user} /> : 
+              <Friends user={user} onLogout={handleLogout} /> : 
               <Navigate to="/" replace />
           } 
         />

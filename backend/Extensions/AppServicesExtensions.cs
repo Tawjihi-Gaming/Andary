@@ -32,6 +32,9 @@ namespace Backend.Extensions
             services.AddSingleton<EmailSender>();
             services.AddHostedService<EmailBackgroundService>();
 
+            // Friend service
+            services.AddScoped<FriendService>();
+
             // CORS
             services.AddCors(options =>
             {

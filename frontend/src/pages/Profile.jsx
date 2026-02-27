@@ -3,9 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
-import LanguageSwitcher from '../components/LanguageSwitcher'
-import GamePopup from '../components/GamePopup'
 import LegalFooter from '../components/LegalFooter'
+import Navbar from './Navbar'
 
 const XP_PER_LEVEL = 100
 
@@ -13,7 +12,6 @@ const getLevel = (xp) => Math.floor(xp / XP_PER_LEVEL) + 1
 const getProgress = (xp) => (xp % XP_PER_LEVEL)
 
 const Profile = ({ user, onLogout, onUpdateUser }) => {
-  const navigate = useNavigate()
   const { t } = useTranslation()
 
   const xp = user?.xp || 0
@@ -258,44 +256,17 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setConfirmPassword('')
   }
 
-  const handleLogout = () => {
-    setIsLogoutPopupOpen(true)
-  }
-
-  const confirmLogout = async () => {
-    setIsLogoutPopupOpen(false)
-    if (!user?.isGuest) {
-      try {
-        await api.post('/auth/logout')
-      } catch (error) {
-        console.error('Logout error:', error)
-      }
-    }
-    if (onLogout) {
-      onLogout()
-    }
-    navigate('/login')
-  }
-
-
   return (
-    <div className="min-h-screen app-page-bg p-4">
+    <div className="min-h-screen app-page-bg relative overflow-hidden">
+      <div className="relative z-10">
+        <Navbar user={user} onLogout={onLogout} />
+      </div>
       <div className="max-w-2xl mx-auto">
-        {/* back button and language switcher */}
-        <div dir="ltr" className="flex flex-col sm:flex-row sm:items-center sm:justify-between items-start gap-3 mb-4">
-          <LanguageSwitcher />
-          <button
-            onClick={() => navigate('/lobby')}
-            className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium"
-          >
-            {t('profile.goBack')}
-          </button>
-        </div>
 
         {/* toast message */}
         {message && (
           <div
-            className={`mb-4 px-4 py-3 rounded-xl text-center text-sm font-medium animate-fade-in transition-all duration-300 ${
+            className={`mb-4 px-4 py-3  rounded-xl text-center text-sm font-medium animate-fade-in transition-all duration-300 ${
               message.type === 'success'
                 ? 'bg-green-500/20 text-green-300 border border-green-500/30'
                 : 'bg-red-500/20 text-red-300 border border-red-500/30'
@@ -306,7 +277,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
         )}
 
         {/* profile card */}
-        <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-8 shadow-2xl">
+        <div className="app-glass-card-strong m-4 backdrop-blur-xl rounded-3xl p-4 sm:p-8 shadow-2xl">
           <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-6 sm:mb-8 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
             {t('profile.title')}
           </h1>
@@ -559,27 +530,9 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           )}
 
           {/* LOGOUT BUTTON */}
-          <div className="flex justify-center mt-6 sm:mt-8">
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 shadow-lg cursor-pointer"
-            >
-              {t('profile.logoutButton')}
-            </button>
-          </div>
         </div>
         <LegalFooter />
       </div>
-      <GamePopup
-        open={isLogoutPopupOpen}
-        title={t('lobby.logoutTitle')}
-        message={t('lobby.logoutMessage')}
-        confirmText={t('lobby.confirmLogout')}
-        cancelText={t('lobby.cancelLogout')}
-        showCancel
-        onCancel={() => setIsLogoutPopupOpen(false)}
-        onConfirm={confirmLogout}
-      />
     </div>
   )
 }

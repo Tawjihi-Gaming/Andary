@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next'
 import api from '../api/axios' 
 import { saveRoomSession } from '../utils/roomSession'
 import LegalFooter from '../components/LegalFooter'
+import Navbar from './Navbar'
 
-const CreateRoom = ({ user }) => {
+const CreateRoom = ({ user, onLogout }) => {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'ar'
   const [roomName, setRoomName] = useState('')
@@ -140,8 +141,11 @@ const CreateRoom = ({ user }) => {
   }
 
   return (
-    <div className="min-h-screen app-page-bg relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
-      
+    <div className="min-h-screen app-page-bg relative flex flex-col overflow-hidden">
+      <div className="relative z-10">
+        <Navbar user={user} onLogout={onLogout} />
+      </div>
+     <div className="flex-grow flex items-center justify-center px-4 py-8"> 
       <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-4xl shadow-2xl">
         <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg shadow-game-yellow/20">
           <span className="text-2xl sm:text-4xl pt-2">➕</span>
@@ -344,6 +348,7 @@ const CreateRoom = ({ user }) => {
         <div className="w-full sm:w-3/4 max-w-4xl mx-auto mt-6 pb-6">
           <LegalFooter />
         </div>
+      </div>
       </div>
     </div>
   )

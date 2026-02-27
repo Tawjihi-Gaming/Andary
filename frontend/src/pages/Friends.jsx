@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from '../components/LanguageSwitcher'
 import LegalFooter from '../components/LegalFooter'
 import GamePopup from '../components/GamePopup'
+import api from '../api/axios'
+
 import {
   getFriends,
   sendFriendRequest,
@@ -14,10 +15,11 @@ import {
   rejectFriendRequest,
   removeFriend,
 } from '../api/friends'
+import Navbar from './Navbar'
 
-const Friends = ({ user }) => {
-  const navigate = useNavigate()
+const Friends = ({ user, onLogout }) => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   // Tab state: 'friends' | 'incoming' | 'sent'
   const [activeTab, setActiveTab] = useState('friends')
@@ -165,42 +167,10 @@ const Friends = ({ user }) => {
     setAddFriendId(e.target.value)
   }
 
-
   return (
     <div className="min-h-screen app-page-bg relative overflow-hidden">
       {/* Navbar */}
-      <nav dir="rtl" className="relative z-10 app-glass-card backdrop-blur-2xl px-3 sm:px-6 py-3 border-x-0 border-t-0">
-        <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/lobby')}>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-linear-to-br from-game-yellow to-game-orange rounded-xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-105 transition-transform">
-                <span className="text-xl sm:text-2xl pt-1 sm:pt-2">🎓</span>
-              </div>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white">Andary</h1>
-            </div>
-            <LanguageSwitcher />
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <button
-              onClick={() => navigate('/profile')}
-              className="flex items-center gap-2 sm:gap-3 app-soft-btn px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-full bg-linear-to-br from-game-yellow to-game-orange flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:shadow-game-yellow/20 transition-all">
-                <span className="text-xl pt-1">{user?.avatar}</span>
-              </div>
-              <span className="text-white/90 font-semibold max-w-24 sm:max-w-none truncate">{user?.username || 'Player'}</span>
-            </button>
-            <button
-              onClick={() => navigate('/lobby')}
-              className="app-soft-btn font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 cursor-pointer"
-            >
-              {t('friends.backToLobby')}
-            </button>
-          </div>
-        </div>
-      </nav>
-
+        <Navbar user={user} onLogout={onLogout} />
       {/* Main content */}
       <div className="relative z-10 max-w-4xl mx-auto p-3 sm:p-6">
         {/* Header */}

@@ -7,8 +7,11 @@ import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
 import Game from './pages/game/[roomId].jsx'
+import Friends from './pages/Friends.jsx'
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
 import TermsOfService from './pages/TermsOfService.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
+import ResetPassword from './pages/ResetPassword.jsx'
 import api from './api/axios'
 import ThemeSwitcher from './components/ThemeSwitcher'
 
@@ -141,6 +144,22 @@ function App() {
               <LoginPage onLogin={handleLogin} />
           } 
         />
+        <Route
+          path="/forgot-password"
+          element={
+            isAuthenticated ?
+              <Navigate to="/lobby" replace /> :
+              <ForgotPassword />
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            isAuthenticated ?
+              <Navigate to="/lobby" replace /> :
+              <ResetPassword />
+          }
+        />
         <Route 
           path="/lobby" 
           element={
@@ -154,6 +173,14 @@ function App() {
           element={
             isAuthenticated ? 
               <Profile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : 
+              <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/friends" 
+          element={
+            isAuthenticated ? 
+              <Friends user={user} /> : 
               <Navigate to="/" replace />
           } 
         />

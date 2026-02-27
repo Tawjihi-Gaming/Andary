@@ -228,6 +228,14 @@ const Lobby = ({ user, onLogout }) => {
               </svg>
             </button>
 
+            {/* friends button */}
+            <button
+              onClick={() => navigate('/friends')}
+              className="app-soft-btn hover:bg-game-purple/20 hover:text-game-purple hover:border-game-purple/30 font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 cursor-pointer"
+            >
+              👥 {t('friends.navButton')}
+            </button>
+
             {/* logout button */}
             <button
               onClick={handleLogout}

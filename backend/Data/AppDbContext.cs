@@ -13,6 +13,9 @@ namespace Backend.Data
         public DbSet<GameSession> GameSessions { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Question> Questions { get; set; }
+		public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+		public DbSet<FriendRequest> FriendRequests { get; set; }
+        public DbSet<Friend> Friends { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
@@ -52,6 +55,12 @@ namespace Backend.Data
 				.WithMany(gs => gs.GameParticipants)
 				.HasForeignKey(gp => gp.GameSessionId);
 
+			modelBuilder.Entity<PasswordResetToken>()
+				.HasOne(t => t.Player)
+				.WithMany(p => p.PasswordResetTokens)
+				.HasForeignKey(t => t.PlayerId)
+				.OnDelete(DeleteBehavior.Cascade);
+
 			modelBuilder.Entity<AuthLocal>()
 			.HasIndex(a => a.Email)
 			.IsUnique();
@@ -59,6 +68,32 @@ namespace Backend.Data
 			modelBuilder.Entity<AuthOAuth>()
 			.HasIndex(a => new { a.Provider, a.ProviderUserId })
 			.IsUnique();
+
+			// Friend (self-referencing many-to-many via join entity)
+			modelBuilder.Entity<Friend>()
+				.HasOne(f => f.Player1)
+				.WithMany(p => p.FriendshipsAsPlayer1)
+				.HasForeignKey(f => f.Player1Id)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<Friend>()
+				.HasOne(f => f.Player2)
+				.WithMany(p => p.FriendshipsAsPlayer2)
+				.HasForeignKey(f => f.Player2Id)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			// FriendRequest (self-referencing)
+			modelBuilder.Entity<FriendRequest>()
+				.HasOne(fr => fr.Sender)
+				.WithMany(p => p.SentRequests)
+				.HasForeignKey(fr => fr.SenderId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<FriendRequest>()
+				.HasOne(fr => fr.Receiver)
+				.WithMany(p => p.ReceivedRequests)
+				.HasForeignKey(fr => fr.ReceiverId)
+				.OnDelete(DeleteBehavior.Restrict);
 		}
     }
 }

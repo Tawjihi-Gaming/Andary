@@ -85,6 +85,47 @@ sign-in an existing player.
 }
 ```
 
+#### POST /api/auth/forgot-password
+
+Request a password reset link.
+
+**Request:**
+
+```json
+{
+  "email": "123@gmail.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "msg": "If an account with that email exists, a reset link has been sent"
+}
+```
+
+#### POST /api/auth/reset-password
+
+Reset password using the token from the reset link.
+
+**Request:**
+
+```json
+{
+  "token": "reset-token-from-email",
+  "newPassword": "newStrongPassword123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "msg": "Password has been reset"
+}
+```
+
 ### lobby
 
 #### GET /api/lobby
@@ -151,6 +192,175 @@ Join a specific lobby.
   "message": "Player joined lobby",
   "lobby_id": "1",
   "player_session_id": "124"
+}
+```
+
+### Friends
+
+#### POST /api/friends/requests
+
+Send a friend request to another player.
+
+**Request:**
+
+```json
+{
+  "receiverId": 42
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 18,
+  "sender": {
+    "id": 7,
+    "username": "player_one",
+    "avatarImageName": "avatar1.png"
+  },
+  "receiver": {
+    "id": 42,
+    "username": "player_two",
+    "avatarImageName": "avatar2.png"
+  },
+  "status": "pending",
+  "createdAt": "2026-02-25T19:20:00Z"
+}
+```
+
+#### DELETE /api/friends/requests/{receiverId}
+
+Cancel a pending friend request sent by the authenticated player.
+
+**Response:**
+
+```json
+{
+  "msg": "Friend request canceled"
+}
+```
+
+#### GET /api/friends/requests/incoming
+
+List incoming pending friend requests for the authenticated player.
+
+**Response:**
+
+```json
+[
+  {
+    "id": 22,
+    "sender": {
+      "id": 31,
+      "username": "player_three",
+      "avatarImageName": "avatar3.png"
+    },
+    "receiver": {
+      "id": 7,
+      "username": "player_one",
+      "avatarImageName": "avatar1.png"
+    },
+    "status": "pending",
+    "createdAt": "2026-02-25T18:05:00Z"
+  }
+]
+```
+
+#### GET /api/friends/requests/sent
+
+List pending friend requests sent by the authenticated player.
+
+**Response:**
+
+```json
+[
+  {
+    "id": 25,
+    "sender": {
+      "id": 7,
+      "username": "player_one",
+      "avatarImageName": "avatar1.png"
+    },
+    "receiver": {
+      "id": 55,
+      "username": "player_five",
+      "avatarImageName": "avatar5.png"
+    },
+    "status": "pending",
+    "createdAt": "2026-02-25T18:30:00Z"
+  }
+]
+```
+
+#### POST /api/friends/requests/{requestId}/accept
+
+Accept an incoming friend request.
+
+**Response:**
+
+```json
+{
+  "friendshipId": 11,
+  "player": {
+    "id": 31,
+    "username": "player_three",
+    "avatarImageName": "avatar3.png"
+  },
+  "since": "2026-02-25T19:25:00Z"
+}
+```
+
+#### POST /api/friends/requests/{requestId}/reject
+
+Reject an incoming friend request.
+
+**Response:**
+
+```json
+{
+  "msg": "Friend request rejected"
+}
+```
+
+#### GET /api/friends
+
+List all friends of the authenticated player.
+
+**Response:**
+
+```json
+[
+  {
+    "friendshipId": 11,
+    "player": {
+      "id": 31,
+      "username": "player_three",
+      "avatarImageName": "avatar3.png"
+    },
+    "since": "2026-02-25T19:25:00Z"
+  },
+  {
+    "friendshipId": 12,
+    "player": {
+      "id": 42,
+      "username": "player_two",
+      "avatarImageName": "avatar2.png"
+    },
+    "since": "2026-02-24T12:10:00Z"
+  }
+]
+```
+
+#### DELETE /api/friends/{friendId}
+
+Remove an existing friendship.
+
+**Response:**
+
+```json
+{
+  "msg": "Friend removed"
 }
 ```
 

@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from './AvatarPicker'
+import LegalFooter from './LegalFooter'
 
 const createClientKey = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -159,7 +161,7 @@ const Auth = ({ onLogin }) => {
   }
 
   return (
-    <div className="auth-card app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 w-full max-w-md shadow-2xl">
+    <div className="auth-card app-glass-card-strong backdrop-blur-xl rounded-3xl p-2 sm:p-6 w-full max-w-md shadow-2xl">
       {/* Toast Message */}
       {message && (
         <div
@@ -202,7 +204,7 @@ const Auth = ({ onLogin }) => {
 
       {/* Guest Tab Content */}
       {activeTab === 'guest' && (
-        <form onSubmit={handleGuestPlay} className="space-y-4">
+        <form onSubmit={handleGuestPlay}>
           <div className="selected-avatar mb-4">
             {/* Selected avatar preview */}
             <div className={`w-20 h-20 mx-auto rounded-full pt-2 flex items-center justify-center mb-3 border-4 shadow-lg transition-all duration-300 ${
@@ -224,7 +226,7 @@ const Auth = ({ onLogin }) => {
           {/* Avatar Picker */}
           <AvatarPicker selected={selectedAvatar} onSelect={setSelectedAvatar} />
 
-          <div className="relative">
+          <div className="relative mt-4">
             <input
               type="text"
               placeholder={t('auth.playerName')}
@@ -303,6 +305,17 @@ const Auth = ({ onLogin }) => {
             </svg>
           </div>
 
+          {!isSignUp && (
+            <div className="text-end -mt-1">
+              <Link
+                to="/forgot-password"
+                className="text-white/70 flex items-center hover:text-game-yellow text-sm transition-colors"
+              >
+                {t('auth.forgotPassword')}
+              </Link>
+            </div>
+          )}
+
           {/* Display Name & Avatar - Only shown for sign up */}
           {isSignUp && (
             <>
@@ -366,6 +379,9 @@ const Auth = ({ onLogin }) => {
           </div>
         </form>
       )}
+      <div className="text-center text-sm text-white/50">
+          <LegalFooter />
+      </div>
     </div>
   )
 }

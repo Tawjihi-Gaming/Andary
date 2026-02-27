@@ -44,9 +44,43 @@ public class GameManager
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ConcurrentDictionary<string, DateTime> _disconnectDeadlines = new();
 
+    // Long-poll waiter registry for lobby list updates
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<List<Room>>> _lobbyWaiters = new();
+
     public GameManager(IServiceScopeFactory scopeFactory)
     {
         _scopeFactory = scopeFactory;
+    }
+
+    // Register a long-poll waiter; returns a task that completes when lobbies change or cancellation fires.
+    public Task<List<Room>> WaitForLobbyChangeAsync(CancellationToken cancellationToken)
+    {
+        var id = Guid.NewGuid().ToString();
+        var tcs = new TaskCompletionSource<List<Room>>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        cancellationToken.Register(() =>
+        {
+            if (_lobbyWaiters.TryRemove(id, out var removed))
+                removed.TrySetCanceled();
+        });
+
+        _lobbyWaiters[id] = tcs;
+        return tcs.Task;
+    }
+
+    // Notify all registered waiters with the current lobby list.
+    private void NotifyLobbiesChanged()
+    {
+        // Atomically take all current waiters
+        var waiters = _lobbyWaiters.ToArray();
+        foreach (var kv in waiters)
+            _lobbyWaiters.TryRemove(kv.Key, out _);
+
+        if (waiters.Length == 0) return;
+
+        var lobbies = GetPublicWaitingRooms();
+        foreach (var kv in waiters)
+            kv.Value.TrySetResult(lobbies);
     }
 
     // Creates a room and automatically adds the creator as the owner.
@@ -68,6 +102,8 @@ public class GameManager
         room.Players.Add(creator);
 
         _rooms[room.RoomId] = room;
+
+        NotifyLobbiesChanged();
 
         return (room, creator);
     }
@@ -121,6 +157,10 @@ public class GameManager
             return JoinRoomResult.DuplicateGuest;
 
         room.Players.Add(sessionPlayer);
+
+        if (room.Type == RoomType.Public && room.Phase == GamePhase.Lobby)
+            NotifyLobbiesChanged();
+
         return JoinRoomResult.Success;
     }
 
@@ -155,6 +195,7 @@ public class GameManager
         {
             _rooms.Remove(roomId);
             result.RoomClosed = true;
+            NotifyLobbiesChanged();
             return result;
         }
 
@@ -175,6 +216,9 @@ public class GameManager
             result.NewOwnerSessionId = newOwner.SessionId;
             result.NewOwnerName = newOwner.DisplayName;
         }
+
+        if (room.Type == RoomType.Public)
+            NotifyLobbiesChanged();
 
         return result;
     }
@@ -414,6 +458,8 @@ public class GameManager
     //start game — now uses all selected topics to filter questions
     public void StartGame(Room room, List<Question> questions)
     {
+        NotifyLobbiesChanged();
+
         room.Questions = questions;
         room.CurrentQuestionIndex = 0;
         room.TopicChooserIndex = Random.Shared.Next(room.Players.Count);

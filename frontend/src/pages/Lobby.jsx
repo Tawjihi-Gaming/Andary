@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect,useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import LanguageSwitcher from '../components/LanguageSwitcher'
@@ -37,35 +37,53 @@ const Lobby = ({ user, onLogout }) => {
     }
   }
 
+  const firstLoadRef = useRef(true);
+
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
+    const onBeforeUnload = () => { isMounted = false; };
+    window.addEventListener('beforeunload', onBeforeUnload);
+
     const fetchLobbies = async () => {
       try {
-        setLobbiesLoading(true)
-        const response = await api.get('/room/lobbies')
-        const list = Array.isArray(response.data) ? response.data : []
-        if (isMounted) {
-          setLobbies(list)
+        const response = await api.get('/room/lobbies', {
+          params: { wait: firstLoadRef.current ? false : true },
+        });
+
+        // mark that first load has completed (use ref so effect doesn't re-run)
+        firstLoadRef.current = false;
+
+        if (response.status === 204) {
+          // server says "no change" -> don't mutate current lobbies
+        } else {
+          const list = Array.isArray(response.data) ? response.data : [];
+          if (isMounted) {
+            // replace state with server payload (empty array clears all rooms)
+            setLobbies(list);
+          }
         }
       } catch (error) {
-        console.error('Error fetching lobbies:', error)
-        if (isMounted) {
-          setLobbies([])
-        }
+        // ignore aborts/cancels, log others
+        const isAbort =
+          error?.name === 'CanceledError' ||
+          error?.code === 'ERR_CANCELED' ||
+          error?.message?.toLowerCase()?.includes('aborted');
+        if (!isAbort) console.error('Error fetching lobbies:', error);
       } finally {
         if (isMounted) {
-          setLobbiesLoading(false)
+          setLobbiesLoading(false);
+          // schedule next long-poll only while mounted
+          setTimeout(() => { if (isMounted) fetchLobbies(); }, 300);
         }
       }
-    }
+    };
 
-    fetchLobbies()
-    const intervalId = setInterval(fetchLobbies, 15000)
+    fetchLobbies();
     return () => {
-      isMounted = false
-      clearInterval(intervalId)
-    }
-  }, [])
+      isMounted = false;
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, []);
 
   const handleJoinLobby = async (roomId) => {
     setJoinError('')

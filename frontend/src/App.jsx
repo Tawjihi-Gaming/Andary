@@ -89,6 +89,7 @@ function App() {
       ...userData,
       avatar: userData.avatar || userData.avatarImageName || '👤',
       avatarImageName: userData.avatarImageName || userData.avatar || '',
+      xp: userData.xp  || 0,
       clientKey: userData.clientKey || createClientKey(),
     }
     localStorage.setItem('isAuthenticated', 'true')

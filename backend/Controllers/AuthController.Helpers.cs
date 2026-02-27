@@ -113,6 +113,7 @@ namespace Backend.Controllers
                 Id = player.Id,
                 Username = player.Username,
                 AvatarImageName = player.AvatarImageName,
+                xp = player.Xp,
                 Email = GetPlayerEmail(player)
             });
         }

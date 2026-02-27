@@ -80,7 +80,7 @@ namespace Backend.Controllers
         {
             if (string.IsNullOrWhiteSpace(token))
                 return;
-            Response.Cookies.Append("jwt", token, BuildAuthCookieOptions(DateTime.UtcNow.AddHoursLogginPage));
+            Response.Cookies.Append("jwt", token, BuildAuthCookieOptions(DateTime.UtcNow.AddHours(2)));
         }
 
         private void SetRefreshToken(Player player)

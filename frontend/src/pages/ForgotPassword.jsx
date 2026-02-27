@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../api/axios'
+import { forgotPassword as forgotPasswordApi } from '../api/auth'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const ForgotPassword = () => {
@@ -42,7 +42,7 @@ const ForgotPassword = () => {
 
     setLoading(true)
     try {
-      const response = await api.post('/auth/forgot-password', { email: email.trim() })
+      const response = await forgotPasswordApi(email.trim())
       showMessage(`✅ ${getForgotPasswordMessage(response.data?.msg)}`, 'success')
       setEmail('')
     }

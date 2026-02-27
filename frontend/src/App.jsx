@@ -13,6 +13,7 @@ import TermsOfService from './pages/TermsOfService.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import api from './api/axios'
+import { logout as apiLogout, getMe } from './api/auth'
 import ThemeSwitcher from './components/ThemeSwitcher'
 
 const createClientKey = () => {
@@ -62,7 +63,7 @@ function App() {
 
     const checkSession = async () => {
       try {
-        const res = await api.get('/auth/me')
+        const res = await getMe()
         const userData = {
           id: res.data.id,
           username: res.data.username,
@@ -97,7 +98,13 @@ function App() {
     setIsAuthenticated(true)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiLogout()
+    } catch (err) {
+      // If logout fails (e.g. already expired), still clear local state
+      console.warn('Logout API call failed:', err)
+    }
     localStorage.removeItem('isAuthenticated')
     localStorage.removeItem('userData')
     setUser(null)

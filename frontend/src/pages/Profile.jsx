@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
+import { editPlayer } from '../api/auth'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
 import LegalFooter from '../components/LegalFooter'
 import Navbar from '../components/Navbar'
@@ -131,7 +132,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setLoading(true)
     try
     {
-      await api.post('/auth/edit', { username })
+      await editPlayer({ username })
       onUpdateUser?.({ ...user, username })
       showMessage(t('profile.usernameUpdated'))
       setEditingField(null)
@@ -157,7 +158,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setLoading(true)
     try
     {
-      await api.post('/auth/edit', { email })
+      await editPlayer({ email })
       onUpdateUser?.({ ...user, email })
       showMessage(t('profile.emailUpdated'))
       setEditingField(null)
@@ -179,7 +180,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setLoading(true)
     try
     {
-      await api.post('/auth/edit', { avatarImageName: selectedAvatar.emoji })
+      await editPlayer({ avatarImageName: selectedAvatar.emoji })
       onUpdateUser?.({ ...user, avatar: selectedAvatar.emoji })
       showMessage(t('profile.avatarUpdated'))
       setEditingField(null)
@@ -217,7 +218,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setLoading(true)
     try
     {
-      await api.post('/auth/edit', { password: newPassword })
+      await editPlayer({ password: newPassword })
       showMessage(t('profile.passwordUpdated'))
       setNewPassword('')
       setConfirmPassword('')

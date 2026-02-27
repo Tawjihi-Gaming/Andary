@@ -46,7 +46,6 @@ const LanguageSwitcher = () => {
 
   return (
     <div ref={containerRef} dir="ltr" className="relative">
-      <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
@@ -58,30 +57,30 @@ const LanguageSwitcher = () => {
         <span className="text-base">{activeLanguage.flag}</span>
         <span>{activeLanguage.label}</span>
         <motion.span
-          animate={reduceMotion ? undefined : { rotate: isOpen ? 0 : 180 }}
+          animate={reduceMotion ? undefined : { rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
           className="text-[10px] sm:text-xs"
           style={{ color: 'var(--app-text-muted)' }}
         >
-          ▶
+          ▼
         </motion.span>
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, width: 0, x: -6 }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, width: 'auto', x: 0 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, width: 0, x: -4 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="overflow-hidden"
+            className="absolute top-full mt-2 start-0 z-50 min-w-[140px]"
           >
           <motion.ul
             initial={reduceMotion ? undefined : { opacity: 0.85 }}
             animate={{ opacity: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0.85 }}
             transition={{ duration: 0.15 }}
-            className="flex items-stretch backdrop-blur-md rounded-xl shadow-lg"
+            className="flex flex-col p-1 backdrop-blur-md rounded-xl shadow-lg"
             style={{
               background: 'var(--app-card-bg-strong)',
               border: '1px solid var(--app-card-border)',
@@ -92,11 +91,11 @@ const LanguageSwitcher = () => {
               const isActive = currentLanguage === language.code
 
               return (
-                <li key={language.code}>
+                <li key={language.code} className="w-full">
                   <button
                     type="button"
                     onClick={() => switchLanguage(language.code)}
-                    className={`h-full flex items-center gap-2 px-3 py-2 text-left text-xs sm:text-sm transition-colors duration-200 cursor-pointer ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-left text-xs sm:text-sm transition-colors duration-200 cursor-pointer ${
                       isActive
                         ? 'bg-yellow-500 text-white rounded-xl'
                         : 'hover:bg-white/15 rounded-xl text-app-text-soft'
@@ -116,7 +115,6 @@ const LanguageSwitcher = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      </div>
     </div>
   )
 }

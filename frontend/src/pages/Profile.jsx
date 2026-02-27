@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
@@ -30,7 +29,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
-  const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
 
   // Game history state
   const [gameHistory, setGameHistory] = useState([])
@@ -123,16 +121,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
   }
 
-  const formatDuration = (start, end) => {
-    if (!start || !end)
-    {
-      return '-'
-    }
-    const ms = new Date(end) - new Date(start)
-    const mins = Math.floor(ms / 60000)
-    if (mins < 1) return `${Math.floor(ms / 1000)}s`
-    return `${mins}m`
-  }
 
   // Update username
   const handleUpdateUsername = async () => {

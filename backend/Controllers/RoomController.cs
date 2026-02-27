@@ -296,7 +296,6 @@ public class RoomController : ControllerBase
                 gp.GameSessionId,
                 gp.FinalScore,
                 gp.FinalRank,
-                StartDate = gp.GameSession.CreatedAt,
                 EndDate = gp.GameSession.FinishedAt,
                 gp.GameSession.TotalRounds
             })

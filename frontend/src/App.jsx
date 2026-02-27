@@ -7,6 +7,7 @@ import Profile from './pages/Profile.jsx'
 import CreateRoom from './pages/Create-room.jsx'
 import GameRoom from './pages/room/[roomId].jsx'
 import Game from './pages/game/[roomId].jsx'
+import Friends from './pages/Friends.jsx'
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
 import TermsOfService from './pages/TermsOfService.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
@@ -172,6 +173,14 @@ function App() {
           element={
             isAuthenticated ? 
               <Profile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : 
+              <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/friends" 
+          element={
+            isAuthenticated ? 
+              <Friends user={user} /> : 
               <Navigate to="/" replace />
           } 
         />

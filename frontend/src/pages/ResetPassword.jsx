@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../api/axios'
+import { resetPassword as resetPasswordApi } from '../api/auth'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const ResetPassword = () => {
@@ -61,10 +61,7 @@ const ResetPassword = () => {
 
     setLoading(true)
     try {
-      const response = await api.post('/auth/reset-password', {
-        token,
-        newPassword,
-      })
+      const response = await resetPasswordApi(token, newPassword)
       showMessage(`✅ ${getResetPasswordMessage(response.data?.msg)}`, 'success')
       setNewPassword('')
       setConfirmPassword('')

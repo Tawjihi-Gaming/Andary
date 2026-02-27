@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
+import { editPlayer } from '../api/auth'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
 import LegalFooter from '../components/LegalFooter'
 import Navbar from '../components/Navbar'
@@ -131,7 +132,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setLoading(true)
     try
     {
-      await api.post('/auth/edit', { username })
+      await editPlayer({ username })
       onUpdateUser?.({ ...user, username })
       showMessage(t('profile.usernameUpdated'))
       setEditingField(null)
@@ -157,7 +158,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setLoading(true)
     try
     {
-      await api.post('/auth/edit', { email })
+      await editPlayer({ email })
       onUpdateUser?.({ ...user, email })
       showMessage(t('profile.emailUpdated'))
       setEditingField(null)
@@ -179,7 +180,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setLoading(true)
     try
     {
-      await api.post('/auth/edit', { avatarImageName: selectedAvatar.emoji })
+      await editPlayer({ avatarImageName: selectedAvatar.emoji })
       onUpdateUser?.({ ...user, avatar: selectedAvatar.emoji })
       showMessage(t('profile.avatarUpdated'))
       setEditingField(null)
@@ -217,7 +218,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setLoading(true)
     try
     {
-      await api.post('/auth/edit', { password: newPassword })
+      await editPlayer({ password: newPassword })
       showMessage(t('profile.passwordUpdated'))
       setNewPassword('')
       setConfirmPassword('')
@@ -273,9 +274,9 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* AVATAR SECTION */}
           <div className="flex flex-col items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div
-              className="w-24 h-24 sm:w-32 sm:h-32 cursor-pointer rounded-full bg-game-yellow pt-2 flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform"
-              onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
-              title={t('profile.clickToChangeAvatar')}
+              className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-game-yellow pt-2 flex items-center justify-center border-4 border-white shadow-lg transition-transform ${!user?.isGuest ? 'cursor-pointer hover:scale-105' : ''}`}
+              onClick={() => !user?.isGuest && setEditingField(editingField === 'avatar' ? null : 'avatar')}
+              title={!user?.isGuest ? t('profile.clickToChangeAvatar') : undefined}
             >
               <span className="text-5xl sm:text-6xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
             </div>
@@ -289,7 +290,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             )}
 
             {/* Avatar picker dropdown */}
-            {editingField === 'avatar' && (
+            {editingField === 'avatar' && !user?.isGuest && (
               <div className="w-full max-w-sm bg-white/10 rounded-2xl p-4 border border-white/20">
                 <AvatarPicker selected={selectedAvatar} onSelect={setSelectedAvatar} />
                 <div className="flex gap-2 mt-3 justify-center">
@@ -423,7 +424,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             </div>
 
             {/* Change Password field */}
-            {!user?.isGuest && (
+            {!user?.isGuest && !user?.isGoogleUser && (
               <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                 <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.passwordLabel')}</label>
                 {editingField === 'password' ? (

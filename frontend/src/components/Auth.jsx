@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../api/axios'
+import { login, signup, getGoogleLoginUrl } from '../api/auth'
 import AvatarPicker, { AVATARS } from './AvatarPicker'
-import LegalFooter from './LegalFooter'
 
 const createClientKey = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -61,7 +60,7 @@ const Auth = ({ onLogin }) => {
 
     try
     {
-      const res = await api.get('/auth/google-login')
+      const res = await getGoogleLoginUrl()
       window.location.href = res.data.url
     }
     catch (error)
@@ -119,12 +118,12 @@ const Auth = ({ onLogin }) => {
           setLoading(false)
           return
         }
-        await api.post('/auth/signup', {
-          username: displayName.trim(),
+        await signup(
+          displayName.trim(),
           email,
           password,
-          avatarImageName: selectedAvatar.emoji,
-        })
+          selectedAvatar.emoji,
+        )
         showMessage(t('auth.accountCreated'), 'success')
       }
       else
@@ -132,10 +131,7 @@ const Auth = ({ onLogin }) => {
         /*
         Login API
         */
-        const response = await api.post('/auth/login', {
-          email,
-          password
-        })
+        const response = await login(email, password)
         showMessage(t('auth.loginSuccess'), 'success')
         // Build user object from the backend response
         const userData = {
@@ -380,9 +376,6 @@ const Auth = ({ onLogin }) => {
           </div>
         </form>
       )}
-      <div className="text-center text-sm text-white/50">
-          <LegalFooter />
-      </div>
     </div>
   )
 }

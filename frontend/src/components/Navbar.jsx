@@ -19,6 +19,13 @@ const Navbar = ({ user, onLogout }) => {
 
   const confirmLogout = async () => {
     setIsLogoutPopupOpen(false)
+    if (user?.isGuest) {
+      if (onLogout) {
+        onLogout()
+      }
+      navigate('/login')
+      return
+    }
     try {
       await api.post('/auth/logout')
     } catch (error) {

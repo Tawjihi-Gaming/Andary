@@ -108,3 +108,4 @@ nunit-*.xml
 *.pem
 Migrations/
 obj/
+bin\Debug

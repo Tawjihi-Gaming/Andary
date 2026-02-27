@@ -27,6 +27,11 @@ namespace Backend.Extensions
             services.AddSingleton<GameManager>();
             services.AddScoped<QuestionsService>();
 
+            // Email background queue
+            services.AddSingleton<IEmailQueue, EmailQueue>();
+            services.AddSingleton<EmailSender>();
+            services.AddHostedService<EmailBackgroundService>();
+
             // CORS
             services.AddCors(options =>
             {

@@ -43,7 +43,26 @@
     "googleLoginError": "❌ 使用 Google 登录时发生错误。",
     "accountCreated": "✅ 账号创建成功！现在可以登录。",
     "loginSuccess": "✅ 登录成功！",
-    "authError": "发生错误。请重试。"
+    "authError": "发生错误。请重试。",
+    "forgotPassword": "忘记密码？",
+    "forgotPasswordTitle": "🔑 忘记密码",
+    "forgotPasswordSubtitle": "输入你的邮箱，我们会发送重置链接。",
+    "sendResetLink": "📩 发送重置链接",
+    "backToLogin": "返回登录",
+    "forgotPasswordSuccess": "如果该邮箱存在对应账号，重置链接已发送",
+    "forgotPasswordEmailRequired": "电子邮箱为必填项",
+    "forgotPasswordError": "发送重置链接失败，请重试。",
+    "newPassword": "新密码",
+    "confirmNewPassword": "确认新密码",
+    "resetPasswordTitle": "🔒 重置密码",
+    "resetPasswordSubtitle": "输入新密码以完成重置。",
+    "resetPasswordButton": "✅ 重置密码",
+    "resetPasswordSuccess": "密码已重置",
+    "resetPasswordError": "重置密码失败，请重试。",
+    "resetPasswordInvalidToken": "令牌无效或已过期。",
+    "resetPasswordMissingToken": "重置令牌无效或缺失。",
+    "resetPasswordMinLength": "密码至少需要6个字符。",
+    "resetPasswordMismatch": "两次输入的密码不一致。"
   },
 
   "avatar": {

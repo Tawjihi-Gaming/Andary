@@ -38,6 +38,37 @@ public class RoomController : ControllerBase
         if (string.IsNullOrEmpty(request.Name))
             return BadRequest(new { error = "Room name is required." });
 
+        var canonicalSelectedTopics = new List<string>();
+        if (request.SelectedTopics != null)
+        {
+            if (request.SelectedTopics.Count > 7)
+                return BadRequest(new { error = "A room can have at most 7 topics." });
+
+            var availableTopics = _questionsService.GetTopics();
+            var uniqueRequestedTopics = request.SelectedTopics
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Select(t => t.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var requestedTopic in uniqueRequestedTopics)
+            {
+                var matchedTopic = availableTopics.FirstOrDefault(t =>
+                    string.Equals(t?.Trim(), requestedTopic, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedTopic == null)
+                {
+                    return BadRequest(new
+                    {
+                        error = "One or more selected topics are invalid.",
+                        invalidTopic = requestedTopic
+                    });
+                }
+
+                canonicalSelectedTopics.Add(matchedTopic);
+            }
+        }
+
         RoomType type = request.IsPrivate ? RoomType.Private : RoomType.Public;
 
         // Create the owner's SessionPlayer
@@ -64,14 +95,8 @@ public class RoomController : ControllerBase
         var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name, creator, answerTimeSeconds);
 
         // Add topics selected during room creation (needed for StartGame)
-        if (request.SelectedTopics != null)
-        {
-            foreach (var topic in request.SelectedTopics.Take(7)) // max 7 topics per room
-            {
-                if (!string.IsNullOrWhiteSpace(topic))
-                    _game.AddTopic(room, topic.Trim());
-            }
-        }
+        foreach (var topic in canonicalSelectedTopics)
+            _game.AddTopic(room, topic);
 
         return Ok(new
         {

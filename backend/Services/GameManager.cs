@@ -35,6 +35,7 @@ public class GameManager
 {
     public const int OwnerDisconnectGraceSeconds = 120;
     public const int PlayerDisconnectGraceSeconds = 60;
+    private const double XpRankAlpha = 0.5;
     private const int TopicSelectionSeconds = 15;
     private const int ChoosingAnswerSeconds = 15;
     private const int LeaderboardSeconds = 5;
@@ -354,12 +355,17 @@ public class GameManager
     {
         if (room.Phase != GamePhase.Lobby)
             return false;
-        if (room.SelectedTopics.Count >= 7)
-            return false;
-        if (room.SelectedTopics.Contains(topic))
+        if (string.IsNullOrWhiteSpace(topic))
             return false;
 
-        room.SelectedTopics.Add(topic);
+        var normalizedTopic = topic.Trim();
+        if (room.SelectedTopics.Count >= 7)
+            return false;
+        if (room.SelectedTopics.Any(t =>
+            string.Equals(t?.Trim(), normalizedTopic, StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        room.SelectedTopics.Add(normalizedTopic);
         return true;
     }
 
@@ -369,7 +375,13 @@ public class GameManager
         if (room.Phase != GamePhase.Lobby)
             return false;
 
-        return room.SelectedTopics.Remove(topic);
+        var matchedTopic = room.SelectedTopics.FirstOrDefault(t =>
+            string.Equals(t?.Trim(), topic?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        if (matchedTopic == null)
+            return false;
+
+        return room.SelectedTopics.Remove(matchedTopic);
     }
 
     //start game — fetches questions from all selected topics
@@ -793,6 +805,8 @@ public class GameManager
     // Save game session and participants to database.
     // Only saves GameParticipant records for logged-in players (those with a PlayerId).
     // Anonymous/guest players' scores are shown in-game but not persisted.
+    // XP is awarded from score with rank scaling:
+    // XP = P * (1 + alpha * (n - r) / (n - 1)), alpha = 0.5
     public async Task SaveGameSession(Room room)
     {
         AppDbContext context;
@@ -838,7 +852,11 @@ public class GameManager
                 var dbPlayer = await context.Players.FindAsync(rankedPlayer.SessionPlayer.PlayerId.Value);
                 if (dbPlayer != null)
                 {
-                    dbPlayer.Xp += rankedPlayer.SessionPlayer.Score;
+                    var xpAward = CalculateXpAward(
+                        rankedPlayer.SessionPlayer.Score,
+                        rankedPlayers.Count,
+                        rankedPlayer.Rank);
+                    dbPlayer.Xp += xpAward;
                 }
             }
 
@@ -848,6 +866,19 @@ public class GameManager
         {
             scope?.Dispose();
         }
+    }
+
+    private static int CalculateXpAward(int scorePoints, int totalPlayers, int rank)
+    {
+        if (scorePoints <= 0)
+            return 0;
+
+        if (totalPlayers <= 1)
+            return scorePoints;
+
+        var rankFactor = (double)(totalPlayers - rank) / (totalPlayers - 1);
+        var xp = scorePoints * (1 + XpRankAlpha * rankFactor);
+        return (int)Math.Round(xp, MidpointRounding.AwayFromZero);
     }
 
 }

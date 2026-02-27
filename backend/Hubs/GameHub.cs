@@ -359,8 +359,28 @@ public class GameHub : Hub
     {
         var room = _game.GetRoom(roomId);
 
-        if (!_game.AddTopic(room, topic))
+        if (string.IsNullOrWhiteSpace(topic))
+        {
+            await Clients.Caller.SendAsync("TopicAddFailed", new { message = "Topic is required." });
             return;
+        }
+
+        var normalizedTopic = topic.Trim();
+        var availableTopics = _questionsService.GetTopics();
+        var matchedTopic = availableTopics.FirstOrDefault(t =>
+            string.Equals(t?.Trim(), normalizedTopic, StringComparison.OrdinalIgnoreCase));
+
+        if (matchedTopic == null)
+        {
+            await Clients.Caller.SendAsync("TopicAddFailed", new { message = "Invalid topic. Choose from available topics only." });
+            return;
+        }
+
+        if (!_game.AddTopic(room, matchedTopic))
+        {
+            await Clients.Caller.SendAsync("TopicAddFailed", new { message = "Unable to add topic. It may already exist or the room is not in lobby." });
+            return;
+        }
 
         // Broadcast updated topic list to all players
         await Clients.Group(roomId).SendAsync("TopicsUpdated", room.SelectedTopics);
@@ -404,6 +424,24 @@ public class GameHub : Hub
         // At least 1 topic must be selected
         if (!_game.CanStartGame(room))
             return;
+
+        // All selected topics must exist in DB. Do not trust client-sent topic names.
+        var availableTopicNames = _questionsService.GetTopics();
+        var invalidTopics = room.SelectedTopics
+            .Where(t => !availableTopicNames.Any(db =>
+                string.Equals(db?.Trim(), t?.Trim(), StringComparison.OrdinalIgnoreCase)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (invalidTopics.Count > 0)
+        {
+            await Clients.Caller.SendAsync("GameError", new
+            {
+                message = "One or more selected topics are invalid. Please remove invalid topics and try again.",
+                invalidTopics
+            });
+            return;
+        }
 
         // Fetch questions from all selected topics
         var questions = _questionsService.GetQuestionsFromTopics(room.TotalQuestions, room.SelectedTopics);

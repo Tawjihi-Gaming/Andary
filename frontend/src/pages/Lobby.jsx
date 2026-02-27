@@ -5,6 +5,7 @@ import api from '../api/axios'
 import { saveRoomSession } from '../utils/roomSession'
 import LegalFooter from '../components/LegalFooter'
 import Navbar from '../components/Navbar.jsx'
+import GamePopup from '../components/GamePopup'
 
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
@@ -383,17 +384,6 @@ const Lobby = ({ user, onLogout }) => {
           </div>
         </div>
       )}
-
-      <GamePopup
-        open={isLogoutPopupOpen}
-        title={t('lobby.logoutTitle')}
-        message={t('lobby.logoutMessage')}
-        confirmText={t('lobby.confirmLogout')}
-        cancelText={t('lobby.cancelLogout')}
-        showCancel
-        onCancel={() => setIsLogoutPopupOpen(false)}
-        onConfirm={confirmLogout}
-      />
       <GamePopup
         open={!!joinError}
         title={t('lobby.errorTitle')}

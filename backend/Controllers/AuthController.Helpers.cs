@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -10,10 +11,6 @@ using System.Security.Claims;
 using Backend.Models.Configs;
 using System.Text.Json;
 using System.Security.Cryptography;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Backend.Controllers
 {
@@ -351,102 +348,41 @@ namespace Backend.Controllers
             return (true, null);
         }
 
-        private async Task SendWelcomeEmailAsync(string email)
+        /// Enqueue a welcome email for background delivery.
+        private void EnqueueWelcomeEmail(string email)
         {
-            try
+            _emailQueue.Enqueue(new EmailMessage
             {
-                var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
-                    ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
-
-                var smtpPortRaw = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
-                if (!int.TryParse(smtpPortRaw, out var smtpPort))
-                    return;
-
-                var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER")
-                    ?? throw new InvalidOperationException("SMTP_USER env var is missing");
-
-                var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS")
-                    ?? throw new InvalidOperationException("SMTP_PASS env var is missing");
-
-                var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpUser;
-                var fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? "Andary";
-
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(fromName, fromEmail));
-                message.To.Add(MailboxAddress.Parse(email));
-                message.Subject = "Welcome to Andary";
-                message.Body = new TextPart("plain")
-                {
-                    Text =
-                        "Hello,\n\n" +
-                        "Thank you for signing up with Andary." +
-                        "We are happy to have you join our website\n\n" +
-                        "If you did not sign up, you can safely ignore this email.\n\n" +
-                        "Best regards,\n" +
-                        "The Andary Team"
-                };
-
-                using var smtp = new SmtpClient();
-                await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
-                await smtp.AuthenticateAsync(smtpUser, smtpPass);
-                await smtp.SendAsync(message);
-                await smtp.DisconnectAsync(true);
-            }
-            catch
-            {
-                return;
-            }
+                To = email,
+                Subject = "Welcome to Andary",
+                Body =
+                    "Hello,\n\n" +
+                    "Thank you for signing up with Andary. " +
+                    "We are happy to have you join our website!\n\n" +
+                    "If you did not sign up, you can safely ignore this email.\n\n" +
+                    "Best regards,\n" +
+                    "The Andary Team"
+            });
         }
 
-        private async Task SendResetEmail(Player player, string token)
+        /// Enqueue a password-reset email for background delivery.
+        private void EnqueueResetEmail(Player player, string token)
         {
-            try
+            var resetLink = $"{Environment.GetEnvironmentVariable("FRONTEND_URL")}/reset-password?token={Uri.EscapeDataString(token)}";
+
+            _emailQueue.Enqueue(new EmailMessage
             {
-                var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
-                    ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
-
-                var smtpPortRaw = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
-                if (!int.TryParse(smtpPortRaw, out var smtpPort))
-                    return;
-
-                var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER")
-                    ?? throw new InvalidOperationException("SMTP_USER env var is missing");
-
-                var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS")
-                    ?? throw new InvalidOperationException("SMTP_PASS env var is missing");
-
-                var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpUser;
-                var fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? "Andary";
-
-                var resetLink = $"{Environment.GetEnvironmentVariable("FRONTEND_URL")}/reset-password?token={Uri.EscapeDataString(token)}";
-
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(fromName, fromEmail));
-                message.To.Add(MailboxAddress.Parse(player.AuthLocal!.Email!));
-                message.Subject = "Password Reset Request";
-                message.Body = new TextPart("plain")
-                {
-                    Text =
-                        $"Hello {player.Username},\n\n" +
-                        "We received a request to reset your password. " +
-                        "You can reset your password by clicking the link below:\n\n" +
-                        $"{resetLink}\n\n" +
-                        "If you did not request a password reset, you can safely ignore this email.\n\n" +
-                        "Best regards,\n" +
-                        "The Andary Team"
-                };
-
-                using var smtp = new SmtpClient();
-                await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
-                await smtp.AuthenticateAsync(smtpUser, smtpPass);
-                await smtp.SendAsync(message);
-                await smtp.DisconnectAsync(true);
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"Failed to send reset email to {player.AuthLocal?.Email}: {ex.Message}");
-                return;
-            }
+                To = player.AuthLocal!.Email!,
+                Subject = "Password Reset Request",
+                Body =
+                    $"Hello {player.Username},\n\n" +
+                    "We received a request to reset your password. " +
+                    "You can reset your password by clicking the link below:\n\n" +
+                    $"{resetLink}\n\n" +
+                    "If you did not request a password reset, you can safely ignore this email.\n\n" +
+                    "Best regards,\n" +
+                    "The Andary Team"
+            });
         }
 
         #endregion

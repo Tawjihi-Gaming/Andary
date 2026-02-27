@@ -299,42 +299,7 @@ public class RoomController : ControllerBase
             });
         }
     }
-
-	[HttpGet("player-game-history")]
-    public IActionResult GetPlayerGameHistory([FromQuery] int playerId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
-    {
-        if (playerId <= 0 || pageNumber <= 0 || pageSize <= 0)
-        {
-            return BadRequest(new { error = "Invalid player ID, page number, or page size." });
-        }
-
-        int startRow = (pageNumber - 1) * pageSize;
-
-        var gameHistories = _context.GameParticipants
-            .Where(gp => gp.PlayerId == playerId)
-            .Include(gp => gp.GameSession)
-            .OrderByDescending(gp => gp.GameSession.CreatedAt)
-            .Skip(startRow)
-            .Take(pageSize)
-            .Select(gp => new
-            {
-                gp.GameSessionId,
-                gp.FinalScore,
-                gp.FinalRank,
-                EndDate = gp.GameSession.FinishedAt,
-                gp.GameSession.TotalRounds
-            })
-            .ToList();
-
-        if (!gameHistories.Any())
-        {
-            return NotFound(new { error = "No game history found for the specified player." });
-        }
-
-        return Ok(gameHistories);
-    }
 }
-
 // Request DTOs
 public class CreateRoomRequest
 {

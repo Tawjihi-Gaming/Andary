@@ -50,8 +50,8 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setHistoryLoading(true)
     try
     {
-      const res = await api.get('/room/player-game-history', {
-        params: { playerId: user.id, pageNumber: page, pageSize: PAGE_SIZE }
+      const res = await api.get('/history/' + user.id, {
+        params: { pageNumber: page, pageSize: PAGE_SIZE }
       })
       const data = res.data
       if (page === 1)
@@ -66,7 +66,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     }
     catch (error)
     {
-      if (error.response?.status === 404)
+      if (error.response?.status === 204)
       {
         setHasMoreHistory(false)
       }

@@ -402,51 +402,48 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
               )}
             </div>
 
-            {/* Email field */}
-            <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-              <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.emailLabel')}</label>
-              {editingField === 'email' ? (
-                <div className="flex flex-col gap-2">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
-                    placeholder={t('profile.enterNewEmail')}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleUpdateEmail}
-                      disabled={loading}
-                      className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
-                    >
-                      {loading ? '...' : t('common.save')}
-                    </button>
-                    <button
-                      onClick={handleCancel}
-                      className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
-                    >
-                      {t('common.cancel')}
-                    </button>
+            {/* Email field - only for local (non-Google, non-guest) accounts */}
+            {!user?.isGuest && !user?.isGoogleUser && (
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.emailLabel')}</label>
+                {editingField === 'email' ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
+                      placeholder={t('profile.enterNewEmail')}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleUpdateEmail}
+                        disabled={loading}
+                        className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
+                      >
+                        {loading ? '...' : t('common.save')}
+                      </button>
+                      <button
+                        onClick={handleCancel}
+                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
+                      >
+                        {t('common.cancel')}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <span className="text-white text-lg">{user?.email || t('profile.noEmail')}</span>
-                  {!user?.isGuest && !user?.isGoogleUser && (
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-lg">{user?.email || t('profile.noEmail')}</span>
                     <button
                       onClick={() => setEditingField('email')}
                       className="text-white/40 cursor-pointer hover:text-game-yellow transition-colors text-sm"
                     >
                       {t('common.edit')}
                     </button>
-                  )}
-                  {user?.isGoogleUser && (
-                    <span className="text-white/30 text-xs text-center mr-10">{t('profile.googleEmailRestriction')}</span>
-                  )}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Change Password field */}
             {!user?.isGuest && (

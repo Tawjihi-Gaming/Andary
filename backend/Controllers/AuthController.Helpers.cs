@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -10,10 +11,6 @@ using System.Security.Claims;
 using Backend.Models.Configs;
 using System.Text.Json;
 using System.Security.Cryptography;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Backend.Controllers
 {
@@ -48,7 +45,7 @@ namespace Backend.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private string GenerateRefreshToken()
+        private string GenerateToken()
         {
             var randomBytes = new byte[32];
             using var rng = RandomNumberGenerator.Create();
@@ -90,7 +87,7 @@ namespace Backend.Controllers
         {
             if (player == null) return;
 
-            var refreshToken = GenerateRefreshToken();
+            var refreshToken = GenerateToken();
 
             player.RefreshToken = HashToken(refreshToken);
             player.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
@@ -338,7 +335,10 @@ namespace Backend.Controllers
 
             if (player.AuthLocal == null)
                 return (false, "Can't update password for OAuth user");
-
+            
+            if (player.AuthLocal.PasswordHash == null)
+                return (false, "Password hash missing, cannot update password");
+            
             var hasher = new PasswordHasher<AuthLocal>();
             var verificationResult = hasher.VerifyHashedPassword(player.AuthLocal, player.AuthLocal.PasswordHash!, password);
             if (verificationResult == PasswordVerificationResult.Success)
@@ -348,52 +348,41 @@ namespace Backend.Controllers
             return (true, null);
         }
 
-        private async Task SendWelcomeEmailAsync(string email)
+        /// Enqueue a welcome email for background delivery.
+        private void EnqueueWelcomeEmail(string email)
         {
-            try
+            _emailQueue.Enqueue(new EmailMessage
             {
-                var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST")
-                    ?? throw new InvalidOperationException("SMTP_HOST env var is missing");
+                To = email,
+                Subject = "Welcome to Andary",
+                Body =
+                    "Hello,\n\n" +
+                    "Thank you for signing up with Andary. " +
+                    "We are happy to have you join our website!\n\n" +
+                    "If you did not sign up, you can safely ignore this email.\n\n" +
+                    "Best regards,\n" +
+                    "The Andary Team"
+            });
+        }
 
-                var smtpPortRaw = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
-                if (!int.TryParse(smtpPortRaw, out var smtpPort))
-                    return;
+        /// Enqueue a password-reset email for background delivery.
+        private void EnqueueResetEmail(Player player, string token)
+        {
+            var resetLink = $"{Environment.GetEnvironmentVariable("FRONTEND_URL")}/reset-password?token={Uri.EscapeDataString(token)}";
 
-                var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER")
-                    ?? throw new InvalidOperationException("SMTP_USER env var is missing");
-
-                var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS")
-                    ?? throw new InvalidOperationException("SMTP_PASS env var is missing");
-
-                var fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpUser;
-                var fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? "Andary";
-
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(fromName, fromEmail));
-                message.To.Add(MailboxAddress.Parse(email));
-                message.Subject = "Welcome to Andary";
-                message.Body = new TextPart("plain")
-                {
-                    Text =
-                        "Hello,\n\n" +
-                        "Thank you for signing up with Andary." +
-                        "We are happy to have you join our website\n\n" +
-                        "If you did not sign up, you can safely ignore this email.\n\n" +
-                        "Best regards,\n" +
-                        "The Andary Team"
-                };
-
-                using var smtp = new SmtpClient();
-                await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
-                await smtp.AuthenticateAsync(smtpUser, smtpPass);
-                await smtp.SendAsync(message);
-                await smtp.DisconnectAsync(true);
-            }
-            catch
+            _emailQueue.Enqueue(new EmailMessage
             {
-                return;
-            }
-
+                To = player.AuthLocal!.Email!,
+                Subject = "Password Reset Request",
+                Body =
+                    $"Hello {player.Username},\n\n" +
+                    "We received a request to reset your password. " +
+                    "You can reset your password by clicking the link below:\n\n" +
+                    $"{resetLink}\n\n" +
+                    "If you did not request a password reset, you can safely ignore this email.\n\n" +
+                    "Best regards,\n" +
+                    "The Andary Team"
+            });
         }
 
         #endregion

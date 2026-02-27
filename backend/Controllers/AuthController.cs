@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -9,13 +10,9 @@ using System.Text;
 using System.Security.Claims;
 using Backend.Models.Configs;
 using Backend.Models.DTOs;
-using System.Text.Json;
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
 
 namespace Backend.Controllers
 {
@@ -27,12 +24,14 @@ namespace Backend.Controllers
         private readonly AppDbContext _db;
         private readonly GoogleOAuthConfig _googleConfig;
         private readonly HttpClient _httpClient;
+        private readonly IEmailQueue _emailQueue;
 
-        public AuthController(AppDbContext db, GoogleOAuthConfig googleConfig, HttpClient httpClient)
+        public AuthController(AppDbContext db, GoogleOAuthConfig googleConfig, HttpClient httpClient, IEmailQueue emailQueue)
         {
             _db = db;
             _googleConfig = googleConfig;
             _httpClient = httpClient;
+            _emailQueue = emailQueue;
         }
         #endregion
 
@@ -117,22 +116,11 @@ namespace Backend.Controllers
 				AvatarImageName = dto.AvatarImageName
 			};
 
-            await using var transaction = await _db.Database.BeginTransactionAsync();
-            try
-            {
-                _db.Players.Add(player);
-                await _db.SaveChangesAsync();
+            _db.Players.Add(player);
+            await _db.SaveChangesAsync();
 
-                await SendWelcomeEmailAsync(authLocal.Email);
-
-                await transaction.CommitAsync();
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                return StatusCode((int)HttpStatusCode.InternalServerError,
-                    new { msg = "Could not complete signup flow" });
-            }
+            // Enqueue welcome email — HTTP response returns immediately.
+            EnqueueWelcomeEmail(authLocal.Email);
 
             return Ok(new { msg = "Player created. Welcome email sent to email address." });
         }
@@ -278,6 +266,72 @@ namespace Backend.Controllers
                 await _db.SaveChangesAsync();
 
             return Ok(new { msg = "Player info updated" });
+        }
+        #endregion
+
+        #region Forgot Password and Reset Password Endpoint
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var email = dto.Email.Trim().ToLower();
+
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(new { msg = "Email is required" });
+
+            var player = await GetPlayerByEmailAsync(email);
+            if (player == null || player.AuthLocal == null)
+                return Ok(new { msg = "If an account with that email exists, a reset link has been sent" });
+
+            var oldTokens = _db.PasswordResetTokens
+                .Where(t => t.PlayerId == player.Id && !t.IsUsed);
+            _db.PasswordResetTokens.RemoveRange(oldTokens);
+            
+            var rawToken = GenerateToken();
+            var resetToken = new PasswordResetToken
+            {
+                PlayerId = player.Id,
+                TokenHash = HashToken(rawToken),
+                ExpiryDate = DateTime.UtcNow.AddMinutes(30)
+            };
+            _db.PasswordResetTokens.Add(resetToken);
+            await _db.SaveChangesAsync();
+
+            // Enqueue reset email — HTTP response returns immediately.
+            EnqueueResetEmail(player, rawToken);
+            return Ok(new { msg = "If an account with that email exists, a reset link has been sent" });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var hashedToken = HashToken(dto.Token);
+            var resetToken = await _db.PasswordResetTokens
+                .Include(t => t.Player)
+                .ThenInclude(p => p.AuthLocal)
+                .FirstOrDefaultAsync(t => t.TokenHash == hashedToken && !t.IsUsed);
+            if (resetToken == null || resetToken.ExpiryDate < DateTime.UtcNow)
+                return BadRequest(new { msg = "Invalid or expired token" });
+
+            var (success, error) = UpdatePassword(resetToken.Player, dto.NewPassword);
+            if (!success)
+                return BadRequest(new { msg = error });
+            resetToken.IsUsed = true;
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { msg = "Could not reset password", detail = ex.Message });
+            }
+
+            return Ok(new { msg = "Password has been reset" });
         }
         #endregion
     }

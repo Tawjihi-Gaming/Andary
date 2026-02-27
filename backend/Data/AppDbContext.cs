@@ -13,7 +13,8 @@ namespace Backend.Data
         public DbSet<GameSession> GameSessions { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Question> Questions { get; set; }
-
+		public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+		
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			base.OnModelCreating(modelBuilder);
@@ -52,6 +53,12 @@ namespace Backend.Data
 				.WithMany(gs => gs.GameParticipants)
 				.HasForeignKey(gp => gp.GameSessionId);
 
+			modelBuilder.Entity<PasswordResetToken>()
+				.HasOne(t => t.Player)
+				.WithMany(p => p.PasswordResetTokens)
+				.HasForeignKey(t => t.PlayerId)
+				.OnDelete(DeleteBehavior.Cascade);
+
 			modelBuilder.Entity<AuthLocal>()
 			.HasIndex(a => a.Email)
 			.IsUnique();
@@ -59,6 +66,11 @@ namespace Backend.Data
 			modelBuilder.Entity<AuthOAuth>()
 			.HasIndex(a => new { a.Provider, a.ProviderUserId })
 			.IsUnique();
+
+			modelBuilder.Entity<PasswordResetToken>()
+			.HasIndex(t => t.TokenHash)
+			.IsUnique();
+
 		}
     }
 }

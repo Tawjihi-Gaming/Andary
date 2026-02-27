@@ -206,37 +206,54 @@ public class RoomController : ControllerBase
         }
     }
 
-    // GET api/room/lobbies
-    // Returns public rooms that are still waiting in lobby phase.
+    // GET api/room/lobbies?wait=true
+    // Without wait: returns current lobbies immediately.
+    // With wait=true: long-polls until lobby state changes or 30s timeout (204).
     [HttpGet("lobbies")]
-    public IActionResult GetPublicLobbies()
+    public async Task<IActionResult> GetPublicLobbies([FromQuery] bool wait = false, CancellationToken cancellationToken = default)
     {
-        var lobbies = _game.GetPublicWaitingRooms()
-            .Select(room =>
+        if (!wait)
+            return Ok(MapLobbies(_game.GetPublicWaitingRooms()));
+
+        var timeout = 30;
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(timeout));
+
+            var rooms = await _game.WaitForLobbyChangeAsync(cts.Token);
+            return Ok(MapLobbies(rooms));
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return NoContent();
+        }
+    }
+
+    private static object MapLobbies(List<Room> rooms)
+    {
+        return rooms.Select(room =>
+        {
+            var owner = room.Players.FirstOrDefault(p => p.SessionId == room.OwnerSessionId);
+            var topic = room.SelectedTopics.Count > 0
+                ? string.Join("، ", room.SelectedTopics.Take(2))
+                : "بدون مواضيع";
+
+            return new
             {
-                var owner = room.Players.FirstOrDefault(p => p.SessionId == room.OwnerSessionId);
-                var topic = room.SelectedTopics.Count > 0
-                    ? string.Join("، ", room.SelectedTopics.Take(2))
-                    : "بدون مواضيع";
-
-                return new
-                {
-                    id = room.RoomId,
-                    roomId = room.RoomId,
-                    name = room.Name,
-                    code = room.Code,
-                    players = room.Players.Count,
-                    maxPlayers = Room.MaxPlayers,
-                    topic,
-                    status = "waiting",
-                    ownerSessionId = room.OwnerSessionId,
-                    ownerName = owner?.DisplayName ?? "Unknown",
-                    answerTimeSeconds = room.AnswerTimeSeconds
-                };
-            })
-            .ToList();
-
-        return Ok(lobbies);
+                id = room.RoomId,
+                roomId = room.RoomId,
+                name = room.Name,
+                code = room.Code,
+                players = room.Players.Count,
+                maxPlayers = Room.MaxPlayers,
+                topic,
+                status = "waiting",
+                ownerSessionId = room.OwnerSessionId,
+                ownerName = owner?.DisplayName ?? "Unknown",
+                answerTimeSeconds = room.AnswerTimeSeconds
+            };
+        }).ToList();
     }
 
     // GET api/room/topics

@@ -1,11 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect,useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
-import LanguageSwitcher from '../components/LanguageSwitcher'
 import { saveRoomSession } from '../utils/roomSession'
-import GamePopup from '../components/GamePopup'
 import LegalFooter from '../components/LegalFooter'
+import Navbar from '../components/Navbar.jsx'
 
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
@@ -15,7 +14,6 @@ const Lobby = ({ user, onLogout }) => {
   const [joinError, setJoinError] = useState('')
   const [lobbies, setLobbies] = useState([])
   const [lobbiesLoading, setLobbiesLoading] = useState(true)
-  const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false)
   const userAvatar = user?.avatarImageName || user?.avatar || ''
 
   const fetchRoomOwnerInfo = async (joinedRoomId) => {
@@ -37,35 +35,53 @@ const Lobby = ({ user, onLogout }) => {
     }
   }
 
+  const firstLoadRef = useRef(true);
+
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
+    const onBeforeUnload = () => { isMounted = false; };
+    window.addEventListener('beforeunload', onBeforeUnload);
+
     const fetchLobbies = async () => {
       try {
-        setLobbiesLoading(true)
-        const response = await api.get('/room/lobbies')
-        const list = Array.isArray(response.data) ? response.data : []
-        if (isMounted) {
-          setLobbies(list)
+        const response = await api.get('/room/lobbies', {
+          params: { wait: firstLoadRef.current ? false : true },
+        });
+
+        // mark that first load has completed (use ref so effect doesn't re-run)
+        firstLoadRef.current = false;
+
+        if (response.status === 204) {
+          // server says "no change" -> don't mutate current lobbies
+        } else {
+          const list = Array.isArray(response.data) ? response.data : [];
+          if (isMounted) {
+            // replace state with server payload (empty array clears all rooms)
+            setLobbies(list);
+          }
         }
       } catch (error) {
-        console.error('Error fetching lobbies:', error)
-        if (isMounted) {
-          setLobbies([])
-        }
+        // ignore aborts/cancels, log others
+        const isAbort =
+          error?.name === 'CanceledError' ||
+          error?.code === 'ERR_CANCELED' ||
+          error?.message?.toLowerCase()?.includes('aborted');
+        if (!isAbort) console.error('Error fetching lobbies:', error);
       } finally {
         if (isMounted) {
-          setLobbiesLoading(false)
+          setLobbiesLoading(false);
+          // schedule next long-poll only while mounted
+          setTimeout(() => { if (isMounted) fetchLobbies(); }, 300);
         }
       }
-    }
+    };
 
-    fetchLobbies()
-    const intervalId = setInterval(fetchLobbies, 15000)
+    fetchLobbies();
     return () => {
-      isMounted = false
-      clearInterval(intervalId)
-    }
-  }, [])
+      isMounted = false;
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, []);
 
   const handleJoinLobby = async (roomId) => {
     setJoinError('')
@@ -173,80 +189,11 @@ const Lobby = ({ user, onLogout }) => {
     }
   }
 
-  const handleLogout = () => {
-    setIsLogoutPopupOpen(true)
-  }
-
-  const confirmLogout = async () => {
-    setIsLogoutPopupOpen(false)
-    if (!user?.isGuest) {
-      try {
-        console.log('Logging out user:', user)
-        await api.post('/auth/logout')
-      } catch (error) {
-        console.error('Logout error:', error)
-      }
-    }
-    if (onLogout) {
-      onLogout()
-    }
-    navigate('/login')
-  }
-
   return (
     <div className="min-h-screen app-page-bg relative overflow-hidden">
 
       {/* Navbar */}
-      <nav dir="rtl" className="relative z-10 app-glass-card backdrop-blur-2xl px-3 sm:px-6 py-3 border-x-0 border-t-0">
-        <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Logo + language switcher */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/lobby')}>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-linear-to-br from-game-yellow to-game-orange rounded-xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-105 transition-transform">
-                <span className="text-xl sm:text-2xl pt-1 sm:pt-2">🎓</span>
-              </div>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white">
-                Andary
-              </h1>
-            </div>
-            <LanguageSwitcher />
-          </div>
-
-          {/* user info & logout */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            {/* user profile */}
-            <button
-              onClick={() => navigate('/profile')}
-              className="flex items-center gap-2 sm:gap-3 app-soft-btn px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-full bg-linear-to-br from-game-yellow to-game-orange flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:shadow-game-yellow/20 transition-all">
-                <span className="text-xl pt-1">{user?.avatar}</span>
-              </div>
-              <span className="text-white/90 font-semibold max-w-24 sm:max-w-none truncate">{user?.username || 'Player'}</span>
-              <svg className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {/* friends button */}
-            <button
-              onClick={() => navigate('/friends')}
-              className="app-soft-btn hover:bg-game-purple/20 hover:text-game-purple hover:border-game-purple/30 font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 cursor-pointer"
-            >
-              👥 {t('friends.navButton')}
-            </button>
-
-            {/* logout button */}
-            <button
-              onClick={handleLogout}
-              className="app-soft-btn hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 cursor-pointer"
-            >
-              {t('lobby.logout')}
-            </button>
-          </div>
-        </div>
-      </nav>
-
+      <Navbar user={user} onLogout={onLogout} />
       {/* main content */}
       <div className="relative z-10 max-w-7xl mx-auto p-3 sm:p-6">
         {/* welcome section */}
@@ -329,7 +276,7 @@ const Lobby = ({ user, onLogout }) => {
                         <h3 className="text-lg font-bold text-white group-hover:text-game-yellow transition-colors">{lobby.name}</h3>
                         <span className="text-white/40 text-sm">{lobby.topic}</span>
                       </div>
-                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-game-green/20 text-game-green border border-game-green/">
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-game-green/20 text-game-green border border-game-green/30">
                         🟢 {t('lobby.waiting')}
                       </span>
                     </div>

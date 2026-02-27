@@ -208,7 +208,7 @@ public class RoomController : ControllerBase
 
     // GET api/room/lobbies?wait=true
     // Without wait: returns current lobbies immediately.
-    // With wait=true: long-polls until lobby state changes or 25s timeout (204).
+    // With wait=true: long-polls until lobby state changes or 30s timeout (204).
     [HttpGet("lobbies")]
     public async Task<IActionResult> GetPublicLobbies([FromQuery] bool wait = false, CancellationToken cancellationToken = default)
     {

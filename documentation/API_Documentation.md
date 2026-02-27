@@ -195,6 +195,47 @@ Join a specific lobby.
 }
 ```
 
+### Room
+
+#### GET /api/room/lobbies
+
+List all available public lobbies. Supports optional long polling.
+
+**Query Parameters:**
+
+| Parameter | Type    | Required | Description                                                                 |
+|-----------|---------|----------|-----------------------------------------------------------------------------|
+| `wait`    | boolean | No       | If `true`, the server holds the request until lobbies change or timeout.    |
+
+**Behavior:**
+
+- `wait` not provided or `false`: returns the current lobby list immediately.
+- `wait=true`: long-polls for up to 25 seconds. Returns `200` with updated data when a change occurs, or `204 No Content` if the timeout is reached with no changes.
+
+**Response (200):**
+
+```json
+[
+  {
+    "id": "guid",
+    "roomId": "guid",
+    "name": "Ali's Room",
+    "code": "123456",
+    "players": 2,
+    "maxPlayers": 6,
+    "topic": "رياضيات، فيزياء",
+    "status": "waiting",
+    "ownerSessionId": "guid",
+    "ownerName": "Ali",
+    "answerTimeSeconds": 30
+  }
+]
+```
+
+**Response (204):**
+
+No content. Returned when `wait=true` and the timeout is reached without lobby changes.
+
 ### Game Loop / Questions
 
 Most live game events (questions, answer submissions, rankings) are handled via WebSocket messages.

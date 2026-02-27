@@ -11,6 +11,7 @@ const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [showJoinModal, setShowJoinModal] = useState(false)
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [roomCode, setRoomCode] = useState('')
   const [joinError, setJoinError] = useState('')
   const [lobbies, setLobbies] = useState([])
@@ -42,7 +43,12 @@ const Lobby = ({ user, onLogout }) => {
     const fetchLobbies = async () => {
       try {
         setLobbiesLoading(true)
-        const response = await api.get('/room/lobbies')
+        const response = await api.get('/room/lobbies',{
+          params: {
+            wait: isFirstLoad ? false : true
+          }
+        })
+        setIsFirstLoad(false)
         const list = Array.isArray(response.data) ? response.data : []
         if (isMounted) {
           setLobbies(list)
@@ -65,7 +71,7 @@ const Lobby = ({ user, onLogout }) => {
       isMounted = false
       clearInterval(intervalId)
     }
-  }, [])
+  }, [isFirstLoad])
 
   const handleJoinLobby = async (roomId) => {
     setJoinError('')

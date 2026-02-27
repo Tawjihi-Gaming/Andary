@@ -10,7 +10,7 @@ namespace Backend.Models
         public int Id { get; set; }
         [Required]
         [MaxLength(88)]
-        public string TokenHash  { get; set; }
+        public required string TokenHash  { get; set; }
         [Required]
         public DateTime ExpiryDate { get; set; }
 

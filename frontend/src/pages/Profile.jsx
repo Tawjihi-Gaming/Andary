@@ -273,9 +273,9 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* AVATAR SECTION */}
           <div className="flex flex-col items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div
-              className="w-24 h-24 sm:w-32 sm:h-32 cursor-pointer rounded-full bg-game-yellow pt-2 flex items-center justify-center border-4 border-white shadow-lg hover:scale-105 transition-transform"
-              onClick={() => setEditingField(editingField === 'avatar' ? null : 'avatar')}
-              title={t('profile.clickToChangeAvatar')}
+              className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-game-yellow pt-2 flex items-center justify-center border-4 border-white shadow-lg transition-transform ${!user?.isGuest ? 'cursor-pointer hover:scale-105' : ''}`}
+              onClick={() => !user?.isGuest && setEditingField(editingField === 'avatar' ? null : 'avatar')}
+              title={!user?.isGuest ? t('profile.clickToChangeAvatar') : undefined}
             >
               <span className="text-5xl sm:text-6xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
             </div>
@@ -289,7 +289,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             )}
 
             {/* Avatar picker dropdown */}
-            {editingField === 'avatar' && (
+            {editingField === 'avatar' && !user?.isGuest && (
               <div className="w-full max-w-sm bg-white/10 rounded-2xl p-4 border border-white/20">
                 <AvatarPicker selected={selectedAvatar} onSelect={setSelectedAvatar} />
                 <div className="flex gap-2 mt-3 justify-center">
@@ -423,7 +423,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             </div>
 
             {/* Change Password field */}
-            {!user?.isGuest && (
+            {!user?.isGuest && !user?.isGoogleUser && (
               <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                 <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.passwordLabel')}</label>
                 {editingField === 'password' ? (

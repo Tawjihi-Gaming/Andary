@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import LegalFooter from '../components/LegalFooter'
 import GamePopup from '../components/GamePopup'
-import api from '../api/axios'
+import Navbar from '../components/Navbar'
 
 import {
   getFriends,
@@ -15,7 +15,6 @@ import {
   rejectFriendRequest,
   removeFriend,
 } from '../api/friends'
-import Navbar from './Navbar'
 
 const Friends = ({ user, onLogout }) => {
   const { t } = useTranslation()

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import { saveRoomSession } from '../utils/roomSession'
 import LegalFooter from '../components/LegalFooter'
-import Navbar from './Navbar.jsx'
+import Navbar from '../components/Navbar.jsx'
 
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()

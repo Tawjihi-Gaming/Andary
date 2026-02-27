@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import LanguageSwitcher from "../components/LanguageSwitcher";
+import LanguageSwitcher from "./LanguageSwitcher";
 import api from '../api/axios'
-import GamePopup from '../components/GamePopup'
+import GamePopup from './GamePopup'
 
 
 const Navbar = ({ user, onLogout }) => {

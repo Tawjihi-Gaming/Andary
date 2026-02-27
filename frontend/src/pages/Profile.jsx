@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
 import LegalFooter from '../components/LegalFooter'
-import Navbar from './Navbar'
+import Navbar from '../components/Navbar'
 
 const XP_PER_LEVEL = 100
 

@@ -65,9 +65,7 @@ function LoginPage({ onLogin }) {
           {/* Auth and Login - Left Side */}
           <Auth onLogin={onLogin} />
         </div>
-        <div className="absolute bottom-0 left-0 right-0 z-20">
-          <LegalFooter />
-        </div>
+       
       </div>
     </>
   )

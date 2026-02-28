@@ -113,15 +113,15 @@
     "roomType": "نوع الغرفة",
     "public": "عامة",
     "private": "خاصة",
-    "selectTopics": "اختر المواضيع (اختر 8 على الأكثر)",
-    "topicsCount": "اختر المواضيع ({{count}}/8 كحد أقصى)",
+    "selectTopics": "اختر المواضيع (اختر 6 على الأكثر)",
+    "topicsCount": "اختر المواضيع ({{count}}/6 كحد أقصى)",
     "loadingTopics": "جاري تحميل المواضيع...",
     "numberOfRounds": "عدد الجولات",
     "answerTime": "وقت الإجابة على السؤال",
     "createButton": "إنشاء الغرفة",
     "noTopicsError": "لا يمكن إنشاء غرفة بدون مواضيع من قاعدة البيانات",
     "selectTopicError": "يجب اختيار موضوع واحد على الأقل",
-    "maxTopicsError": "يجب اختيار 8 مواضيع كحد أقصى"
+    "maxTopicsError": "يجب اختيار 6 مواضيع كحد أقصى"
   },
 
   "profile": {

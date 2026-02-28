@@ -113,15 +113,15 @@
     "roomType": "Room Type",
     "public": "Public",
     "private": "Private",
-    "selectTopics": "Select Topics (up to 8)",
-    "topicsCount": "Select Topics ({{count}}/8 maximum)",
+    "selectTopics": "Select Topics (up to 6)",
+    "topicsCount": "Select Topics ({{count}}/6 maximum)",
     "loadingTopics": "Loading topics from database...",
     "numberOfRounds": "Number of Rounds",
     "answerTime": "Answer Time",
     "createButton": "Create Room",
     "noTopicsError": "Cannot create room without database topics",
     "selectTopicError": "Please select at least one topic",
-    "maxTopicsError": "Please select no more than 8 topics"
+    "maxTopicsError": "Please select no more than 6 topics"
   },
 
   "profile": {
@@ -260,15 +260,6 @@
     "navButton": "Friends"
   },
 
-  "testRoom": {
-    "title": "Test Game Room",
-    "players": "Players",
-    "testTools": "Test Tools",
-    "addPlayer": "Add Player",
-    "removePlayer": "Remove Player",
-    "copied": "Copied!",
-    "copyRoomCode": "Copy Room Code"
-  },
 
   "legal": {
     "privacyPolicy": "Privacy Policy",

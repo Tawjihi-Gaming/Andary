@@ -113,15 +113,15 @@
     "roomType": "房间类型",
     "public": "公开",
     "private": "私人",
-    "selectTopics": "选择主题（最多8个）",
-    "topicsCount": "选择主题（最多 {{count}}/8 个）",
+    "selectTopics": "选择主题（最多6个）",
+    "topicsCount": "选择主题（最多 {{count}}/6 个）",
     "loadingTopics": "正在从数据库加载主题...",
     "numberOfRounds": "回合数",
     "answerTime": "答题时间",
     "createButton": "创建房间",
     "noTopicsError": "没有数据库主题，无法创建房间",
     "selectTopicError": "请至少选择一个主题",
-    "maxTopicsError": "请选择不超过8个主题"
+    "maxTopicsError": "请选择不超过6个主题"
   },
 
   "profile": {

@@ -82,7 +82,7 @@ const CreateRoom = ({ user, onLogout }) => {
       return
     }
   
-    if (selectedTopics.length > 8) {
+    if (selectedTopics.length > 6) {
       setError(t('createRoom.maxTopicsError'))
       return
     }

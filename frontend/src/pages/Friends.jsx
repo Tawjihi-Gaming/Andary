@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import LegalFooter from '../components/LegalFooter'
@@ -18,7 +17,6 @@ import {
 
 const Friends = ({ user, onLogout }) => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   // Tab state: 'friends' | 'incoming' | 'sent'
   const [activeTab, setActiveTab] = useState('friends')

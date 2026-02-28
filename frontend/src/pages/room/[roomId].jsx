@@ -60,7 +60,6 @@ const GameRoom = ({ user }) => {
 
     const [connectionStatus, setConnectionStatus] = useState('connecting')
     const [players, setPlayers] = useState([])
-    const [gameState, setGameState] = useState(null)
     const [roomOwnerId, setRoomOwnerId] = useState(roomState.ownerId)
     const [roomOwnerName, setRoomOwnerName] = useState(roomState.ownerName)
     const [isReady, setIsReady] = useState(false)
@@ -221,7 +220,6 @@ const GameRoom = ({ user }) => {
                 // Game started
                 connection.on('GameStarted', (state) => {
                     console.log('Game started:', state)
-                    setGameState(state)
                     saveGameSessionSnapshot({ roomId, sessionId, user, state })
                     const syncedTimer = state?.answerTimeSeconds || timer
                     navigate(`/game/${roomId}`, {
@@ -237,7 +235,6 @@ const GameRoom = ({ user }) => {
                 // Choose round topic
                 connection.on('ChooseRoundTopic', (state) => {
                     console.log('Choose round topic:', state)
-                    setGameState(state)
                     saveGameSessionSnapshot({ roomId, sessionId, user, state })
                     const syncedTimer = state?.answerTimeSeconds || timer
                     navigate(`/game/${roomId}`, {
@@ -258,19 +255,16 @@ const GameRoom = ({ user }) => {
                 connection.on('ShowChoices', (payload) => {
                     const choices = Array.isArray(payload) ? payload : (payload?.choices || [])
                     console.log('Answer choices:', choices)
-                    setGameState(prev => ({ ...prev, choices }))
                 })
 
                 // Round ended
                 connection.on('RoundEnded', (state) => {
                     console.log('Round ended:', state)
-                    setGameState(state)
                 })
 
                 // Game ended
                 connection.on('GameEnded', (state) => {
                     console.log('Game ended:', state)
-                    setGameState(state)
                 })
 
                 // Ownership transferred
@@ -297,7 +291,6 @@ const GameRoom = ({ user }) => {
                 // Room state
                 connection.on('RoomState', (state) => {
                     console.log('Room state received:', state)
-                    setGameState(state)
                     if (state?.ownerSessionId) {
                         setRoomOwnerId(state.ownerSessionId)
                     }

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import LoginPage from './pages/LogginPage.jsx'
@@ -12,7 +12,6 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
 import TermsOfService from './pages/TermsOfService.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
-import api from './api/axios'
 import { logout as apiLogout, getMe } from './api/auth'
 import ThemeSwitcher from './components/ThemeSwitcher'
 

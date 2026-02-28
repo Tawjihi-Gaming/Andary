@@ -9,10 +9,6 @@ export const login = (email, password) =>
 
 //  Session 
 
-/* Refresh the JWT using the refresh-token cookie. */
-export const refreshToken = () =>
-  api.post('/auth/refresh-token')
-
 /** Get the currently authenticated player. */
 export const getMe = () =>
   api.get('/auth/me')

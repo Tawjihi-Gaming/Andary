@@ -541,16 +541,6 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
         }
     }, [roomId])
 
-    const handleNextRound = useCallback(async () => {
-        const conn = connRef.current
-        if (!conn) return
-        try {
-            await conn.invoke('NextRound', roomId)
-        } catch (error) {
-            console.error('Error advancing round:', error)
-        }
-    }, [roomId])
-
     const handleLeave = async () => {
         const conn = connRef.current
         if (conn) {

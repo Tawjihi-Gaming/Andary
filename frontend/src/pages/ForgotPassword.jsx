@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { forgotPassword as forgotPasswordApi } from '../api/auth'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const ForgotPassword = () => {
-  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'ar'
 

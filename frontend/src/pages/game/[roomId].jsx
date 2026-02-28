@@ -608,7 +608,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                                     <button
                                         key={topic}
                                         onClick={() => handleTopicSelect(topic)}
-                                        className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg"
+                                        className="bg-white/10 hover:bg-white/20 border cursor-pointer border-white/20 hover:border-white/40 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg"
                                     >
                                         {topic}
                                     </button>

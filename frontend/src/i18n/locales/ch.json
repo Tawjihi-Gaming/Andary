@@ -11,8 +11,6 @@
     "guest": "游客",
     "yes": "是",
     "no": "否",
-    "error": "错误",
-    "success": "成功",
     "close": "关闭",
     "join": "加入",
     "ready": "准备",
@@ -43,7 +41,6 @@
     "googleLoginError": "❌ 使用 Google 登录时发生错误。",
     "accountCreated": "✅ 账号创建成功！现在可以登录。",
     "loginSuccess": "✅ 登录成功！",
-    "authError": "发生错误。请重试。",
     "forgotPassword": "忘记密码？",
     "forgotPasswordTitle": "🔑 忘记密码",
     "forgotPasswordSubtitle": "输入你的邮箱，我们会发送重置链接。",
@@ -64,7 +61,6 @@
     "resetPasswordMinLength": "密码至少需要6个字符。",
     "resetPasswordMismatch": "两次输入的密码不一致。",
     "emailInUse": "❌ 电子邮箱已被使用。请使用不同的邮箱。",
-    "signupError": "创建账号失败。请重试。",
     "loginError": "登录失败。请检查凭据并重试。"
   },
 
@@ -97,12 +93,18 @@
     "logoutMessage": "你确定要退出登录吗？",
     "logoutTitle": "确认退出",
     "ok": "是",
-    "cancel": "否",
     "errorTitle": "错误",
     "roomFullError": "房间已满。你无法加入这个房间。",
     "roomNotFound": "房间未找到。请检查代码并重试。",
     "unableToJoin": "无法加入房间。请重试。",
-    "roomCodeError": "无效的房间代码"
+    "roomCodeError": "无效的房间代码",
+    "playerNameRequired": "玩家名称是必填的。",
+    "playerNotFound": "玩家未找到。",
+    "privateRoomCodeOnly": "私人房间只能通过房间代码加入。",
+    "provideCodeOrId": "请提供房间代码或房间 ID。",
+    "duplicateAccount": "该账户已在房间中。",
+    "duplicateGuest": "该游客会话已在房间中。",
+    "gameAlreadyStarted": "游戏已开始，无法加入房间。"
   },
 
   "createRoom": {
@@ -121,11 +123,13 @@
     "createButton": "创建房间",
     "noTopicsError": "没有数据库主题，无法创建房间",
     "selectTopicError": "请至少选择一个主题",
-    "maxTopicsError": "请选择不超过6个主题"
+    "maxTopicsError": "请选择不超过6个主题",
+    "noTopicsFound": "数据库中未找到主题。",
+    "loadTopicsFailed": "从数据库加载主题失败。",
+    "createFailed": "创建房间失败。请重试。"
   },
 
   "profile": {
-    "goBack": "← 返回",
     "title": "玩家资料",
     "changeAvatar": "✏️ 更换头像",
     "clickToChangeAvatar": "点击更换头像",
@@ -140,11 +144,8 @@
     "enterNewEmail": "输入新电子邮箱",
     "noEmail": "无电子邮箱（游客）",
     "changePassword": "🔒 更改",
-    "currentPassword": "当前密码",
     "newPassword": "新密码",
     "confirmPassword": "确认新密码",
-    "updatePassword": "更新密码",
-    "logoutButton": "退出登录",
     "usernameUpdated": "✅ 用户名已更新！",
     "usernameUpdateFailed": "❌ 用户名更新失败。",
     "emailUpdated": "✅ 电子邮箱已更新！",
@@ -157,6 +158,10 @@
     "passwordUpdated": "✅ 密码已更新！",
     "passwordUpdateFailed": "❌ 密码更新失败。",
     "googleEmailRestriction": "❌ Google 注册用户无法修改电子邮箱。",
+    "emailInUse": "❌ 该电子邮箱已被其他账户使用。",
+    "passwordSameAsCurrent": "❌ 新密码必须与当前密码不同。",
+    "oauthPasswordRestriction": "❌ 无法为 OAuth 用户更新密码。",
+    "passwordHashMissing": "❌ 密码哈希缺失，无法更新密码。",
     "gameHistory": "🎮 游戏记录",
     "noGameHistory": "还没有玩过游戏。",
     "rounds": "{{count}} 回合"
@@ -184,7 +189,11 @@
     "backToLobby": "返回大厅",
     "closedTitle": "房间已关闭",
     "closedFallbackMessage": "此房间已关闭。",
-    "reasonPrefix": "原因："
+    "reasonPrefix": "原因：",
+    "allPlayersLeft": "所有玩家已离开。",
+    "topicAddFailed": "添加主题失败。请重试。",
+    "gameStartError": "无法开始游戏。所选主题没有可用的题目。",
+    "topicSelectionFailed": "无法选择此主题。请确保轮到你并且有可用的题目。"
   },
 
   "game": {
@@ -207,12 +216,14 @@
       "empty": "请先填写一个假答案。",
       "cannotUseCorrectAnswer": "你不能把正确答案作为假答案提交。"
     },
+    "topicAddFailed": "添加主题失败。请重试。",
+    "gameError": "无法开始游戏。没有可用的题目。",
+    "topicSelectionFailed": "无法选择此主题。请确保轮到你并且有可用的题目。",
     "correctAnswerExplained": "解释：",
     "timeLeft": "剩余时间",
     "chooseCorrectAnswer": "从选项中选择正确答案：",
     "leaderboard": "🏆 排行榜",
     "correctAnswer": "正确答案：",
-    "nextRound": "下一回合 ➡️",
     "gameOver": "🏆 游戏结束！",
     "totalXp": "总计：{{xp}} XP",
     "winner": "获胜者：{{name}}",
@@ -227,7 +238,6 @@
   "friends": {
     "title": "好友",
     "subtitle": "管理好友和好友请求",
-    "backToLobby": "← 返回大厅",
     "addFriend": "➕ 添加好友",
     "enterPlayerId": "输入玩家 ID",
     "yourId": "你的玩家 ID",
@@ -256,18 +266,18 @@
     "removeFailed": "删除好友失败。",
     "invalidId": "❌ 请输入有效的玩家 ID。",
     "cannotAddSelf": "❌ 你不能添加自己为好友。",
+    "alreadyFriends": "你们已经是好友了。",
+    "playerNotFound": "玩家未找到。",
+    "alreadySent": "好友请求已发送。",
+    "pendingNotFound": "未找到待处理的请求。",
+    "requestNotFound": "未找到好友请求。",
+    "onlyReceiverCanAccept": "只有接收者才能接受此请求。",
+    "onlyReceiverCanReject": "只有接收者才能拒绝此请求。",
+    "noLongerPending": "请求不再待处理。",
+    "friendshipNotFound": "未找到友谊关系。",
+    "canOnlyRemoveOwn": "你只能删除自己的友谊关系。",
     "guestRestriction": "好友功能仅对注册玩家开放。",
     "navButton": "好友"
-  },
-
-  "testRoom": {
-    "title": "测试游戏房间",
-    "players": "玩家",
-    "testTools": "测试工具",
-    "addPlayer": "添加玩家",
-    "removePlayer": "移除玩家",
-    "copied": "已复制！",
-    "copyRoomCode": "复制房间代码"
   },
 
   "legal": {

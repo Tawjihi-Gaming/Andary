@@ -15,6 +15,25 @@ import {
   removeFriend,
 } from '../api/friends'
 
+const friendsErrorMap = {
+  'Cannot send a friend request to yourself': 'friends.cannotAddSelf',
+  'Already friends': 'friends.alreadyFriends',
+  'Player not found': 'friends.playerNotFound',
+  'Friend request already sent': 'friends.alreadySent',
+  'Pending request not found': 'friends.pendingNotFound',
+  'Friend request not found': 'friends.requestNotFound',
+  'Only the receiver can accept this request': 'friends.onlyReceiverCanAccept',
+  'Only the receiver can reject this request': 'friends.onlyReceiverCanReject',
+  'Request is no longer pending': 'friends.noLongerPending',
+  'Friendship not found': 'friends.friendshipNotFound',
+  'You can only remove your own friendships': 'friends.canOnlyRemoveOwn',
+}
+
+const mapFriendsError = (backendMsg, fallbackKey) => {
+  if (!backendMsg) return fallbackKey
+  return friendsErrorMap[backendMsg] || fallbackKey
+}
+
 const Friends = ({ user, onLogout }) => {
   const { t } = useTranslation()
 
@@ -88,8 +107,8 @@ const Friends = ({ user, onLogout }) => {
       setAddFriendId('')
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.requestFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.requestFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     } finally {
       setAddFriendLoading(false)
     }
@@ -102,8 +121,8 @@ const Friends = ({ user, onLogout }) => {
       showMessage(t('friends.requestAccepted'))
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.acceptFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.acceptFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     }
   }
 
@@ -114,8 +133,8 @@ const Friends = ({ user, onLogout }) => {
       showMessage(t('friends.requestRejected'))
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.rejectFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.rejectFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     }
   }
 
@@ -126,8 +145,8 @@ const Friends = ({ user, onLogout }) => {
       showMessage(t('friends.requestCanceled'))
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.cancelFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.cancelFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     }
   }
 
@@ -140,8 +159,8 @@ const Friends = ({ user, onLogout }) => {
       setRemovePopup({ open: false, friendshipId: null, name: '' })
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.removeFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.removeFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     }
   }
 

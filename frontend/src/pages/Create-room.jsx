@@ -42,13 +42,12 @@ const CreateRoom = ({ user, onLogout }) => {
         setAvailableTopics(normalizedTopics)
 
         if (normalizedTopics.length === 0) {
-          setTopicsError('No topics found in database.')
+          setTopicsError(t('createRoom.noTopicsFound'))
         }
       } catch (err) {
         console.error('Error fetching topics:', err)
         setAvailableTopics([])
-        const backendMsg = err?.response?.data?.details || err?.response?.data?.error || err?.message
-        setTopicsError(`Failed to load topics from database. ${backendMsg || ''}`.trim())
+        setTopicsError(t('createRoom.loadTopicsFailed'))
       } finally {
         setTopicsLoading(false)
       }
@@ -136,7 +135,7 @@ const CreateRoom = ({ user, onLogout }) => {
       })
     } catch (err) {
       console.error('Error creating room:', err)
-      setError('Failed to create room. Please try again.')
+      setError(t('createRoom.createFailed'))
     }
   }
 

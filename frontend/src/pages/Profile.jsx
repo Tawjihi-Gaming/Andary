@@ -11,6 +11,14 @@ const XP_PER_LEVEL = 100
 const getLevel = (xp) => Math.floor(xp / XP_PER_LEVEL) + 1
 const getProgress = (xp) => (xp % XP_PER_LEVEL)
 
+const profileErrorMap = {
+  'Email is already in use by another account': 'profile.emailInUse',
+  'Google-registered users cannot modify their email.': 'profile.googleEmailRestriction',
+  'New password must be different from the current password': 'profile.passwordSameAsCurrent',
+  "Can't update password for OAuth user": 'profile.oauthPasswordRestriction',
+  'Password hash missing, cannot update password': 'profile.passwordHashMissing',
+}
+
 const Profile = ({ user, onLogout, onUpdateUser }) => {
   const { t } = useTranslation()
 
@@ -140,7 +148,8 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     catch (error)
     {
       console.error('Update username error:', error)
-      const msg = error.response?.data?.msg || t('profile.usernameUpdateFailed')
+      const backendMsg = error.response?.data?.msg || ''
+      const msg = profileErrorMap[backendMsg] ? t(profileErrorMap[backendMsg]) : t('profile.usernameUpdateFailed')
       showMessage(msg, 'error')
     }
     finally
@@ -166,7 +175,8 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     catch (error)
     {
       console.error('Update email error:', error)
-      const msg = error.response?.data?.msg || t('profile.emailUpdateFailed')
+      const backendMsg = error.response?.data?.msg || ''
+      const msg = profileErrorMap[backendMsg] ? t(profileErrorMap[backendMsg]) : t('profile.emailUpdateFailed')
       showMessage(msg, 'error')
     }
     finally
@@ -188,7 +198,8 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     catch (error)
     {
       console.error('Update avatar error:', error)
-      const msg = error.response?.data?.msg || t('profile.avatarUpdateFailed')
+      const backendMsg = error.response?.data?.msg || ''
+      const msg = profileErrorMap[backendMsg] ? t(profileErrorMap[backendMsg]) : t('profile.avatarUpdateFailed')
       showMessage(msg, 'error')
     }
     finally
@@ -227,7 +238,8 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     catch (error)
     {
       console.error('Update password error:', error)
-      const msg = error.response?.data?.msg || t('profile.passwordUpdateFailed')
+      const backendMsg = error.response?.data?.msg || ''
+      const msg = profileErrorMap[backendMsg] ? t(profileErrorMap[backendMsg]) : t('profile.passwordUpdateFailed')
       showMessage(msg, 'error')
     }
     finally

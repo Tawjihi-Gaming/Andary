@@ -7,6 +7,24 @@ import LegalFooter from '../components/LegalFooter'
 import Navbar from '../components/Navbar.jsx'
 import GamePopup from '../components/GamePopup'
 
+const lobbyErrorMap = {
+  'Player name is required.': 'lobby.playerNameRequired',
+  'Player not found.': 'lobby.playerNotFound',
+  'Private rooms can only be joined using the room code.': 'lobby.privateRoomCodeOnly',
+  'Provide a room code or room ID.': 'lobby.provideCodeOrId',
+  'This account is already in the room.': 'lobby.duplicateAccount',
+  'This guest session is already in the room.': 'lobby.duplicateGuest',
+  'Unable to join room after the game has started.': 'lobby.gameAlreadyStarted',
+  'Invalid room code.': 'lobby.roomCodeError',
+  'Room not found.': 'lobby.roomNotFound',
+}
+
+const mapLobbyError = (backendMsg, fallbackKey) => {
+  if (!backendMsg) return fallbackKey
+  if (backendMsg.toLowerCase().includes('full')) return 'lobby.roomFullError'
+  return lobbyErrorMap[backendMsg] || fallbackKey
+}
+
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -125,10 +143,9 @@ const Lobby = ({ user, onLogout }) => {
     } catch (err) {
       if (err?.response?.status === 404) {
         setJoinError(t('lobby.roomNotFound'))
-      } else if (err?.response?.data?.error?.toLowerCase()?.includes('full')) {
-        setJoinError(t('lobby.roomFullError'))
       } else {
-        setJoinError(err?.response?.data?.error || t('lobby.unableToJoin'))
+        const key = mapLobbyError(err?.response?.data?.error, 'lobby.unableToJoin')
+        setJoinError(t(key))
       }
     }
   }
@@ -190,14 +207,11 @@ const Lobby = ({ user, onLogout }) => {
         })
       } catch (err) {
         //console.error('Error joining room:', err)
-        if (err?.response?.data?.error?.toLowerCase()?.includes('full')) {
-          setJoinError(t('lobby.roomFullError'))
-        } else if (err?.response?.status === 404) {
+        if (err?.response?.status === 404) {
           setJoinError(t('lobby.roomNotFound'))
-        } else if (err?.response?.data?.error?.toLowerCase()?.includes('code')) {
-          setJoinError(t('lobby.roomCodeError'))
         } else {
-          setJoinError(err?.response?.data?.error || t('lobby.unableToJoin'))
+          const key = mapLobbyError(err?.response?.data?.error, 'lobby.unableToJoin')
+          setJoinError(t(key))
         }
       }
     }

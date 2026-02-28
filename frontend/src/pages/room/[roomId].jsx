@@ -64,6 +64,7 @@ const GameRoom = ({ user }) => {
     const [roomOwnerName, setRoomOwnerName] = useState(roomState.ownerName)
     const [isReady, setIsReady] = useState(false)
     const [isCopied, setIsCopied] = useState(false)
+    const [roomError, setRoomError] = useState('')
     const [closedRoomPopup, setClosedRoomPopup] = useState({
         open: false,
         message: '',
@@ -313,13 +314,25 @@ const GameRoom = ({ user }) => {
                     }
                 })
 
+                connection.on('TopicAddFailed', () => {
+                    setRoomError(t('room.topicAddFailed'))
+                })
+
+                connection.on('GameError', () => {
+                    setRoomError(t('room.gameStartError'))
+                })
+
+                connection.on('TopicSelectionFailed', () => {
+                    setRoomError(t('room.topicSelectionFailed'))
+                })
+
                 // Room closed
                 connection.on('RoomClosed', (data) => {
                     console.log('Room closed:', data)
                     setClosedRoomPopup({
                         open: true,
-                        message: data?.message || t('room.closedFallbackMessage'),
-                        reason: data?.reason || '',
+                        message: t('room.closedFallbackMessage'),
+                        reason: data?.reason ? t('room.allPlayersLeft') : '',
                     })
                 })
 
@@ -365,6 +378,9 @@ const GameRoom = ({ user }) => {
                 conn.off('PlayerDisconnected')
                 conn.off('RoomState')
                 conn.off('GameStateSync')
+                conn.off('TopicAddFailed')
+                conn.off('GameError')
+                conn.off('TopicSelectionFailed')
                 conn.off('RoomClosed')
             }
         }
@@ -393,6 +409,15 @@ const GameRoom = ({ user }) => {
                          t('room.connecting')}
                     </span>
                 </div>
+
+                {/* Room Error */}
+                {roomError && (
+                    <div className="mb-4 sm:mb-6 flex justify-center">
+                        <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                            ❌ {roomError}
+                        </span>
+                    </div>
+                )}
 
                 {/* Players List */}
                 <div className="mb-4 sm:mb-6">

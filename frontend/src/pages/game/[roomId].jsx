@@ -63,6 +63,15 @@ const getSecondsLeftFromDeadline = (deadlineUtc) => {
 const PHASE_DURATION_SECONDS = 15
 const TIMED_PHASES = ['topic-selection', 'collecting-fakes', 'choosing-answer', 'round-result']
 
+const fakeAnswerErrorMap = {
+    'مرحلة الإجابات المزيفة انتهت.': 'game.fakeAnswerErrors.phaseEnded',
+    'تعذر التعرف على اللاعب.': 'game.fakeAnswerErrors.playerUnrecognized',
+    'اللاعب غير موجود في الغرفة.': 'game.fakeAnswerErrors.playerNotInRoom',
+    'لا يوجد سؤال حالي.': 'game.fakeAnswerErrors.noCurrentQuestion',
+    'اكتب إجابة مزيفة أولاً.': 'game.fakeAnswerErrors.empty',
+    'لا يمكنك إرسال الإجابة الصحيحة كإجابة مزيفة.': 'game.fakeAnswerErrors.cannotUseCorrectAnswer',
+}
+
 const Game = ({ user: authenticatedUser, onUpdateUser }) => {
     const { roomId } = useParams()
     const location = useLocation()
@@ -410,6 +419,18 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
             // No game-page behavior depends on owner identity, but registering avoids client warnings.
             conn.on('OwnershipTransferred', () => {})
 
+            conn.on('TopicAddFailed', (data) => {
+                setMessage(t('game.topicAddFailed'))
+            })
+
+            conn.on('GameError', (data) => {
+                setMessage(t('game.gameError'))
+            })
+
+            conn.on('TopicSelectionFailed', (data) => {
+                setMessage(t('game.topicSelectionFailed'))
+            })
+
             conn.on('RoomClosed', () => {
                 setPhase('finished')
                 setRoundResult(null)
@@ -457,6 +478,9 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 conn.off('PlayerLeft')
                 conn.off('PlayerDisconnected')
                 conn.off('OwnershipTransferred')
+                conn.off('TopicAddFailed')
+                conn.off('GameError')
+                conn.off('TopicSelectionFailed')
                 conn.off('RoomClosed')
             }
         }
@@ -511,11 +535,8 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 setMessage('')
                 setHasSubmittedFake(false)
                 const backendMessage = typeof result?.message === 'string' ? result.message.trim() : ''
-                const resolvedTranslation = backendMessage ? t(backendMessage, { defaultValue: '' }) : ''
-                const translatedError =
-                    resolvedTranslation && resolvedTranslation !== backendMessage
-                        ? resolvedTranslation
-                        : t('game.fakeAnswerError')
+                const mappedKey = fakeAnswerErrorMap[backendMessage]
+                const translatedError = mappedKey ? t(mappedKey) : t('game.fakeAnswerError')
                 setFakeSubmitError(translatedError)
                 return
             }

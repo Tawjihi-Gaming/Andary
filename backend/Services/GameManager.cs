@@ -31,6 +31,17 @@ public class LeaveRoomResult
     public string? NewOwnerName { get; set; }
 }
 
+// Per-player XP data returned by SaveGameSession for targeted delivery.
+public class XpAwardResult
+{
+    public string ConnectionId { get; set; } = "";
+    public int PlayerId { get; set; }
+    public int XpAwarded { get; set; }
+    public int TotalXp { get; set; }
+    public int FinalScore { get; set; }
+    public int FinalRank { get; set; }
+}
+
 public class GameManager
 {
     public const int OwnerDisconnectGraceSeconds = 10;
@@ -803,12 +814,10 @@ public class GameManager
     }
 
     // Save game session and participants to database.
-    // Only saves GameParticipant records for logged-in players (those with a PlayerId).
-    // Anonymous/guest players' scores are shown in-game but not persisted.
-    // XP is awarded from score with rank scaling:
-    // XP = P * (1 + alpha * (n - r) / (n - 1)), alpha = 0.5
-    public async Task SaveGameSession(Room room)
+    // Returns per-player XP data for logged-in players so the hub can send targeted messages.
+    public async Task<List<XpAwardResult>> SaveGameSession(Room room)
     {
+        var xpResults = new List<XpAwardResult>();
         AppDbContext context;
         IServiceScope? scope = null;
 
@@ -848,7 +857,7 @@ public class GameManager
                 };
                 context.GameParticipants.Add(participant);
 
-                // Update the player's total XP in the database
+                // Calculate and persist XP
                 var dbPlayer = await context.Players.FindAsync(rankedPlayer.SessionPlayer.PlayerId.Value);
                 if (dbPlayer != null)
                 {
@@ -857,6 +866,16 @@ public class GameManager
                         rankedPlayers.Count,
                         rankedPlayer.Rank);
                     dbPlayer.Xp += xpAward;
+
+                    xpResults.Add(new XpAwardResult
+                    {
+                        ConnectionId = rankedPlayer.SessionPlayer.ConnectionId,
+                        PlayerId = rankedPlayer.SessionPlayer.PlayerId.Value,
+                        XpAwarded = xpAward,
+                        TotalXp = dbPlayer.Xp,
+                        FinalScore = rankedPlayer.SessionPlayer.Score,
+                        FinalRank = rankedPlayer.Rank
+                    });
                 }
             }
 
@@ -866,6 +885,8 @@ public class GameManager
         {
             scope?.Dispose();
         }
+
+        return xpResults;
     }
 
     private static int CalculateXpAward(int scorePoints, int totalPlayers, int rank)

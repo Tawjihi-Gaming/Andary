@@ -59,6 +59,25 @@ public class GameHub : Hub
         }
     }
 
+    // Send targeted XP awards to each logged-in player before the group broadcast.
+    private async Task SendXpAwarded(List<XpAwardResult> xpResults, CancellationToken cancellationToken = default)
+    {
+        foreach (var result in xpResults)
+        {
+            if (string.IsNullOrWhiteSpace(result.ConnectionId))
+                continue;
+
+            await _hubContext.Clients.Client(result.ConnectionId).SendAsync("XpAwarded", new
+            {
+                playerId = result.PlayerId,
+                xpAwarded = result.XpAwarded,
+                totalXp = result.TotalXp,
+                finalScore = result.FinalScore,
+                finalRank = result.FinalRank
+            }, cancellationToken);
+        }
+    }
+
     private void SyncPhaseTimer(string roomId, Room room)
     {
         CancelPhaseTimer(roomId);
@@ -116,9 +135,11 @@ public class GameHub : Hub
         }
 
         var endedState = _game.GetGameState(room);
-        await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
         CancelPhaseTimer(roomId);
-        await _game.SaveGameSession(room);
+        // Persist XP and send targeted awards before the final broadcast.
+        var xpResults = await _game.SaveGameSession(room);
+        await SendXpAwarded(xpResults, cancellationToken);
+        await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
     }
 
     private async Task HandlePhaseTimeout(string roomId, CancellationToken cancellationToken)
@@ -148,10 +169,11 @@ public class GameHub : Hub
 
             room.Phase = GamePhase.GameEnded;
             _game.RefreshPhaseDeadline(room);
+            CancelPhaseTimer(roomId);
+            var xpResultsTopic = await _game.SaveGameSession(room);
+            await SendXpAwarded(xpResultsTopic, cancellationToken);
             var endedState = _game.GetGameState(room);
             await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
-            CancelPhaseTimer(roomId);
-            await _game.SaveGameSession(room);
             return;
         }
 
@@ -236,9 +258,10 @@ public class GameHub : Hub
             room.Phase = GamePhase.GameEnded;
             _game.RefreshPhaseDeadline(room);
             CancelPhaseTimer(roomId);
+            var xpResults = await _game.SaveGameSession(room);
+            await SendXpAwarded(xpResults);
             var endedState = _game.GetGameState(room);
             await Clients.Group(roomId).SendAsync("GameEnded", endedState);
-            await _game.SaveGameSession(room);
             return;
         }
 

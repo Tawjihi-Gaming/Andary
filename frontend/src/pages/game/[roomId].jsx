@@ -653,6 +653,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                                     e.preventDefault()
                                     handleSubmitFake()
                                 }}
+                                className="flex flex-col gap-4"
                             >
                             <input
                                 type="text"

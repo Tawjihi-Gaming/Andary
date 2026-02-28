@@ -648,6 +648,12 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                         <p className="text-green-300 text-center text-base sm:text-lg font-bold">✅ {message}</p>
                     ) : (
                         <div className="flex flex-col gap-4">
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault()
+                                    handleSubmitFake()
+                                }}
+                            >
                             <input
                                 type="text"
                                 value={fakeAnswer}
@@ -659,10 +665,11 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                             <button
                                 onClick={handleSubmitFake}
                                 disabled={!fakeAnswer.trim()}
-                                className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="bg-white/10 hover:bg-white/20 max-w-full w-full border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 {t('common.send')}
                             </button>
+                            </form>
                             {fakeSubmitError && (
                                 <p className="text-red-300 text-center font-semibold">{fakeSubmitError}</p>
                             )}
@@ -697,7 +704,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                             <button
                                 key={i}
                                 onClick={() => { setSelectedAnswerIndex(i); handleChooseAnswer(choice) }}
-                                className={`border font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base ${
+                                className={`border font-semibold py-2.5 sm:py-3 px-4 sm:px-6 cursor-pointer hover:bg-game-yellow/10 rounded-xl transition-all duration-300 text-sm sm:text-base ${
                                     selectedAnswerIndex === i
                                         ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
                                         : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
@@ -798,7 +805,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                     </div>
                     <button
                         onClick={handleRequestLeave}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20"
+                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 cursor-pointer rounded-2xl transition-all duration-300 border border-white/20"
                     >
                         {t('game.backToLobby')}
                     </button>

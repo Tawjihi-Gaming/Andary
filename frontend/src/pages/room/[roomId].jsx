@@ -434,7 +434,7 @@ const GameRoom = ({ user }) => {
                 {canCopyCode && (
                     <button
                         onClick={handleCopyCode}
-                        className="mt-4 cursor-pointer sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        className="mt-4 cursor-pointer sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:text-yellow-100 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                     >
                         {isCopied ? (
                             <>
@@ -462,7 +462,7 @@ const GameRoom = ({ user }) => {
                                 disabled={!allPlayersReady}
                                 className={`mt-3 sm:mt-4 w-full font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 ${
                                     allPlayersReady
-                                        ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                                        ? 'bg-blue-500 hover:bg-blue-600 text-white hover:text-yellow-100 cursor-pointer'
                                         : 'bg-gray-500/30 text-white/40 cursor-not-allowed'
                                 }`}
                             >
@@ -477,7 +477,7 @@ const GameRoom = ({ user }) => {
                             {!isReady ? (
                                 <button
                                     onClick={handleReadyUp}
-                                    className="mt-3 cursor-pointer sm:mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
+                                    className="mt-3 cursor-pointer sm:mt-4 w-full bg-green-500 hover:bg-green-600 text-white hover:text-yellow-100 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
                                 >
                                     {t('common.ready')}
                                 </button>
@@ -489,7 +489,7 @@ const GameRoom = ({ user }) => {
                                     </div>
                                     <button
                                         onClick={handleUnready}
-                                        className="mt-3 cursor-pointer sm:mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-2 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-red-500/30"
+                                        className="mt-3 cursor-pointer sm:mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 font-bold py-2 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-red-500/30"
                                     >
                                         {t('room.cancelReady')}
                                     </button>
@@ -503,7 +503,7 @@ const GameRoom = ({ user }) => {
                 {/* Back Button */}
                 <button
                     onClick={handleBackToLobby}
-                    className="mt-4 cursor-pointer sm:mt-6 w-full bg-white/5 hover:bg-white/10 text-white/90 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+                    className="mt-4 cursor-pointer sm:mt-6 w-full bg-white/5 hover:bg-white/10 text-white/90 hover:text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
                 >
                     {t('room.backToLobby')}
                 </button>

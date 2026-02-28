@@ -231,8 +231,8 @@ const Lobby = ({ user, onLogout }) => {
                 <span className="text-2xl sm:text-3xl pt-2">➕</span>
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{t('lobby.createRoom')}</h3>
-                <p className="text-white/50 text-xs sm:text-sm">{t('lobby.createRoomSub')}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-game-yellow mb-1 transition-colors">{t('lobby.createRoom')}</h3>
+                <p className="text-white/50 group-hover:text-white/70 text-xs sm:text-sm transition-colors">{t('lobby.createRoomSub')}</p>
               </div>
             </div>
           </button>
@@ -248,8 +248,8 @@ const Lobby = ({ user, onLogout }) => {
                 <span className="text-2xl sm:text-3xl pt-2">🔗</span>
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{t('lobby.joinByCode')}</h3>
-                <p className="text-white/50 text-xs sm:text-sm">{t('lobby.joinByCodeSub')}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-game-cyan mb-1 transition-colors">{t('lobby.joinByCode')}</h3>
+                <p className="text-white/50 group-hover:text-white/70 text-xs sm:text-sm transition-colors">{t('lobby.joinByCodeSub')}</p>
               </div>
             </div>
           </button>
@@ -382,14 +382,14 @@ const Lobby = ({ user, onLogout }) => {
                   setShowJoinModal(false)
                   setRoomCode('')
                 }}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white/70 font-bold py-3.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold py-3.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleJoinSubmit}
                 disabled={!roomCode.trim()}
-                className="flex-1 bg-linear-to-r from-game-cyan to-game-blue hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-game-cyan/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                className="flex-1 bg-linear-to-r from-game-cyan to-game-blue hover:from-cyan-400 hover:to-blue-500 text-white hover:text-yellow-100 font-bold py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-game-cyan/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {t('common.join')}
               </button>

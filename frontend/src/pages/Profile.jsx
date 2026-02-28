@@ -297,13 +297,13 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   <button
                     onClick={handleUpdateAvatar}
                     disabled={loading}
-                    className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
+                    className="bg-game-green hover:bg-green-600 text-white hover:text-yellow-100 font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                   >
                     {loading ? '...' : t('common.save')}
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
+                    className="bg-white/10 hover:bg-white/20 text-white hover:text-game-yellow font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                   >
                     {t('common.cancel')}
                   </button>
@@ -358,13 +358,13 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                     <button
                       onClick={handleUpdateUsername}
                       disabled={loading}
-                      className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
+                      className="bg-game-green hover:bg-green-600 text-white hover:text-yellow-100 font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                     >
                       {loading ? '...' : t('common.save')}
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
+                      className="bg-white/10 hover:bg-white/20 text-white hover:text-game-yellow font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                     >
                       {t('common.cancel')}
                     </button>
@@ -401,13 +401,13 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                     <button
                       onClick={handleUpdateEmail}
                       disabled={loading}
-                      className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
+                      className="bg-game-green hover:bg-green-600 text-white hover:text-yellow-100 font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                     >
                       {loading ? '...' : t('common.save')}
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
+                      className="bg-white/10 hover:bg-white/20 text-white hover:text-game-yellow font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                     >
                       {t('common.cancel')}
                     </button>
@@ -457,13 +457,13 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                       <button
                         onClick={handleUpdatePassword}
                         disabled={loading}
-                        className="bg-game-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
+                        className="bg-game-green hover:bg-green-600 text-white hover:text-yellow-100 font-bold py-2 px-6 rounded-xl transition-all text-sm disabled:opacity-50 cursor-pointer"
                       >
                         {loading ? '...' : t('common.save')}
                       </button>
                       <button
                         onClick={handleCancel}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
+                        className="bg-white/10 hover:bg-white/20 text-white hover:text-game-yellow font-bold py-2 px-6 rounded-xl transition-all text-sm cursor-pointer"
                       >
                         {t('common.cancel')}
                       </button>

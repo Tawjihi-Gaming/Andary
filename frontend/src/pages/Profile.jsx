@@ -332,6 +332,16 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           {/* USER INFO FIELDS */}
           <div className="space-y-4 max-w-md mx-auto">
 
+            {/* Player ID field */}
+            {!user?.isGuest && (
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.playerId')}</label>
+                <div className="flex items-center justify-between">
+                  <span className="text-white text-lg font-semibold">{user?.id}</span>
+                </div>
+              </div>
+            )}
+
             {/* Username field */}
             <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
               <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.username')}</label>

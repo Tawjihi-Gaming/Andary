@@ -147,9 +147,12 @@ const Auth = ({ onLogin }) => {
     }
     catch (error)
     {
-      console.error('Auth error:', error)
-      const errorMsg = error.response?.data?.msg || t('auth.authError')
-      showMessage(`❌ ${errorMsg}`, 'error')
+      if(error.response?.data?.msg === 'Email already used' || error.response?.data?.msg === 'Email is already in use') {
+        showMessage(t('auth.emailInUse'), 'error')
+      }
+      else{
+        showMessage(t('auth.loginError'), 'error')
+      }
     }
     finally
     {

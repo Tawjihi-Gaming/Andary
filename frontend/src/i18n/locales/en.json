@@ -11,8 +11,6 @@
     "guest": "Guest",
     "yes": "Yes",
     "no": "No",
-    "error": "Error",
-    "success": "Success",
     "close": "Close",
     "join": "Join",
     "ready": "Ready",
@@ -43,7 +41,6 @@
     "googleLoginError": "❌ An error occurred during Google login.",
     "accountCreated": "✅ Account created successfully! You can now sign in.",
     "loginSuccess": "✅ Logged in successfully!",
-    "authError": "An error occurred. Please try again.",
     "forgotPassword": "Forgot password?",
     "forgotPasswordTitle": "🔑 Forgot Password",
     "forgotPasswordSubtitle": "Enter your email and we will send you a reset link.",
@@ -64,7 +61,6 @@
     "resetPasswordMinLength": "Password must be at least 6 characters.",
     "resetPasswordMismatch": "Passwords do not match.",
     "emailInUse": "❌ Email is already in use. Please use a different email.",
-    "signupError": "Failed to create account. Please try again.",
     "loginError": "Failed to log in. Please check your credentials and try again."
   },
 
@@ -97,12 +93,18 @@
     "logoutMessage": "Are you sure you want to logout?",
     "logoutTitle": "Confirm Logout",
     "ok": "Yes",
-    "cancel": "No",
     "errorTitle": "Error",
     "roomFullError": "Room is full. You cannot join this room.",
     "roomNotFound": "Room not found. Please check the code and try again.",
     "unableToJoin": "Unable to join room. Please try again.",
-    "roomCodeError": "Invalid room code"
+    "roomCodeError": "Invalid room code",
+    "playerNameRequired": "Player name is required.",
+    "playerNotFound": "Player not found.",
+    "privateRoomCodeOnly": "Private rooms can only be joined using the room code.",
+    "provideCodeOrId": "Please provide a room code or room ID.",
+    "duplicateAccount": "This account is already in the room.",
+    "duplicateGuest": "This guest session is already in the room.",
+    "gameAlreadyStarted": "Unable to join room after the game has started."
   },
 
   "createRoom": {
@@ -121,11 +123,13 @@
     "createButton": "Create Room",
     "noTopicsError": "Cannot create room without database topics",
     "selectTopicError": "Please select at least one topic",
-    "maxTopicsError": "Please select no more than 6 topics"
+    "maxTopicsError": "Please select no more than 6 topics",
+    "noTopicsFound": "No topics found in database.",
+    "loadTopicsFailed": "Failed to load topics from database.",
+    "createFailed": "Failed to create room. Please try again."
   },
 
   "profile": {
-    "goBack": "← Back",
     "title": "Player Profile",
     "changeAvatar": "✏️ Change Avatar",
     "clickToChangeAvatar": "Click to change avatar",
@@ -140,11 +144,8 @@
     "enterNewEmail": "Enter new email",
     "noEmail": "No email (Guest)",
     "changePassword": "🔒 Change",
-    "currentPassword": "Current Password",
     "newPassword": "New Password",
     "confirmPassword": "Confirm New Password",
-    "updatePassword": "Update Password",
-    "logoutButton": "Logout",
     "usernameUpdated": "✅ Username updated!",
     "usernameUpdateFailed": "❌ Failed to update username.",
     "emailUpdated": "✅ Email updated!",
@@ -157,6 +158,10 @@
     "passwordUpdated": "✅ Password updated!",
     "passwordUpdateFailed": "❌ Failed to update password.",
     "googleEmailRestriction": "❌ Google-registered users cannot modify their email.",
+    "emailInUse": "❌ Email is already in use by another account.",
+    "passwordSameAsCurrent": "❌ New password must be different from the current password.",
+    "oauthPasswordRestriction": "❌ Cannot update password for OAuth user.",
+    "passwordHashMissing": "❌ Password hash missing, cannot update password.",
     "gameHistory": "🎮 Game History",
     "noGameHistory": "No games played yet.",
     "rounds": "{{count}} rounds"
@@ -184,7 +189,11 @@
     "backToLobby": "Back to Lobby",
     "closedTitle": "Room Closed",
     "closedFallbackMessage": "This room has been closed.",
-    "reasonPrefix": "Reason:"
+    "reasonPrefix": "Reason:",
+    "allPlayersLeft": "All players left.",
+    "topicAddFailed": "Failed to add topic. Please try again.",
+    "gameStartError": "Unable to start the game. No questions available for the selected topics.",
+    "topicSelectionFailed": "Unable to select this topic. Ensure it is your turn and questions exist."
   },
 
   "game": {
@@ -207,12 +216,14 @@
       "empty": "Write a fake answer first.",
       "cannotUseCorrectAnswer": "You cannot submit the correct answer as a fake answer."
     },
+    "topicAddFailed": "Failed to add topic. Please try again.",
+    "gameError": "Unable to start the game. No questions available.",
+    "topicSelectionFailed": "Unable to select this topic. Ensure it is your turn and questions exist.",
     "correctAnswerExplained": "Explanation:",
     "timeLeft": "Time left",
     "chooseCorrectAnswer": "Choose the correct answer from the options:",
     "leaderboard": "🏆 Leaderboard",
     "correctAnswer": "Correct Answer:",
-    "nextRound": "Next Round ➡️",
     "gameOver": "🏆 Game Over!",
     "totalXp": "Total: {{xp}} XP",
     "winner": "Winner: {{name}}",
@@ -227,7 +238,6 @@
   "friends": {
     "title": "Friends",
     "subtitle": "Manage your friends and friend requests",
-    "backToLobby": "← Back to Lobby",
     "addFriend": "➕ Add Friend",
     "enterPlayerId": "Enter Player ID",
     "yourId": "Your Player ID",
@@ -256,6 +266,16 @@
     "removeFailed": "Failed to remove friend.",
     "invalidId": "❌ Please enter a valid Player ID.",
     "cannotAddSelf": "❌ You cannot add yourself as a friend.",
+    "alreadyFriends": "You are already friends.",
+    "playerNotFound": "Player not found.",
+    "alreadySent": "Friend request already sent.",
+    "pendingNotFound": "Pending request not found.",
+    "requestNotFound": "Friend request not found.",
+    "onlyReceiverCanAccept": "Only the receiver can accept this request.",
+    "onlyReceiverCanReject": "Only the receiver can reject this request.",
+    "noLongerPending": "Request is no longer pending.",
+    "friendshipNotFound": "Friendship not found.",
+    "canOnlyRemoveOwn": "You can only remove your own friendships.",
     "guestRestriction": "Friends feature is only available for registered players.",
     "navButton": "Friends"
   },

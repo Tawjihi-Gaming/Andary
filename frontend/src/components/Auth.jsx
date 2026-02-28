@@ -187,7 +187,7 @@ const Auth = ({ onLogin }) => {
         <button
           onClick={() => setActiveTab('guest')}
           className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-bold text-sm sm:text-base transition-all duration-300 ${
-            activeTab === 'guest' ? 'tab-active' : 'tab-inactive hover:bg-white/20'
+            activeTab === 'guest' ? 'tab-active' : 'tab-inactive hover:bg-white/20 hover:text-white'
           }`}
         >
           {t('auth.playAsGuest')}
@@ -195,7 +195,7 @@ const Auth = ({ onLogin }) => {
         <button
           onClick={() => setActiveTab('signin')}
           className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-bold text-sm sm:text-base transition-all duration-300 ${
-            activeTab === 'signin' ? 'tab-active' : 'tab-inactive hover:bg-white/20'
+            activeTab === 'signin' ? 'tab-active' : 'tab-inactive hover:bg-white/20 hover:text-white'
           }`}
         >
           {t('auth.signIn')}
@@ -243,7 +243,7 @@ const Auth = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4"
+            className="btn-game w-full bg-game-yellow text-gray-900 hover:text-black font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4"
           >
             {t('auth.startPlaying')}
           </button>
@@ -341,7 +341,7 @@ const Auth = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="btn-game w-full bg-game-yellow text-gray-900 hover:text-black font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? t('common.processing') : (isSignUp ? t('auth.createAccount') : t('auth.login'))}
@@ -359,7 +359,7 @@ const Auth = ({ onLogin }) => {
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="flex-1 bg-white hover:bg-gray-300 text-gray-800 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 font-medium shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 bg-white hover:bg-gray-300 text-gray-800 hover:text-gray-900 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 font-medium shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (

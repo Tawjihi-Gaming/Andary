@@ -7,6 +7,24 @@ import LegalFooter from '../components/LegalFooter'
 import Navbar from '../components/Navbar.jsx'
 import GamePopup from '../components/GamePopup'
 
+const lobbyErrorMap = {
+  'Player name is required.': 'lobby.playerNameRequired',
+  'Player not found.': 'lobby.playerNotFound',
+  'Private rooms can only be joined using the room code.': 'lobby.privateRoomCodeOnly',
+  'Provide a room code or room ID.': 'lobby.provideCodeOrId',
+  'This account is already in the room.': 'lobby.duplicateAccount',
+  'This guest session is already in the room.': 'lobby.duplicateGuest',
+  'Unable to join room after the game has started.': 'lobby.gameAlreadyStarted',
+  'Invalid room code.': 'lobby.roomCodeError',
+  'Room not found.': 'lobby.roomNotFound',
+}
+
+const mapLobbyError = (backendMsg, fallbackKey) => {
+  if (!backendMsg) return fallbackKey
+  if (backendMsg.toLowerCase().includes('full')) return 'lobby.roomFullError'
+  return lobbyErrorMap[backendMsg] || fallbackKey
+}
+
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -125,10 +143,9 @@ const Lobby = ({ user, onLogout }) => {
     } catch (err) {
       if (err?.response?.status === 404) {
         setJoinError(t('lobby.roomNotFound'))
-      } else if (err?.response?.data?.error?.toLowerCase()?.includes('full')) {
-        setJoinError(t('lobby.roomFullError'))
       } else {
-        setJoinError(err?.response?.data?.error || t('lobby.unableToJoin'))
+        const key = mapLobbyError(err?.response?.data?.error, 'lobby.unableToJoin')
+        setJoinError(t(key))
       }
     }
   }
@@ -190,14 +207,11 @@ const Lobby = ({ user, onLogout }) => {
         })
       } catch (err) {
         //console.error('Error joining room:', err)
-        if (err?.response?.data?.error?.toLowerCase()?.includes('full')) {
-          setJoinError(t('lobby.roomFullError'))
-        } else if (err?.response?.status === 404) {
+        if (err?.response?.status === 404) {
           setJoinError(t('lobby.roomNotFound'))
-        } else if (err?.response?.data?.error?.toLowerCase()?.includes('code')) {
-          setJoinError(t('lobby.roomCodeError'))
         } else {
-          setJoinError(err?.response?.data?.error || t('lobby.unableToJoin'))
+          const key = mapLobbyError(err?.response?.data?.error, 'lobby.unableToJoin')
+          setJoinError(t(key))
         }
       }
     }
@@ -231,8 +245,8 @@ const Lobby = ({ user, onLogout }) => {
                 <span className="text-2xl sm:text-3xl pt-2">➕</span>
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{t('lobby.createRoom')}</h3>
-                <p className="text-white/50 text-xs sm:text-sm">{t('lobby.createRoomSub')}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-game-yellow mb-1 transition-colors">{t('lobby.createRoom')}</h3>
+                <p className="text-white/50 group-hover:text-white/70 text-xs sm:text-sm transition-colors">{t('lobby.createRoomSub')}</p>
               </div>
             </div>
           </button>
@@ -248,8 +262,8 @@ const Lobby = ({ user, onLogout }) => {
                 <span className="text-2xl sm:text-3xl pt-2">🔗</span>
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{t('lobby.joinByCode')}</h3>
-                <p className="text-white/50 text-xs sm:text-sm">{t('lobby.joinByCodeSub')}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-game-cyan mb-1 transition-colors">{t('lobby.joinByCode')}</h3>
+                <p className="text-white/50 group-hover:text-white/70 text-xs sm:text-sm transition-colors">{t('lobby.joinByCodeSub')}</p>
               </div>
             </div>
           </button>
@@ -382,14 +396,14 @@ const Lobby = ({ user, onLogout }) => {
                   setShowJoinModal(false)
                   setRoomCode('')
                 }}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white/70 font-bold py-3.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold py-3.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleJoinSubmit}
                 disabled={!roomCode.trim()}
-                className="flex-1 bg-linear-to-r from-game-cyan to-game-blue hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-game-cyan/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                className="flex-1 bg-linear-to-r from-game-cyan to-game-blue hover:from-cyan-400 hover:to-blue-500 text-white hover:text-yellow-100 font-bold py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-game-cyan/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {t('common.join')}
               </button>

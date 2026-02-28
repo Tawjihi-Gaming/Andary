@@ -63,6 +63,15 @@ const getSecondsLeftFromDeadline = (deadlineUtc) => {
 const PHASE_DURATION_SECONDS = 15
 const TIMED_PHASES = ['topic-selection', 'collecting-fakes', 'choosing-answer', 'round-result']
 
+const fakeAnswerErrorMap = {
+    'مرحلة الإجابات المزيفة انتهت.': 'game.fakeAnswerErrors.phaseEnded',
+    'تعذر التعرف على اللاعب.': 'game.fakeAnswerErrors.playerUnrecognized',
+    'اللاعب غير موجود في الغرفة.': 'game.fakeAnswerErrors.playerNotInRoom',
+    'لا يوجد سؤال حالي.': 'game.fakeAnswerErrors.noCurrentQuestion',
+    'اكتب إجابة مزيفة أولاً.': 'game.fakeAnswerErrors.empty',
+    'لا يمكنك إرسال الإجابة الصحيحة كإجابة مزيفة.': 'game.fakeAnswerErrors.cannotUseCorrectAnswer',
+}
+
 const Game = ({ user: authenticatedUser, onUpdateUser }) => {
     const { roomId } = useParams()
     const location = useLocation()
@@ -157,12 +166,14 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
     }, [])
 
     // New round/new question: clear previous fake-answer UI state.
+    // Don't reset hasSubmittedFake here — it will be restored from server state on reconnect.
     useEffect(() => {
         if (phase === 'collecting-fakes') {
             setFakeAnswer('')
             setMessage('')
             setFakeSubmitError('')
-            setHasSubmittedFake(false)
+            // Only reset hasSubmittedFake if NOT already submitted on the server.
+            // On reconnect, the server sync will set it correctly before this runs.
         }
         if (phase === 'choosing-answer') {
             setSelectedAnswerIndex(null)
@@ -270,6 +281,8 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 setTopics(state.selectedTopics || [])
                 setCurrentTurn(state.currentPlayerSessionId)
                 applyTimerState(state)
+                // New round — reset fake submission state
+                setHasSubmittedFake(false)
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
@@ -284,6 +297,9 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                    // Reset fake submission state for new round
+                    const me = state.players.find(p => p.sessionId === sessionId)
+                    setHasSubmittedFake(!!me?.hasSubmittedFake)
                 }
                 setQuestion(state.currentQuestion?.questionText || null)
                 setChoices(state.choices || [])
@@ -346,7 +362,8 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
             // Server sends full current state on rejoin
             conn.on('GameStateSync', (state) => {
                 console.log('[Game] State synced after reconnect:', state)
-                setPhase(mapPhase(state.phase))
+                const mappedPhase = mapPhase(state.phase)
+                setPhase(mappedPhase)
                 setTopics(state.selectedTopics || [])
                 setSelectedTopic(state.currentRoundTopic)
                 setCurrentTurn(state.currentPlayerSessionId)
@@ -354,9 +371,21 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                    // Restore hasSubmittedFake from server player data on reconnect
+                    const me = state.players.find(p => p.sessionId === sessionId)
+                    if (me?.hasSubmittedFake) {
+                        setHasSubmittedFake(true)
+                        setMessage(t('game.fakeAnswerSent'))
+                    } else {
+                        setHasSubmittedFake(false)
+                    }
                 }
                 setQuestion(state.currentQuestion?.questionText || null)
                 setChoices(state.choices || [])
+                // Restore roundResult so the correct answer & explanation are visible
+                if (mappedPhase === 'round-result') {
+                    setRoundResult(state)
+                }
             })
 
             conn.on('PlayerLeft', (data) => {
@@ -389,6 +418,18 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
             // This event can be broadcast while the shared connection is on the game page.
             // No game-page behavior depends on owner identity, but registering avoids client warnings.
             conn.on('OwnershipTransferred', () => {})
+
+            conn.on('TopicAddFailed', (data) => {
+                setMessage(t('game.topicAddFailed'))
+            })
+
+            conn.on('GameError', (data) => {
+                setMessage(t('game.gameError'))
+            })
+
+            conn.on('TopicSelectionFailed', (data) => {
+                setMessage(t('game.topicSelectionFailed'))
+            })
 
             conn.on('RoomClosed', () => {
                 setPhase('finished')
@@ -437,6 +478,9 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 conn.off('PlayerLeft')
                 conn.off('PlayerDisconnected')
                 conn.off('OwnershipTransferred')
+                conn.off('TopicAddFailed')
+                conn.off('GameError')
+                conn.off('TopicSelectionFailed')
                 conn.off('RoomClosed')
             }
         }
@@ -491,11 +535,8 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 setMessage('')
                 setHasSubmittedFake(false)
                 const backendMessage = typeof result?.message === 'string' ? result.message.trim() : ''
-                const resolvedTranslation = backendMessage ? t(backendMessage, { defaultValue: '' }) : ''
-                const translatedError =
-                    resolvedTranslation && resolvedTranslation !== backendMessage
-                        ? resolvedTranslation
-                        : t('game.fakeAnswerError')
+                const mappedKey = fakeAnswerErrorMap[backendMessage]
+                const translatedError = mappedKey ? t(mappedKey) : t('game.fakeAnswerError')
                 setFakeSubmitError(translatedError)
                 return
             }
@@ -518,16 +559,6 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
             await conn.invoke('ChooseAnswer', roomId, answer)
         } catch (error) {
             console.error('Error choosing answer:', error)
-        }
-    }, [roomId])
-
-    const handleNextRound = useCallback(async () => {
-        const conn = connRef.current
-        if (!conn) return
-        try {
-            await conn.invoke('NextRound', roomId)
-        } catch (error) {
-            console.error('Error advancing round:', error)
         }
     }, [roomId])
 
@@ -608,7 +639,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                                     <button
                                         key={topic}
                                         onClick={() => handleTopicSelect(topic)}
-                                        className="bg-white/10 hover:bg-white/20 border cursor-pointer border-white/20 hover:border-white/40 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg"
+                                        className="bg-white/10 hover:bg-white/20 border cursor-pointer border-white/20 hover:border-white/40 text-white hover:text-game-yellow font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg"
                                     >
                                         {topic}
                                     </button>
@@ -666,7 +697,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                             <button
                                 onClick={handleSubmitFake}
                                 disabled={!fakeAnswer.trim()}
-                                className="bg-white/10 cursor-pointer hover:bg-white/20 max-w-full w-full border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="bg-white/10 cursor-pointer hover:bg-white/20 max-w-full w-full border border-white/20 hover:border-white/40 text-white hover:text-game-yellow font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 {t('common.send')}
                             </button>
@@ -708,7 +739,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                                 className={`border font-semibold py-2.5 sm:py-3 px-4 sm:px-6 cursor-pointer hover:bg-game-yellow/10 rounded-xl transition-all duration-300 text-sm sm:text-base ${
                                     selectedAnswerIndex === i
                                         ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
-                                        : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
+                                        : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white hover:text-game-yellow'
                                 }`}
                                 dir={getTextDirection(choice)}
                             >
@@ -812,7 +843,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                     </div>
                     <button
                         onClick={handleRequestLeave}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 cursor-pointer rounded-2xl transition-all duration-300 border border-white/20"
+                        className="bg-white/10 hover:bg-white/20 text-white hover:text-game-yellow font-bold py-3 px-8 cursor-pointer rounded-2xl transition-all duration-300 border border-white/20"
                     >
                         {t('game.backToLobby')}
                     </button>

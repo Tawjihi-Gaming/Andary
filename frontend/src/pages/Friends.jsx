@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import LegalFooter from '../components/LegalFooter'
@@ -16,9 +15,27 @@ import {
   removeFriend,
 } from '../api/friends'
 
+const friendsErrorMap = {
+  'Cannot send a friend request to yourself': 'friends.cannotAddSelf',
+  'Already friends': 'friends.alreadyFriends',
+  'Player not found': 'friends.playerNotFound',
+  'Friend request already sent': 'friends.alreadySent',
+  'Pending request not found': 'friends.pendingNotFound',
+  'Friend request not found': 'friends.requestNotFound',
+  'Only the receiver can accept this request': 'friends.onlyReceiverCanAccept',
+  'Only the receiver can reject this request': 'friends.onlyReceiverCanReject',
+  'Request is no longer pending': 'friends.noLongerPending',
+  'Friendship not found': 'friends.friendshipNotFound',
+  'You can only remove your own friendships': 'friends.canOnlyRemoveOwn',
+}
+
+const mapFriendsError = (backendMsg, fallbackKey) => {
+  if (!backendMsg) return fallbackKey
+  return friendsErrorMap[backendMsg] || fallbackKey
+}
+
 const Friends = ({ user, onLogout }) => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   // Tab state: 'friends' | 'incoming' | 'sent'
   const [activeTab, setActiveTab] = useState('friends')
@@ -90,8 +107,8 @@ const Friends = ({ user, onLogout }) => {
       setAddFriendId('')
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.requestFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.requestFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     } finally {
       setAddFriendLoading(false)
     }
@@ -104,8 +121,8 @@ const Friends = ({ user, onLogout }) => {
       showMessage(t('friends.requestAccepted'))
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.acceptFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.acceptFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     }
   }
 
@@ -116,8 +133,8 @@ const Friends = ({ user, onLogout }) => {
       showMessage(t('friends.requestRejected'))
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.rejectFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.rejectFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     }
   }
 
@@ -128,8 +145,8 @@ const Friends = ({ user, onLogout }) => {
       showMessage(t('friends.requestCanceled'))
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.cancelFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.cancelFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     }
   }
 
@@ -142,8 +159,8 @@ const Friends = ({ user, onLogout }) => {
       setRemovePopup({ open: false, friendshipId: null, name: '' })
       fetchAll()
     } catch (err) {
-      const msg = err?.response?.data?.msg || t('friends.removeFailed')
-      showMessage(`❌ ${msg}`, 'error')
+      const key = mapFriendsError(err?.response?.data?.msg, 'friends.removeFailed')
+      showMessage(`❌ ${t(key)}`, 'error')
     }
   }
 
@@ -157,7 +174,7 @@ const Friends = ({ user, onLogout }) => {
     `px-4 sm:px-6 py-2.5 rounded-2xl font-semibold text-sm transition-all duration-300 cursor-pointer ${
       activeTab === tab
         ? 'bg-game-purple/30 text-white border border-game-purple/50 shadow-lg shadow-game-purple/10'
-        : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+        : 'text-white/50 hover:text-white hover:bg-white/5'
     }`
 
     const handleFriendInputChange = (e) => {
@@ -215,7 +232,7 @@ const Friends = ({ user, onLogout }) => {
                 />
                 <button
                   disabled={addFriendLoading || !addFriendId.trim()}
-                  className="bg-linear-to-r from-game-purple to-game-blue hover:from-purple-400 hover:to-blue-500 text-white font-bold px-6 py-3 rounded-2xl transition-all duration-300 shadow-lg shadow-game-purple/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
+                  className="bg-linear-to-r from-game-purple to-game-blue hover:from-purple-400 hover:to-blue-500 text-white hover:text-yellow-100 font-bold px-6 py-3 rounded-2xl transition-all duration-300 shadow-lg shadow-game-purple/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
                 >
                   {addFriendLoading ? t('common.processing') : t('common.send')}
                 </button>
@@ -321,13 +338,13 @@ const Friends = ({ user, onLogout }) => {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleAccept(req.id)}
-                              className="bg-game-green/20 hover:bg-game-green/30 text-game-green font-semibold px-4 py-2 rounded-xl border border-game-green/30 transition-all duration-300 text-sm cursor-pointer"
+                              className="bg-game-green/20 hover:bg-game-green/30 text-game-green hover:text-green-300 font-semibold px-4 py-2 rounded-xl border border-game-green/30 transition-all duration-300 text-sm cursor-pointer"
                             >
                               {t('friends.accept')}
                             </button>
                             <button
                               onClick={() => handleReject(req.id)}
-                              className="bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold px-4 py-2 rounded-xl border border-red-500/20 transition-all duration-300 text-sm cursor-pointer"
+                              className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-semibold px-4 py-2 rounded-xl border border-red-500/20 transition-all duration-300 text-sm cursor-pointer"
                             >
                               {t('friends.reject')}
                             </button>

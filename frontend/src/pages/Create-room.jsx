@@ -42,13 +42,12 @@ const CreateRoom = ({ user, onLogout }) => {
         setAvailableTopics(normalizedTopics)
 
         if (normalizedTopics.length === 0) {
-          setTopicsError('No topics found in database.')
+          setTopicsError(t('createRoom.noTopicsFound'))
         }
       } catch (err) {
         console.error('Error fetching topics:', err)
         setAvailableTopics([])
-        const backendMsg = err?.response?.data?.details || err?.response?.data?.error || err?.message
-        setTopicsError(`Failed to load topics from database. ${backendMsg || ''}`.trim())
+        setTopicsError(t('createRoom.loadTopicsFailed'))
       } finally {
         setTopicsLoading(false)
       }
@@ -136,7 +135,7 @@ const CreateRoom = ({ user, onLogout }) => {
       })
     } catch (err) {
       console.error('Error creating room:', err)
-      setError('Failed to create room. Please try again.')
+      setError(t('createRoom.createFailed'))
     }
   }
 
@@ -181,15 +180,15 @@ const CreateRoom = ({ user, onLogout }) => {
                 className={`group relative p-3 sm:p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
                   !isPrivate
                     ? 'bg-gradient-to-br from-game-green/30 to-emerald-500/30 border-game-green/50 shadow-lg shadow-game-green/20'
-                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white'
                 }`}
               >
                 <div className="flex flex-col items-center gap-1 sm:gap-2">
                   <span className="text-2xl sm:text-4xl">🌍</span>
-                  <span className={`font-bold text-base sm:text-lg ${!isPrivate ? 'text-game-green' : 'text-white/70'}`}>
+                  <span className={`font-bold text-base sm:text-lg ${!isPrivate ? 'text-game-green' : 'text-white/70 group-hover:text-white'}`}>
                     {t('createRoom.public')}
                   </span>
-                  <span className={`text-xs sm:text-sm ${!isPrivate ? 'text-game-green/70' : 'text-white/60'}`}>
+                  <span className={`text-xs sm:text-sm ${!isPrivate ? 'text-game-green/70' : 'text-white/60 group-hover:text-white/80'}`}>
                     Public
                   </span>
                 </div>
@@ -209,15 +208,15 @@ const CreateRoom = ({ user, onLogout }) => {
                 className={`group relative p-3 sm:p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
                   isPrivate
                     ? 'bg-gradient-to-br from-game-orange/30 to-red-500/30 border-game-orange/50 shadow-lg shadow-game-orange/20'
-                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white'
                 }`}
               >
                 <div className="flex flex-col items-center gap-1 sm:gap-2">
                   <span className="text-2xl sm:text-4xl">🔒</span>
-                  <span className={`font-bold text-base sm:text-lg ${isPrivate ? 'text-game-orange' : 'text-white/70'}`}>
+                  <span className={`font-bold text-base sm:text-lg ${isPrivate ? 'text-game-orange' : 'text-white/70 group-hover:text-white'}`}>
                     {t('createRoom.private')}
                   </span>
-                  <span className={`text-xs sm:text-sm ${isPrivate ? 'text-game-orange/70' : 'text-white/60'}`}>
+                  <span className={`text-xs sm:text-sm ${isPrivate ? 'text-game-orange/70' : 'text-white/60 group-hover:text-white/80'}`}>
                     Private
                   </span>
                 </div>
@@ -288,7 +287,7 @@ const CreateRoom = ({ user, onLogout }) => {
                   className={`flex-1 px-3 py-2 sm:px-6 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-200 border-2 cursor-pointer ${
                     rounds === option
                       ? 'bg-game-yellow/20 border-game-yellow text-game-yellow shadow-lg shadow-game-yellow/20'
-                      : 'bg-white/5 border-white/10 text-white/90 hover:bg-white/10 hover:border-white/20'
+                      : 'bg-white/5 border-white/10 text-white/90 hover:bg-white/10 hover:border-white/20 hover:text-white'
                   }`}
                 >
                   {option} {t('common.rounds')}
@@ -331,7 +330,7 @@ const CreateRoom = ({ user, onLogout }) => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full cursor-pointer bg-gradient-to-r from-game-yellow to-game-orange hover:from-game-yellow hover:to-game-orange text-white font-bold py-4 sm:py-5 text-base sm:text-lg rounded-2xl transition-all duration-300 shadow-lg shadow-game-yellow/20 hover:shadow-game-yellow/30 hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full cursor-pointer bg-gradient-to-r from-game-yellow to-game-orange hover:from-game-yellow hover:to-game-orange text-white font-bold py-4 sm:py-5 text-base sm:text-lg rounded-2xl transition-all duration-300 shadow-lg shadow-game-yellow/20 hover:shadow-game-yellow/30 hover:scale-[1.02] hover:text-yellow-100 active:scale-[0.98]"
           >
             {t('createRoom.createButton')}
           </button>
@@ -340,7 +339,7 @@ const CreateRoom = ({ user, onLogout }) => {
           <button
             type="button"
             onClick={() => navigate('/lobby')}
-            className="w-full bg-white/5 hover:bg-white/10 text-white/90 font-bold py-3 sm:py-4 text-base sm:text-lg rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+            className="w-full cursor-pointer bg-white/5 hover:bg-white/10 text-white/90 hover:text-white font-bold py-3 sm:py-4 text-base sm:text-lg rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
           >
             {t('common.back')}
           </button>

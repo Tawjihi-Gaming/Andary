@@ -137,9 +137,11 @@ public class GameHub : Hub
         var endedState = _game.GetGameState(room);
         CancelPhaseTimer(roomId);
         // Persist XP and send targeted awards before the final broadcast.
+        // Use CancellationToken.None — the phase timer CTS we just cancelled may
+        // be the very token passed in, so reusing it would abort the final sends.
         var xpResults = await _game.SaveGameSession(room);
-        await SendXpAwarded(xpResults, cancellationToken);
-        await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
+        await SendXpAwarded(xpResults, CancellationToken.None);
+        await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, CancellationToken.None);
     }
 
     private async Task HandlePhaseTimeout(string roomId, CancellationToken cancellationToken)
@@ -170,10 +172,12 @@ public class GameHub : Hub
             room.Phase = GamePhase.GameEnded;
             _game.RefreshPhaseDeadline(room);
             CancelPhaseTimer(roomId);
+            // Use CancellationToken.None — cancellationToken originates from the
+            // phase-timer CTS we just cancelled above.
             var xpResultsTopic = await _game.SaveGameSession(room);
-            await SendXpAwarded(xpResultsTopic, cancellationToken);
+            await SendXpAwarded(xpResultsTopic, CancellationToken.None);
             var endedState = _game.GetGameState(room);
-            await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
+            await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, CancellationToken.None);
             return;
         }
 

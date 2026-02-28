@@ -666,7 +666,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                             <button
                                 onClick={handleSubmitFake}
                                 disabled={!fakeAnswer.trim()}
-                                className="bg-white/10 hover:bg-white/20 max-w-full w-full border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="bg-white/10 cursor-pointer hover:bg-white/20 max-w-full w-full border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 {t('common.send')}
                             </button>
@@ -744,6 +744,12 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                         <div className="mb-4 sm:mb-6 bg-white/10 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20">
                             <p className="text-white/60 text-xs sm:text-sm mb-1">{t('game.correctAnswer')}</p>
                             <p className="text-green-300 text-lg sm:text-xl font-bold" dir={getTextDirection(roundResult.currentQuestion.correctAnswer)}>{roundResult.currentQuestion.correctAnswer}</p>
+                            {roundResult.currentQuestion.explanation && (
+                                <div className="text-white/60 text-xs sm:text-sm mt-2">
+                                    <p className="font-bold mb-1">{t('game.correctAnswerExplained')}</p>
+                                    <p className="whitespace-pre-wrap" dir="auto">{roundResult.currentQuestion.explanation}</p>
+                                </div>
+                            )}
                         </div>
                     )}
 

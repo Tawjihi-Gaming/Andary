@@ -203,7 +203,7 @@
       "empty": "请先填写一个假答案。",
       "cannotUseCorrectAnswer": "你不能把正确答案作为假答案提交。"
     },
-    "correctAnswerExplained": "解释：{{explanation}}",
+    "correctAnswerExplained": "解释：",
     "timeLeft": "剩余时间",
     "chooseCorrectAnswer": "从选项中选择正确答案：",
     "leaderboard": "🏆 排行榜",

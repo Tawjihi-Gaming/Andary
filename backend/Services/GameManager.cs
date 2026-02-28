@@ -717,6 +717,13 @@ public class GameManager
         room.FakeAnswers.Clear();
         room.ChosenAnswers.Clear();
 
+        // Reset per-round gameplay flags for all players
+        foreach (var player in room.Players)
+        {
+            player.HasSubmittedFake = false;
+            player.HasChosenAnswer = false;
+        }
+
         // Randomly select next topic chooser (different from current when possible)
         if (room.Players.Count > 1)
         {

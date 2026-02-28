@@ -157,12 +157,14 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
     }, [])
 
     // New round/new question: clear previous fake-answer UI state.
+    // Don't reset hasSubmittedFake here — it will be restored from server state on reconnect.
     useEffect(() => {
         if (phase === 'collecting-fakes') {
             setFakeAnswer('')
             setMessage('')
             setFakeSubmitError('')
-            setHasSubmittedFake(false)
+            // Only reset hasSubmittedFake if NOT already submitted on the server.
+            // On reconnect, the server sync will set it correctly before this runs.
         }
         if (phase === 'choosing-answer') {
             setSelectedAnswerIndex(null)
@@ -270,6 +272,8 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 setTopics(state.selectedTopics || [])
                 setCurrentTurn(state.currentPlayerSessionId)
                 applyTimerState(state)
+                // New round — reset fake submission state
+                setHasSubmittedFake(false)
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
@@ -284,6 +288,9 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                    // Reset fake submission state for new round
+                    const me = state.players.find(p => p.sessionId === sessionId)
+                    setHasSubmittedFake(!!me?.hasSubmittedFake)
                 }
                 setQuestion(state.currentQuestion?.questionText || null)
                 setChoices(state.choices || [])
@@ -346,7 +353,8 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
             // Server sends full current state on rejoin
             conn.on('GameStateSync', (state) => {
                 console.log('[Game] State synced after reconnect:', state)
-                setPhase(mapPhase(state.phase))
+                const mappedPhase = mapPhase(state.phase)
+                setPhase(mappedPhase)
                 setTopics(state.selectedTopics || [])
                 setSelectedTopic(state.currentRoundTopic)
                 setCurrentTurn(state.currentPlayerSessionId)
@@ -354,9 +362,21 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                 if (state.players) {
                     setPlayers(state.players)
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
+                    // Restore hasSubmittedFake from server player data on reconnect
+                    const me = state.players.find(p => p.sessionId === sessionId)
+                    if (me?.hasSubmittedFake) {
+                        setHasSubmittedFake(true)
+                        setMessage(t('game.fakeAnswerSent'))
+                    } else {
+                        setHasSubmittedFake(false)
+                    }
                 }
                 setQuestion(state.currentQuestion?.questionText || null)
                 setChoices(state.choices || [])
+                // Restore roundResult so the correct answer & explanation are visible
+                if (mappedPhase === 'round-result') {
+                    setRoundResult(state)
+                }
             })
 
             conn.on('PlayerLeft', (data) => {

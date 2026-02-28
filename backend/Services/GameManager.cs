@@ -481,8 +481,6 @@ public class GameManager
     //start game — now uses all selected topics to filter questions
     public void StartGame(Room room, List<Question> questions)
     {
-        NotifyLobbiesChanged();
-
         room.Questions = questions;
         room.CurrentQuestionIndex = 0;
         room.TopicChooserIndex = Random.Shared.Next(room.Players.Count);
@@ -502,6 +500,7 @@ public class GameManager
             {
                 room.Phase = GamePhase.GameEnded;
                 RefreshPhaseDeadline(room);
+                NotifyLobbiesChanged();
                 return;
             }
 
@@ -515,6 +514,7 @@ public class GameManager
         }
 
         RefreshPhaseDeadline(room);
+        NotifyLobbiesChanged();
     }
 
     // Player selects the topic for the current round (only when multiple topics exist)

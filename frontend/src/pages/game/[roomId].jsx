@@ -63,7 +63,7 @@ const getSecondsLeftFromDeadline = (deadlineUtc) => {
 const PHASE_DURATION_SECONDS = 15
 const TIMED_PHASES = ['topic-selection', 'collecting-fakes', 'choosing-answer', 'round-result']
 
-const Game = ({ user: authenticatedUser }) => {
+const Game = ({ user: authenticatedUser, onUpdateUser }) => {
     const { roomId } = useParams()
     const location = useLocation()
     const navigate = useNavigate()
@@ -111,6 +111,8 @@ const Game = ({ user: authenticatedUser }) => {
         initialGameState?.answerTimeSeconds || initialAnswerTimeSeconds
     )
     const [phaseDeadlineUtc, setPhaseDeadlineUtc] = useState(initialGameState?.phaseDeadlineUtc || null)
+    // XP award received from server before GameEnded
+    const [xpAward, setXpAward] = useState(null)
     const [secondsLeft, setSecondsLeft] = useState(
         getSecondsLeftFromDeadline(initialGameState?.phaseDeadlineUtc)
     )
@@ -307,6 +309,21 @@ const Game = ({ user: authenticatedUser }) => {
                 }
             })
 
+            // Targeted XP award — arrives before GameEnded for logged-in players.
+            conn.on('XpAwarded', (data) => {
+                setXpAward(data)
+
+                // Sync to localStorage and App-level state
+                try {
+                    const stored = JSON.parse(localStorage.getItem('userData') || '{}')
+                    if (stored && typeof data.totalXp === 'number') {
+                        stored.xp = data.totalXp
+                        localStorage.setItem('userData', JSON.stringify(stored))
+                        if (onUpdateUser) onUpdateUser(stored)
+                    }
+                } catch { /* storage unavailable */ }
+            })
+
             conn.on('GameEnded', (state) => {
                 setPhase('finished')
                 clearSession() // Game over — clear saved session
@@ -413,6 +430,7 @@ const Game = ({ user: authenticatedUser }) => {
                 conn.off('GameStarted')
                 conn.off('ShowChoices')
                 conn.off('RoundEnded')
+                conn.off('XpAwarded')
                 conn.off('GameEnded')
                 conn.off('TurnChanged')
                 conn.off('GameStateSync')
@@ -765,6 +783,12 @@ const Game = ({ user: authenticatedUser }) => {
                 <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full max-w-2xl shadow-2xl text-center">
                     <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-3 sm:mb-4">{t('game.gameOver')}</h1>
                     {winner && <p className="text-yellow-300 text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{t('game.winner', { name: winner })}</p>}
+                    {xpAward && (
+                        <div className="mb-4 sm:mb-6 bg-game-yellow/10 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-game-yellow/30">
+                            <p className="text-game-yellow text-lg sm:text-xl font-bold">+{xpAward.xpAwarded} XP</p>
+                            <p className="text-white/60 text-xs sm:text-sm">{t('game.totalXp', { xp: xpAward.totalXp })}</p>
+                        </div>
+                    )}
                     <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
                         {players.map(p => (
                             <div key={p.sessionId} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white/10 text-white font-bold text-xs sm:text-sm">

@@ -211,7 +211,7 @@ function App() {
           path="/game/:roomId" 
           element={
             isAuthenticated ? 
-              <Game user={user} /> :
+              <Game user={user} onUpdateUser={handleUpdateUser} /> :
               <Navigate to="/" replace />
           } 
         />

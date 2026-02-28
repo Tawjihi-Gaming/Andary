@@ -210,6 +210,7 @@
     "correctAnswer": "Correct Answer:",
     "nextRound": "Next Round ➡️",
     "gameOver": "🏆 Game Over!",
+    "totalXp": "Total: {{xp}} XP",
     "winner": "Winner: {{name}}",
     "backToLobby": "Back to Lobby",
     "leaveRoom": "Leave Room",

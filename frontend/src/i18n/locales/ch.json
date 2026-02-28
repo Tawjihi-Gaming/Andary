@@ -210,6 +210,7 @@
     "correctAnswer": "正确答案：",
     "nextRound": "下一回合 ➡️",
     "gameOver": "🏆 游戏结束！",
+    "totalXp": "总计：{{xp}} XP",
     "winner": "获胜者：{{name}}",
     "backToLobby": "返回大厅",
     "leaveRoom": "离开房间",

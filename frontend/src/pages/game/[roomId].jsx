@@ -63,7 +63,7 @@ const getSecondsLeftFromDeadline = (deadlineUtc) => {
 const PHASE_DURATION_SECONDS = 15
 const TIMED_PHASES = ['topic-selection', 'collecting-fakes', 'choosing-answer', 'round-result']
 
-const Game = ({ user: authenticatedUser }) => {
+const Game = ({ user: authenticatedUser, onUpdateUser }) => {
     const { roomId } = useParams()
     const location = useLocation()
     const navigate = useNavigate()
@@ -111,6 +111,8 @@ const Game = ({ user: authenticatedUser }) => {
         initialGameState?.answerTimeSeconds || initialAnswerTimeSeconds
     )
     const [phaseDeadlineUtc, setPhaseDeadlineUtc] = useState(initialGameState?.phaseDeadlineUtc || null)
+    // XP award received from server before GameEnded
+    const [xpAward, setXpAward] = useState(null)
     const [secondsLeft, setSecondsLeft] = useState(
         getSecondsLeftFromDeadline(initialGameState?.phaseDeadlineUtc)
     )
@@ -307,6 +309,21 @@ const Game = ({ user: authenticatedUser }) => {
                 }
             })
 
+            // Targeted XP award — arrives before GameEnded for logged-in players.
+            conn.on('XpAwarded', (data) => {
+                setXpAward(data)
+
+                // Sync to localStorage and App-level state
+                try {
+                    const stored = JSON.parse(localStorage.getItem('userData') || '{}')
+                    if (stored && typeof data.totalXp === 'number') {
+                        stored.xp = data.totalXp
+                        localStorage.setItem('userData', JSON.stringify(stored))
+                        if (onUpdateUser) onUpdateUser(stored)
+                    }
+                } catch { /* storage unavailable */ }
+            })
+
             conn.on('GameEnded', (state) => {
                 setPhase('finished')
                 clearSession() // Game over — clear saved session
@@ -413,6 +430,7 @@ const Game = ({ user: authenticatedUser }) => {
                 conn.off('GameStarted')
                 conn.off('ShowChoices')
                 conn.off('RoundEnded')
+                conn.off('XpAwarded')
                 conn.off('GameEnded')
                 conn.off('TurnChanged')
                 conn.off('GameStateSync')
@@ -590,7 +608,7 @@ const Game = ({ user: authenticatedUser }) => {
                                     <button
                                         key={topic}
                                         onClick={() => handleTopicSelect(topic)}
-                                        className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg"
+                                        className="bg-white/10 hover:bg-white/20 border cursor-pointer border-white/20 hover:border-white/40 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg"
                                     >
                                         {topic}
                                     </button>
@@ -630,6 +648,13 @@ const Game = ({ user: authenticatedUser }) => {
                         <p className="text-green-300 text-center text-base sm:text-lg font-bold">✅ {message}</p>
                     ) : (
                         <div className="flex flex-col gap-4">
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault()
+                                    handleSubmitFake()
+                                }}
+                                className="flex flex-col gap-4"
+                            >
                             <input
                                 type="text"
                                 value={fakeAnswer}
@@ -641,10 +666,11 @@ const Game = ({ user: authenticatedUser }) => {
                             <button
                                 onClick={handleSubmitFake}
                                 disabled={!fakeAnswer.trim()}
-                                className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="bg-white/10 cursor-pointer hover:bg-white/20 max-w-full w-full border border-white/20 hover:border-white/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 {t('common.send')}
                             </button>
+                            </form>
                             {fakeSubmitError && (
                                 <p className="text-red-300 text-center font-semibold">{fakeSubmitError}</p>
                             )}
@@ -679,7 +705,7 @@ const Game = ({ user: authenticatedUser }) => {
                             <button
                                 key={i}
                                 onClick={() => { setSelectedAnswerIndex(i); handleChooseAnswer(choice) }}
-                                className={`border font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base ${
+                                className={`border font-semibold py-2.5 sm:py-3 px-4 sm:px-6 cursor-pointer hover:bg-game-yellow/10 rounded-xl transition-all duration-300 text-sm sm:text-base ${
                                     selectedAnswerIndex === i
                                         ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20 text-game-yellow'
                                         : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white'
@@ -718,6 +744,12 @@ const Game = ({ user: authenticatedUser }) => {
                         <div className="mb-4 sm:mb-6 bg-white/10 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20">
                             <p className="text-white/60 text-xs sm:text-sm mb-1">{t('game.correctAnswer')}</p>
                             <p className="text-green-300 text-lg sm:text-xl font-bold" dir={getTextDirection(roundResult.currentQuestion.correctAnswer)}>{roundResult.currentQuestion.correctAnswer}</p>
+                            {roundResult.currentQuestion.explanation && (
+                                <div className="text-white/60 text-xs sm:text-sm mt-2">
+                                    <p className="font-bold mb-1">{t('game.correctAnswerExplained')}</p>
+                                    <p className="whitespace-pre-wrap" dir="auto">{roundResult.currentQuestion.explanation}</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -765,6 +797,12 @@ const Game = ({ user: authenticatedUser }) => {
                 <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full max-w-2xl shadow-2xl text-center">
                     <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-3 sm:mb-4">{t('game.gameOver')}</h1>
                     {winner && <p className="text-yellow-300 text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{t('game.winner', { name: winner })}</p>}
+                    {xpAward && (
+                        <div className="mb-4 sm:mb-6 bg-game-yellow/10 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-game-yellow/30">
+                            <p className="text-game-yellow text-lg sm:text-xl font-bold">+{xpAward.xpAwarded} XP</p>
+                            <p className="text-white/60 text-xs sm:text-sm">{t('game.totalXp', { xp: xpAward.totalXp })}</p>
+                        </div>
+                    )}
                     <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
                         {players.map(p => (
                             <div key={p.sessionId} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white/10 text-white font-bold text-xs sm:text-sm">
@@ -774,7 +812,7 @@ const Game = ({ user: authenticatedUser }) => {
                     </div>
                     <button
                         onClick={handleRequestLeave}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-2xl transition-all duration-300 border border-white/20"
+                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 cursor-pointer rounded-2xl transition-all duration-300 border border-white/20"
                     >
                         {t('game.backToLobby')}
                     </button>

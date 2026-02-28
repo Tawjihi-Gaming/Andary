@@ -51,8 +51,8 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     setHistoryLoading(true)
     try
     {
-      const res = await api.get('/room/player-game-history', {
-        params: { playerId: user.id, pageNumber: page, pageSize: PAGE_SIZE }
+      const res = await api.get('/history/' + user.id, {
+        params: { pageNumber: page, pageSize: PAGE_SIZE }
       })
       const data = res.data
       if (page === 1)
@@ -67,7 +67,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     }
     catch (error)
     {
-      if (error.response?.status === 404)
+      if (error.response?.status === 204)
       {
         setHasMoreHistory(false)
       }
@@ -331,6 +331,16 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
           {/* USER INFO FIELDS */}
           <div className="space-y-4 max-w-md mx-auto">
+
+            {/* Player ID field */}
+            {!user?.isGuest && (
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.playerId')}</label>
+                <div className="flex items-center justify-between">
+                  <span className="text-white text-lg font-semibold">{user?.id}</span>
+                </div>
+              </div>
+            )}
 
             {/* Username field */}
             <div className="bg-white/5 rounded-2xl p-4 border border-white/10">

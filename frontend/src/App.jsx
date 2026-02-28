@@ -90,6 +90,7 @@ function App() {
       ...userData,
       avatar: userData.avatar || userData.avatarImageName || '👤',
       avatarImageName: userData.avatarImageName || userData.avatar || '',
+      xp: userData.xp  || 0,
       clientKey: userData.clientKey || createClientKey(),
     }
     localStorage.setItem('isAuthenticated', 'true')
@@ -210,7 +211,7 @@ function App() {
           path="/game/:roomId" 
           element={
             isAuthenticated ? 
-              <Game user={user} /> :
+              <Game user={user} onUpdateUser={handleUpdateUser} /> :
               <Navigate to="/" replace />
           } 
         />

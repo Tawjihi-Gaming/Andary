@@ -139,6 +139,7 @@ const Auth = ({ onLogin }) => {
           username: response.data.username,
           email: response.data.email || email,
           avatar: response.data.avatarImageName || '👤',
+          xp: response.data.xp || 0,
           isGuest: false
         }
         setTimeout(() => onLogin?.(userData), 1000)
@@ -146,9 +147,12 @@ const Auth = ({ onLogin }) => {
     }
     catch (error)
     {
-      console.error('Auth error:', error)
-      const errorMsg = error.response?.data?.msg || t('auth.authError')
-      showMessage(`❌ ${errorMsg}`, 'error')
+      if(error.response?.data?.msg === 'Email already used' || error.response?.data?.msg === 'Email is already in use') {
+        showMessage(t('auth.emailInUse'), 'error')
+      }
+      else{
+        showMessage(t('auth.loginError'), 'error')
+      }
     }
     finally
     {

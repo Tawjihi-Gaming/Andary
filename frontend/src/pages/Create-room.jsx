@@ -82,7 +82,7 @@ const CreateRoom = ({ user, onLogout }) => {
       return
     }
   
-    if (selectedTopics.length > 8) {
+    if (selectedTopics.length > 6) {
       setError(t('createRoom.maxTopicsError'))
       return
     }
@@ -331,7 +331,7 @@ const CreateRoom = ({ user, onLogout }) => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-game-yellow to-game-orange hover:from-game-yellow hover:to-game-orange text-white font-bold py-4 sm:py-5 text-base sm:text-lg rounded-2xl transition-all duration-300 shadow-lg shadow-game-yellow/20 hover:shadow-game-yellow/30 hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full cursor-pointer bg-gradient-to-r from-game-yellow to-game-orange hover:from-game-yellow hover:to-game-orange text-white font-bold py-4 sm:py-5 text-base sm:text-lg rounded-2xl transition-all duration-300 shadow-lg shadow-game-yellow/20 hover:shadow-game-yellow/30 hover:scale-[1.02] active:scale-[0.98]"
           >
             {t('createRoom.createButton')}
           </button>

@@ -59,6 +59,25 @@ public class GameHub : Hub
         }
     }
 
+    // Send targeted XP awards to each logged-in player before the group broadcast.
+    private async Task SendXpAwarded(List<XpAwardResult> xpResults, CancellationToken cancellationToken = default)
+    {
+        foreach (var result in xpResults)
+        {
+            if (string.IsNullOrWhiteSpace(result.ConnectionId))
+                continue;
+
+            await _hubContext.Clients.Client(result.ConnectionId).SendAsync("XpAwarded", new
+            {
+                playerId = result.PlayerId,
+                xpAwarded = result.XpAwarded,
+                totalXp = result.TotalXp,
+                finalScore = result.FinalScore,
+                finalRank = result.FinalRank
+            }, cancellationToken);
+        }
+    }
+
     private void SyncPhaseTimer(string roomId, Room room)
     {
         CancelPhaseTimer(roomId);
@@ -116,9 +135,13 @@ public class GameHub : Hub
         }
 
         var endedState = _game.GetGameState(room);
-        await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
         CancelPhaseTimer(roomId);
-        await _game.SaveGameSession(room);
+        // Persist XP and send targeted awards before the final broadcast.
+        // Use CancellationToken.None — the phase timer CTS we just cancelled may
+        // be the very token passed in, so reusing it would abort the final sends.
+        var xpResults = await _game.SaveGameSession(room);
+        await SendXpAwarded(xpResults, CancellationToken.None);
+        await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, CancellationToken.None);
     }
 
     private async Task HandlePhaseTimeout(string roomId, CancellationToken cancellationToken)
@@ -148,10 +171,13 @@ public class GameHub : Hub
 
             room.Phase = GamePhase.GameEnded;
             _game.RefreshPhaseDeadline(room);
-            var endedState = _game.GetGameState(room);
-            await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, cancellationToken);
             CancelPhaseTimer(roomId);
-            await _game.SaveGameSession(room);
+            // Use CancellationToken.None — cancellationToken originates from the
+            // phase-timer CTS we just cancelled above.
+            var xpResultsTopic = await _game.SaveGameSession(room);
+            await SendXpAwarded(xpResultsTopic, CancellationToken.None);
+            var endedState = _game.GetGameState(room);
+            await _hubContext.Clients.Group(roomId).SendAsync("GameEnded", endedState, CancellationToken.None);
             return;
         }
 
@@ -236,9 +262,10 @@ public class GameHub : Hub
             room.Phase = GamePhase.GameEnded;
             _game.RefreshPhaseDeadline(room);
             CancelPhaseTimer(roomId);
+            var xpResults = await _game.SaveGameSession(room);
+            await SendXpAwarded(xpResults);
             var endedState = _game.GetGameState(room);
             await Clients.Group(roomId).SendAsync("GameEnded", endedState);
-            await _game.SaveGameSession(room);
             return;
         }
 
@@ -359,8 +386,28 @@ public class GameHub : Hub
     {
         var room = _game.GetRoom(roomId);
 
-        if (!_game.AddTopic(room, topic))
+        if (string.IsNullOrWhiteSpace(topic))
+        {
+            await Clients.Caller.SendAsync("TopicAddFailed", new { message = "Topic is required." });
             return;
+        }
+
+        var normalizedTopic = topic.Trim();
+        var availableTopics = _questionsService.GetTopics();
+        var matchedTopic = availableTopics.FirstOrDefault(t =>
+            string.Equals(t?.Trim(), normalizedTopic, StringComparison.OrdinalIgnoreCase));
+
+        if (matchedTopic == null)
+        {
+            await Clients.Caller.SendAsync("TopicAddFailed", new { message = "Invalid topic. Choose from available topics only." });
+            return;
+        }
+
+        if (!_game.AddTopic(room, matchedTopic))
+        {
+            await Clients.Caller.SendAsync("TopicAddFailed", new { message = "Unable to add topic. It may already exist or the room is not in lobby." });
+            return;
+        }
 
         // Broadcast updated topic list to all players
         await Clients.Group(roomId).SendAsync("TopicsUpdated", room.SelectedTopics);
@@ -404,6 +451,24 @@ public class GameHub : Hub
         // At least 1 topic must be selected
         if (!_game.CanStartGame(room))
             return;
+
+        // All selected topics must exist in DB. Do not trust client-sent topic names.
+        var availableTopicNames = _questionsService.GetTopics();
+        var invalidTopics = room.SelectedTopics
+            .Where(t => !availableTopicNames.Any(db =>
+                string.Equals(db?.Trim(), t?.Trim(), StringComparison.OrdinalIgnoreCase)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (invalidTopics.Count > 0)
+        {
+            await Clients.Caller.SendAsync("GameError", new
+            {
+                message = "One or more selected topics are invalid. Please remove invalid topics and try again.",
+                invalidTopics
+            });
+            return;
+        }
 
         // Fetch questions from all selected topics
         var questions = _questionsService.GetQuestionsFromTopics(room.TotalQuestions, room.SelectedTopics);

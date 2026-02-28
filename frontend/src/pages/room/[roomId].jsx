@@ -477,7 +477,7 @@ const GameRoom = ({ user }) => {
                             {!isReady ? (
                                 <button
                                     onClick={handleReadyUp}
-                                    className="mt-3 sm:mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
+                                    className="mt-3 cursor-pointer sm:mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
                                 >
                                     {t('common.ready')}
                                 </button>
@@ -489,7 +489,7 @@ const GameRoom = ({ user }) => {
                                     </div>
                                     <button
                                         onClick={handleUnready}
-                                        className="mt-3 sm:mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-2 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-red-500/30"
+                                        className="mt-3 cursor-pointer sm:mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-2 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-red-500/30"
                                     >
                                         {t('room.cancelReady')}
                                     </button>

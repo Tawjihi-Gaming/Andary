@@ -62,7 +62,10 @@
     "resetPasswordInvalidToken": "令牌无效或已过期。",
     "resetPasswordMissingToken": "重置令牌无效或缺失。",
     "resetPasswordMinLength": "密码至少需要6个字符。",
-    "resetPasswordMismatch": "两次输入的密码不一致。"
+    "resetPasswordMismatch": "两次输入的密码不一致。",
+    "emailInUse": "❌ 电子邮箱已被使用。请使用不同的邮箱。",
+    "signupError": "创建账号失败。请重试。",
+    "loginError": "登录失败。请检查凭据并重试。"
   },
 
   "avatar": {
@@ -110,15 +113,15 @@
     "roomType": "房间类型",
     "public": "公开",
     "private": "私人",
-    "selectTopics": "选择主题（最多8个）",
-    "topicsCount": "选择主题（最多 {{count}}/8 个）",
+    "selectTopics": "选择主题（最多6个）",
+    "topicsCount": "选择主题（最多 {{count}}/6 个）",
     "loadingTopics": "正在从数据库加载主题...",
     "numberOfRounds": "回合数",
     "answerTime": "答题时间",
     "createButton": "创建房间",
     "noTopicsError": "没有数据库主题，无法创建房间",
     "selectTopicError": "请至少选择一个主题",
-    "maxTopicsError": "请选择不超过8个主题"
+    "maxTopicsError": "请选择不超过6个主题"
   },
 
   "profile": {
@@ -129,6 +132,7 @@
     "level": "⭐ 等级 {{level}}",
     "xpProgress": "{{progress}} / {{max}} XP",
     "totalXp": "总 XP：{{xp}}",
+    "playerId": "玩家 ID",
     "username": "用户名",
     "emailLabel": "电子邮箱",
     "passwordLabel": "密码",
@@ -203,13 +207,14 @@
       "empty": "请先填写一个假答案。",
       "cannotUseCorrectAnswer": "你不能把正确答案作为假答案提交。"
     },
-    "correctAnswerExplained": "解释：{{explanation}}",
+    "correctAnswerExplained": "解释：",
     "timeLeft": "剩余时间",
     "chooseCorrectAnswer": "从选项中选择正确答案：",
     "leaderboard": "🏆 排行榜",
     "correctAnswer": "正确答案：",
     "nextRound": "下一回合 ➡️",
     "gameOver": "🏆 游戏结束！",
+    "totalXp": "总计：{{xp}} XP",
     "winner": "获胜者：{{name}}",
     "backToLobby": "返回大厅",
     "leaveRoom": "离开房间",
@@ -332,7 +337,6 @@
     "terminationTitle": "9. 终止",
     "terminationText": "如果您违反这些服务条款，我们保留随时暂停或终止您账户的权利。终止后，您使用平台的权利将立即停止。与您账户相关的任何数据可能会被删除。",
     "changesTitle": "10. 条款变更",
-    "changesText": "我们可能会不时更新这些服务条款。更改将在发布后立即生效。您在更改后继续使用平台即表示接受新条款。我们鼓励您定期查看这些条款。",
-    "contactText": "如果您对这些服务条款有任何疑问，请通过平台联系 Andary 开发团队。"
+    "changesText": "我们可能会不时更新这些服务条款。更改将在发布后立即生效。您在更改后继续使用平台即表示接受新条款。我们鼓励您定期查看这些条款。"
   }
 }

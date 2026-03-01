@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { login, signup, getGoogleLoginUrl } from '../api/auth'
 import AvatarPicker, { AVATARS } from './AvatarPicker'
+import PasswordInput from './PasswordInput'
 
 const createClientKey = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -281,6 +282,7 @@ const Auth = ({ onLogin }) => {
               placeholder={t('auth.email')}
               value={email}
               required
+              maxLength={50}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-cyan focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
@@ -290,20 +292,19 @@ const Auth = ({ onLogin }) => {
             </svg>
           </div>
 
-          <div className="relative">
-            <input
-              type="password"
+          <PasswordInput
               placeholder={t('auth.password')}
               value={password}
               required
+              minLength={6}
+              maxLength={100}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
-            <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
+          {isSignUp && (
+            <p className="text-white/50 text-xs -mt-2">{t('auth.passwordPolicy')}</p>
+          )}
 
           {!isSignUp && (
             <div className="text-end -mt-1">

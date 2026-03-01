@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { resetPassword as resetPasswordApi } from '../api/auth'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import PasswordInput from '../components/PasswordInput'
 
 const ResetPassword = () => {
   const navigate = useNavigate()
@@ -51,6 +52,11 @@ const ResetPassword = () => {
 
     if (newPassword.length < 6) {
       showMessage(`❌ ${t('auth.resetPasswordMinLength')}`, 'error')
+      return
+    }
+
+    if (newPassword.length > 100) {
+      showMessage(`❌ ${t('auth.resetPasswordMaxLength')}`, 'error')
       return
     }
 
@@ -114,38 +120,30 @@ const ResetPassword = () => {
           </div>
         )}
 
+        <p className="text-white/50 text-xs text-center mb-4">{t('auth.passwordPolicy')}</p>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <input
-              type="password"
+          <PasswordInput
               placeholder={t('auth.newPassword')}
               value={newPassword}
               required
               minLength={6}
+              maxLength={100}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
-            <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
 
-          <div className="relative">
-            <input
-              type="password"
+          <PasswordInput
               placeholder={t('auth.confirmNewPassword')}
               value={confirmPassword}
               required
               minLength={6}
+              maxLength={100}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
-            <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
 
           <button
             type="submit"

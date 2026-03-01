@@ -100,6 +100,10 @@ const Friends = ({ user, onLogout }) => {
       showMessage(t('friends.cannotAddSelf'), 'error')
       return
     }
+    if (friends.some(f => f.player?.id === id)) {
+      showMessage(`❌ ${t('friends.alreadyFriends')}`, 'error')
+      return
+    }
     setAddFriendLoading(true)
     try {
       await sendFriendRequest(id)

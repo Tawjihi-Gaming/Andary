@@ -691,6 +691,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                                 value={fakeAnswer}
                                 onChange={(e) => setFakeAnswer(e.target.value)}
                                 placeholder={t('game.fakeAnswerPlaceholder')}
+                                maxLength={50}
                                 className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 xl:px-6 py-2.5 sm:py-3 xl:py-4 text-base sm:text-lg xl:text-xl focus:outline-none focus:border-white/40"
                                 dir={questionDirection}
                             />

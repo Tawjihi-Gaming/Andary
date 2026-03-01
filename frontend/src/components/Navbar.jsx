@@ -71,7 +71,7 @@ const Navbar = ({ user, onLogout }) => {
             {/* user profile */}
             <button
               onClick={() => navigate('/profile')}
-              className="flex items-center gap-2 app-soft-btn border border-transparent hover:bg-game-yellow/20 hover:border-game-yellow/30 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 group cursor-pointer min-w-[130px] text-center"
+              className="flex items-center gap-4 app-soft-btn border border-transparent hover:bg-game-yellow/20 hover:border-game-yellow/30 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 group cursor-pointer min-w-[130px] text-center"
             >
               <div className="w-7 h-7 rounded-full bg-linear-to-br from-game-yellow to-game-orange flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:shadow-game-yellow/20 transition-all">
                 <span className="text-sm">{user?.avatar}</span>

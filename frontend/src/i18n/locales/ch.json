@@ -188,7 +188,7 @@
     "youAreReady": "✓ 你已准备！",
     "waitingForOwner": "等待房主开始游戏...",
     "cancelReady": "取消准备",
-    "backToLobby": "返回大厅",
+    "backToLobby": "退出游戏",
     "closedTitle": "房间已关闭",
     "closedFallbackMessage": "此房间已关闭。",
     "reasonPrefix": "原因：",

@@ -71,10 +71,10 @@ const Navbar = ({ user, onLogout }) => {
             {/* user profile */}
             <button
               onClick={() => navigate('/profile')}
-              className="flex items-center gap-3 app-soft-btn border border-transparent hover:bg-game-yellow/20 hover:border-game-yellow/30 font-semibold px-4 py-2.5 rounded-2xl transition-all duration-300 group cursor-pointer"
+              className="flex items-center gap-2 app-soft-btn border border-transparent hover:bg-game-yellow/20 hover:border-game-yellow/30 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 group cursor-pointer min-w-[130px] text-center"
             >
-              <div className="w-10 h-10 rounded-3xl bg-linear-to-br from-game-yellow to-game-orange flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:shadow-game-yellow/20 transition-all">
-                <span className="text-xl pt-1">{user?.avatar}</span>
+              <div className="w-7 h-7 rounded-full bg-linear-to-br from-game-yellow to-game-orange flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:shadow-game-yellow/20 transition-all">
+                <span className="text-sm">{user?.avatar}</span>
               </div>
               <span className="text-white/90 group-hover:text-game-yellow truncate transition-colors">{user?.username || 'Player'}</span>
             </button>
@@ -82,7 +82,7 @@ const Navbar = ({ user, onLogout }) => {
             {/* friends button */}
             <button
               onClick={() => navigate('/friends')}
-              className="app-soft-btn border border-transparent hover:bg-game-purple/20 hover:text-game-yellow hover:border-game-purple/30 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 cursor-pointer"
+              className="app-soft-btn border border-transparent hover:bg-game-purple/20 hover:text-game-yellow hover:border-game-purple/30 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 cursor-pointer min-w-[130px] text-center"
             >
               👥 {t('friends.navButton')}
             </button>
@@ -90,7 +90,7 @@ const Navbar = ({ user, onLogout }) => {
             {/* logout button */}
             <button
               onClick={handleLogout}
-              className="app-soft-btn border border-transparent hover:bg-red-500/20 hover:text-game-yellow hover:border-red-500/30 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 cursor-pointer"
+              className="app-soft-btn border border-transparent hover:bg-red-500/20 hover:text-game-yellow hover:border-red-500/30 font-semibold px-5 py-2.5 rounded-2xl transition-all duration-300 cursor-pointer min-w-[130px] text-center"
             >
               {t('lobby.logout')}
             </button>
@@ -157,6 +157,7 @@ const Navbar = ({ user, onLogout }) => {
         confirmText={t('lobby.confirmLogout')}
         cancelText={t('lobby.cancelLogout')}
         showCancel
+        variant="danger"
         onCancel={() => setIsLogoutPopupOpen(false)}
         onConfirm={confirmLogout}
       />

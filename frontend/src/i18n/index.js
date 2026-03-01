@@ -16,7 +16,6 @@ i18n
       en: { translation: en },
       ch: { translation: ch },
     },
-    lng: 'ar',
     fallbackLng: 'ar',
     supportedLngs: ['ar', 'en', 'ch'],
     interpolation: {

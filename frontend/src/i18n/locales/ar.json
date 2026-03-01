@@ -188,7 +188,7 @@
     "youAreReady": "✓ أنت جاهز!",
     "waitingForOwner": "في انتظار صاحب الغرفة لبدء اللعبة...",
     "cancelReady": "إلغاء الجاهزية",
-    "backToLobby": "العودة للردهة",
+    "backToLobby": "مغادرة اللعبة",
     "closedTitle": "تم إغلاق الغرفة",
     "closedFallbackMessage": "تم إغلاق هذه الغرفة.",
     "reasonPrefix": "السبب:",

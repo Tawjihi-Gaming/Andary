@@ -7,8 +7,13 @@ const GamePopup = ({
   onConfirm,
   onCancel,
   showCancel = false,
+  variant = 'default',
 }) => {
   if (!open) return null
+
+  const confirmClass = variant === 'danger'
+    ? 'px-4 py-2 rounded-xl cursor-pointer bg-red-500 text-white font-bold hover:bg-red-600 hover:scale-105 transition-all duration-300'
+    : 'px-4 py-2 rounded-xl cursor-pointer bg-game-yellow text-gray-900 font-bold hover:brightness-110 hover:scale-105 transition-all duration-300'
 
   return (
     <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-4">
@@ -28,7 +33,7 @@ const GamePopup = ({
           <button
             type="button"
             onClick={onConfirm}
-            className="px-4 py-2 rounded-xl cursor-pointer bg-game-yellow text-gray-900 font-bold hover:brightness-110 hover:scale-105 transition-all duration-300"
+            className={confirmClass}
           >
             {confirmText}
           </button>

@@ -14,7 +14,7 @@ const TermsOfService = () => {
           <LanguageSwitcher />
           <button
             onClick={() => navigate(-1)}
-            className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium"
+            className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium border border-white/30 hover:border-game-yellow rounded-lg px-4 py-2"
           >
             ← {t('common.back')}
           </button>

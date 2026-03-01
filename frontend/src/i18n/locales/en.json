@@ -188,7 +188,7 @@
     "youAreReady": "✓ You are ready!",
     "waitingForOwner": "Waiting for the room owner to start the game...",
     "cancelReady": "Cancel Ready",
-    "backToLobby": "Back to Lobby",
+    "backToLobby": "Quit Game",
     "closedTitle": "Room Closed",
     "closedFallbackMessage": "This room has been closed.",
     "reasonPrefix": "Reason:",

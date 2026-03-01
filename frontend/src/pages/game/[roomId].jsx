@@ -349,9 +349,9 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                     setScores(state.scores || buildScoresMapFromPlayers(state.players))
                 }
                 if (state.players?.length > 0) {
-                    const topPlayer = state.players.reduce((best, p) =>
-                        p.score > (best?.score || 0) ? p : best, state.players[0])
-                    setWinner(topPlayer.displayName)
+                    const topScore = Math.max(...state.players.map(p => p.score || 0))
+                    const topPlayers = state.players.filter(p => (p.score || 0) === topScore)
+                    setWinner(topPlayers.map(p => p.displayName).join(', '))
                 }
             })
 
@@ -759,6 +759,17 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
         const sortedPlayers = [...players].sort((a, b) => (scores[b.sessionId] || 0) - (scores[a.sessionId] || 0))
         const medals = ['🥇', '🥈', '🥉']
 
+        // Build rank map: players with equal scores share the same rank
+        const rankMap = {}
+        let currentRank = 1
+        sortedPlayers.forEach((p, index) => {
+            const score = scores[p.sessionId] || 0
+            if (index > 0 && score < (scores[sortedPlayers[index - 1].sessionId] || 0)) {
+                currentRank = index + 1
+            }
+            rankMap[p.sessionId] = currentRank
+        })
+
         return (
             <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative">
                 {leaveNoticeBanner}
@@ -787,9 +798,10 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
 
                     {/* Leaderboard */}
                     <div className="flex flex-col gap-2 sm:gap-3 xl:gap-4 mb-6 sm:mb-8">
-                        {sortedPlayers.map((p, index) => {
+                        {sortedPlayers.map((p) => {
+                            const rank = rankMap[p.sessionId]
                             const isMe = p.sessionId === sessionId
-                            const isFirst = index === 0
+                            const isFirst = rank === 1
                             return (
                                 <div
                                     key={p.sessionId}
@@ -802,7 +814,7 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                                         }`}
                                 >
                                     <div className="flex items-center gap-2 sm:gap-3 xl:gap-4">
-                                        <span className="text-xl sm:text-2xl xl:text-3xl">{medals[index] || `#${index + 1}`}</span>
+                                        <span className="text-xl sm:text-2xl xl:text-3xl">{medals[rank - 1] || `#${rank}`}</span>
                                         <span className={`font-bold text-base sm:text-lg xl:text-xl ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
                                             {p.displayName}
                                             {isMe && <span className="text-white/50 text-sm font-normal me-2">({t('common.you')})</span>}
@@ -823,6 +835,18 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
 
     // ─── GAME FINISHED ────────────────────────────────────────────────────────
     if (phase === 'finished') {
+        const sortedFinishedPlayers = [...players].sort((a, b) => (scores[b.sessionId] || 0) - (scores[a.sessionId] || 0))
+        const finishedMedals = ['🥇', '🥈', '🥉']
+        const finishedRankMap = {}
+        let finishedRank = 1
+        sortedFinishedPlayers.forEach((p, index) => {
+            const score = scores[p.sessionId] || 0
+            if (index > 0 && score < (scores[sortedFinishedPlayers[index - 1].sessionId] || 0)) {
+                finishedRank = index + 1
+            }
+            finishedRankMap[p.sessionId] = finishedRank
+        })
+
         return (
             <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
                 {leaveNoticeBanner}
@@ -835,12 +859,35 @@ const Game = ({ user: authenticatedUser, onUpdateUser }) => {
                             <p className="text-white/60 text-xs sm:text-sm">{t('game.totalXp', { xp: xpAward.totalXp })}</p>
                         </div>
                     )}
-                    <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-                        {players.map(p => (
-                            <div key={p.sessionId} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white/10 text-white font-bold text-xs sm:text-sm">
-                                {p.displayName}: {scores[p.sessionId] || 0}
-                            </div>
-                        ))}
+                    <div className="flex flex-col gap-2 sm:gap-3 mb-6 sm:mb-8">
+                        {sortedFinishedPlayers.map((p) => {
+                            const rank = finishedRankMap[p.sessionId]
+                            const isMe = p.sessionId === sessionId
+                            const isFirst = rank === 1
+                            return (
+                                <div
+                                    key={p.sessionId}
+                                    className={`flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 rounded-2xl border transition-all duration-300
+                                        ${isFirst
+                                            ? 'bg-game-yellow/20 border-game-yellow shadow-lg shadow-game-yellow/20'
+                                            : isMe
+                                                ? 'bg-white/15 border-white/40'
+                                                : 'bg-white/10 border-white/20'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <span className="text-xl sm:text-2xl">{finishedMedals[rank - 1] || `#${rank}`}</span>
+                                        <span className={`font-bold text-base sm:text-lg ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
+                                            {p.displayName}
+                                            {isMe && <span className="text-white/50 text-sm font-normal me-2">({t('common.you')})</span>}
+                                        </span>
+                                    </div>
+                                    <span className={`text-base sm:text-xl font-extrabold ${isFirst ? 'text-game-yellow' : 'text-white'}`}>
+                                        {scores[p.sessionId] || 0} {t('common.point')}
+                                    </span>
+                                </div>
+                            )
+                        })}
                     </div>
                     <button
                         onClick={handleRequestLeave}

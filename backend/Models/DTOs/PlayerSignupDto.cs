@@ -7,7 +7,7 @@ namespace Backend.Models.DTOs
     {
         [Required(ErrorMessage = "Username is required")]
         [MinLength(3, ErrorMessage = "Username must be at least 3 characters")]
-        [MaxLength(50, ErrorMessage = "Username must not exceed 50 characters")]
+        [MaxLength(20, ErrorMessage = "Username must not exceed 20 characters")]
         public string Username { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Email is required")]

@@ -99,11 +99,6 @@ const TermsOfService = () => {
               <p>{t('terms.changesText')}</p>
             </section>
 
-            {/* Contact */}
-            {/* <section>
-              <h2 className="text-lg sm:text-xl font-bold text-game-yellow mb-2">{t('terms.contactTitle')}</h2>
-              <p>{t('terms.contactText')}</p>
-            </section> */}
           </div>
         </div>
       </div>

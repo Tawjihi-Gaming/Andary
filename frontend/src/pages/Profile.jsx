@@ -568,7 +568,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             </div>
           )}
 
-          {/* LOGOUT BUTTON */}
         </div>
         <LegalFooter />
       </div>

@@ -6,7 +6,6 @@ import LanguageSwitcher from '../components/LanguageSwitcher'
 import PasswordInput from '../components/PasswordInput'
 
 const ResetPassword = () => {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'ar'

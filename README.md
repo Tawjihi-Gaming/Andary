@@ -435,8 +435,8 @@ npm run dev
 | 10 | **Gameplay — Fake Answer Submission** | Players submit bluff answers; timed phase with deadline | rsham, malja-fa |
 | 11 | **Scoring & Leaderboard** | Points for correct answers and fooling others; live ranking per round | rsham, malja-fa |
 | 12 | **XP System** | XP awarded at game end based on rank; persisted to player profile | rsham, malja-fa, sbibers |
-| 13 | **Game History** | Paginated history of past games with score, rank, date | rsham, dikhalil, sbibers, aatieh |
-| 14 | **Friend System** | Send/accept/reject/cancel friend requests; view friends list | dikhalil, sbibers |
+| 13 | **Game History** | Paginated history of past games with score, rank, date | rsham, dikhalil, sbibers |
+| 14 | **Friend System** | Send/accept/reject/cancel friend requests; view friends list | aatieh, sbibers |
 | 15 | **Internationalization (i18n)** | Arabic (RTL), English, Chinese — full UI translation | malja-fa, sbibers |
 | 16 | **Dark / Light Theme** | Toggleable theme persisted in localStorage | malja-fa |
 | 17 | **Dockerized Deployment** | Multi-container setup with Docker Compose, Nginx reverse proxy, HTTPS | aatieh |

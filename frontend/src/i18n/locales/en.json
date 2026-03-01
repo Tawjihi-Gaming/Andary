@@ -177,6 +177,8 @@
     "connectionError": "🔴 Connection Error",
     "connecting": "🟡 Connecting...",
     "playersCount": "Players ({{count}})",
+    "minimumPlayers": "At least 2 players are needed to start the game",
+    "roomIsFull": "The room is full (maximum 6 players)",
     "copied": "Copied!",
     "copyRoomCode": "Copy Room Code: {{code}}",
     "youAreOwner": "You are the room owner",

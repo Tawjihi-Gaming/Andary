@@ -177,6 +177,8 @@
     "connectionError": "🔴 连接错误",
     "connecting": "🟡 连接中...",
     "playersCount": "玩家（{{count}}）",
+    "minimumPlayers": "至少需要2名玩家才能开始游戏",
+    "roomIsFull": "房间已满（最多6名玩家）",
     "copied": "已复制！",
     "copyRoomCode": "复制房间代码：{{code}}",
     "youAreOwner": "你是房主",

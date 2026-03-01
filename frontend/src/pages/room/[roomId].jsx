@@ -447,6 +447,16 @@ const GameRoom = ({ user }) => {
                             </div>
                         ))}
                     </div>
+                    {players.length < 2 && (
+                        <p className="text-yellow-400/80 text-xs sm:text-sm text-center mt-3 animate-pulse">
+                            ⚠️ {t('room.minimumPlayers')}
+                        </p>
+                    )}
+                    {players.length >= 6 && (
+                        <p className="text-red-400/80 text-xs sm:text-sm text-center mt-3 animate-pulse">
+                            🚫 {t('room.roomIsFull')}
+                        </p>
+                    )}
                 </div>
 
                 {canCopyCode && (

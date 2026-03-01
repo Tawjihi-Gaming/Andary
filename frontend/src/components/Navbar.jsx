@@ -51,15 +51,15 @@ const Navbar = ({ user, onLogout }) => {
 
    return (
     <div className="relative z-50">
-        <nav dir="rtl" className="relative px-3 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <nav dir="rtl" className="relative px-3 sm:px-6 xl:px-8 py-3 xl:py-4">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto flex items-center justify-between">
           {/* Logo + language switcher */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/lobby')}>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-linear-to-br from-game-yellow to-game-orange rounded-xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-105 transition-transform">
-                <span className="text-xl sm:text-2xl pt-1 sm:pt-2">🎓</span>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 xl:w-14 xl:h-14 bg-linear-to-br from-game-yellow to-game-orange rounded-xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-105 transition-transform">
+                <span className="text-xl sm:text-2xl xl:text-3xl pt-1 sm:pt-2">🎓</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+              <h1 className="text-xl sm:text-2xl xl:text-3xl font-extrabold text-white">
                 Andary
               </h1>
             </div>

@@ -262,7 +262,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
       <div className="relative z-10">
         <Navbar user={user} onLogout={onLogout} />
       </div>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto">
 
         {/* toast message */}
         {message && (
@@ -278,19 +278,19 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
         )}
 
         {/* profile card */}
-        <div className="app-glass-card-strong m-4 backdrop-blur-xl rounded-3xl p-4 sm:p-8 shadow-2xl">
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-6 sm:mb-8 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
+        <div className="app-glass-card-strong m-4 backdrop-blur-xl rounded-3xl p-4 sm:p-8 xl:p-10 shadow-2xl">
+          <h1 className="text-2xl sm:text-4xl xl:text-5xl font-extrabold text-white mb-6 sm:mb-8 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
             {t('profile.title')}
           </h1>
 
           {/* AVATAR SECTION */}
           <div className="flex flex-col items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div
-              className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-game-yellow pt-2 flex items-center justify-center border-4 border-white shadow-lg transition-transform ${!user?.isGuest ? 'cursor-pointer hover:scale-105' : ''}`}
+              className={`w-24 h-24 sm:w-32 sm:h-32 xl:w-40 xl:h-40 rounded-full bg-game-yellow pt-2 flex items-center justify-center border-4 border-white shadow-lg transition-transform ${!user?.isGuest ? 'cursor-pointer hover:scale-105' : ''}`}
               onClick={() => !user?.isGuest && setEditingField(editingField === 'avatar' ? null : 'avatar')}
               title={!user?.isGuest ? t('profile.clickToChangeAvatar') : undefined}
             >
-              <span className="text-5xl sm:text-6xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
+              <span className="text-5xl sm:text-6xl xl:text-7xl">{editingField === 'avatar' ? selectedAvatar.emoji : user?.avatar}</span>
             </div>
             {!user?.isGuest && (
               <button
@@ -326,7 +326,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
           {/* LEVEL & XP BAR */}
           {!user?.isGuest && (
-            <div className="w-full max-w-md mx-auto mb-8">
+            <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto mb-8">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-white font-bold text-lg">{t('profile.level', { level })}</span>
                 <span className="text-white/70 text-sm">{t('profile.xpProgress', { progress, max: XP_PER_LEVEL })}</span>
@@ -342,7 +342,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
           )}
 
           {/* USER INFO FIELDS */}
-          <div className="space-y-4 max-w-md mx-auto">
+          <div className="space-y-4 max-w-md lg:max-w-lg xl:max-w-xl mx-auto">
 
             {/* Player ID field */}
             {!user?.isGuest && (
@@ -498,8 +498,8 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
             {/* GAME HISTORY SECTION */}
           {!user?.isGuest && (
-            <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-8 shadow-2xl mt-6">
-              <h2 className="text-2xl font-extrabold text-white mb-6 text-center" style={{ textShadow: '2px 2px 0 #2563EB' }}>
+            <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-8 xl:p-10 shadow-2xl mt-6">
+              <h2 className="text-2xl xl:text-3xl font-extrabold text-white mb-6 text-center" style={{ textShadow: '2px 2px 0 #2563EB' }}>
                 {t('profile.gameHistory')}
               </h2>
   

@@ -188,13 +188,13 @@ const Friends = ({ user, onLogout }) => {
       {/* Navbar */}
         <Navbar user={user} onLogout={onLogout} />
       {/* Main content */}
-      <div className="relative z-10 max-w-4xl mx-auto p-3 sm:p-6">
+      <div className="relative z-10 max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto p-3 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-2">
+          <h2 className="text-2xl sm:text-4xl xl:text-5xl font-extrabold text-white mb-2">
             {t('friends.title')} 👥
           </h2>
-          <p className="text-white/50 text-base sm:text-lg">{t('friends.subtitle')}</p>
+          <p className="text-white/50 text-base sm:text-lg xl:text-xl">{t('friends.subtitle')}</p>
         </div>
 
         {/* Message toast */}
@@ -397,7 +397,7 @@ const Friends = ({ user, onLogout }) => {
         )}
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-3 sm:px-6">
+      <div className="relative z-10 max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
         <LegalFooter />
       </div>
 

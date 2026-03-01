@@ -62,7 +62,7 @@ const ForgotPassword = () => {
         <LanguageSwitcher />
       </div>
 
-      <div className="w-full max-w-md app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 shadow-2xl z-10">
+      <div className="w-full max-w-md lg:max-w-lg app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 xl:p-8 shadow-2xl z-10">
         <h1 className="text-2xl sm:text-3xl font-extrabold m-1 text-white text-center mb-2" style={{ textShadow: '3px 3px 0 #2563EB' }}>
           {t('auth.forgotPasswordTitle')}
         </h1>

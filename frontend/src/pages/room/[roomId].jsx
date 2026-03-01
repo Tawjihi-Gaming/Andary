@@ -309,6 +309,26 @@ const GameRoom = ({ user }) => {
                 })
 
                 connection.on('GameStateSync', (state) => {
+                    // If the game has already started (phase is not Lobby),
+                    // redirect the player to the game page instead of staying in the waiting room.
+                    if (state?.phase && state.phase !== 'Lobby') {
+                        console.log('Game already in progress — redirecting to game page. Phase:', state.phase)
+                        saveGameSessionSnapshot({ roomId, sessionId, user, state })
+                        const syncedTimer = state?.answerTimeSeconds || timer
+                        navigate(`/game/${roomId}`, {
+                            state: {
+                                ...roomState,
+                                user,
+                                roomId,
+                                code,
+                                sessionId,
+                                timer: syncedTimer,
+                                answerTimeSeconds: syncedTimer,
+                                gameState: state,
+                            }
+                        })
+                        return
+                    }
                     if (state?.players) {
                         setPlayers(state.players.map(normalizePlayer))
                     }
@@ -387,9 +407,9 @@ const GameRoom = ({ user }) => {
     }, [roomId, sessionId])
    
     return (
-        <div className="min-h-screen app-page-bg relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
-            <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl">
-                <h1 className="text-xl sm:text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
+        <div className="min-h-screen app-page-bg relative overflow-hidden flex items-center justify-center p-3 sm:p-6 lg:p-8">
+            <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 xl:p-10 w-full sm:w-3/4 max-w-6xl 2xl:max-w-7xl shadow-2xl">
+                <h1 className="text-xl sm:text-3xl xl:text-4xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
                 <p className="text-white/80 text-center mb-4 text-xs sm:text-sm">
                     {t('room.type')} {roomTypeLabel}
                 </p>
@@ -421,8 +441,8 @@ const GameRoom = ({ user }) => {
 
                 {/* Players List */}
                 <div className="mb-4 sm:mb-6">
-                    <h3 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4 text-center">{t('room.playersCount', { count: players.length })}</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4 max-h-64 overflow-y-auto">
+                    <h3 className="text-lg sm:text-2xl xl:text-3xl font-bold text-white mb-3 sm:mb-4 text-center">{t('room.playersCount', { count: players.length })}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 lg:gap-5 max-h-64 lg:max-h-80 overflow-y-auto">
                         {players.map((player) => (
                             <div 
                                 key={player.sessionId}
@@ -435,7 +455,7 @@ const GameRoom = ({ user }) => {
                                 } transition-all duration-300`}
                             >
                                 <div className="flex flex-col items-center gap-1 sm:gap-3">
-                                    <span className="text-4xl sm:text-6xl">{player?.avatar || '👤'}</span>
+                                    <span className="text-4xl sm:text-6xl xl:text-7xl">{player?.avatar || '👤'}</span>
                                     <p className="text-white text-xs sm:text-base font-semibold truncate w-full text-center">
                                         {player.name}
                                         {player.sessionId === roomOwnerId && ' 👑'}
@@ -447,6 +467,16 @@ const GameRoom = ({ user }) => {
                             </div>
                         ))}
                     </div>
+                    {players.length < 2 && (
+                        <p className="text-yellow-400/80 text-xs sm:text-sm text-center mt-3 animate-pulse">
+                            ⚠️ {t('room.minimumPlayers')}
+                        </p>
+                    )}
+                    {players.length >= 6 && (
+                        <p className="text-red-400/80 text-xs sm:text-sm text-center mt-3 animate-pulse">
+                            🚫 {t('room.roomIsFull')}
+                        </p>
+                    )}
                 </div>
 
                 {canCopyCode && (

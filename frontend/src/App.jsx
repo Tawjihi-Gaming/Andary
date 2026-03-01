@@ -216,6 +216,14 @@ function App() {
         />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route 
+          path="*" 
+          element={
+            isAuthenticated ? 
+              <Navigate to="/lobby" replace /> : 
+              <Navigate to="/" replace />
+          } 
+        />
       </Routes>
     </BrowserRouter>
   )

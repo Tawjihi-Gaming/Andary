@@ -7,22 +7,22 @@ const PrivacyPolicy = () => {
   const { t } = useTranslation()
 
   return (
-    <div className="min-h-screen app-page-bg p-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen app-page-bg p-4 lg:p-8">
+      <div className="max-w-3xl xl:max-w-4xl mx-auto">
         {/* Top bar */}
         <div dir="ltr" className="flex flex-col sm:flex-row sm:items-center sm:justify-between items-start gap-3 mb-6">
           <LanguageSwitcher />
           <button
             onClick={() => navigate(-1)}
-            className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium"
+            className="text-white hover:text-game-yellow transition-colors flex items-center gap-2 cursor-pointer text-sm font-medium border border-white/30 hover:border-game-yellow rounded-lg px-4 py-2"
           >
             ← {t('common.back')}
           </button>
         </div>
 
         {/* Content card */}
-        <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-8 shadow-2xl">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
+        <div className="app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-8 xl:p-10 shadow-2xl">
+          <h1 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white mb-2 text-center" style={{ textShadow: '3px 3px 0 #2563EB' }}>
             {t('legal.privacyPolicyTitle')}
           </h1>
           <p className="text-white/40 text-sm text-center mb-6 sm:mb-8">{t('legal.lastUpdated')}: 2026-02-25</p>

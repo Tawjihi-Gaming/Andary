@@ -56,7 +56,7 @@ function LoginPage({ onLogin }) {
           ))}
         </div>
       
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-16 w-full max-w-6xl z-10 flex-1">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-16 xl:gap-24 w-full max-w-6xl xl:max-w-7xl z-10 flex-1">
           {/* Logo - Right Side */}
           <div className="flex flex-col items-center gap-8">
             <Logo/>

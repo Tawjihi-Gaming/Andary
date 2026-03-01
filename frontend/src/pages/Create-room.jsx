@@ -145,7 +145,7 @@ const CreateRoom = ({ user, onLogout }) => {
         <Navbar user={user} onLogout={onLogout} />
       </div>
      <div className="flex-grow flex items-center justify-center px-4 py-8"> 
-      <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-4xl shadow-2xl">
+      <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 xl:p-10 w-full sm:w-3/4 max-w-4xl xl:max-w-5xl shadow-2xl">
         <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg shadow-game-yellow/20">
           <span className="text-2xl sm:text-4xl pt-2">➕</span>
         </div>
@@ -247,7 +247,7 @@ const CreateRoom = ({ user, onLogout }) => {
               ) : topicsError ? (
                 <p className="text-red-300 text-sm text-center py-6">{topicsError}</p>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
                   {availableTopics.map((topic, index) => (
                     <div
                       key={`${topic}-${index}`}
@@ -344,7 +344,7 @@ const CreateRoom = ({ user, onLogout }) => {
             {t('common.back')}
           </button>
         </form>
-        <div className="w-full sm:w-3/4 max-w-4xl mx-auto mt-6 pb-6">
+        <div className="w-full sm:w-3/4 max-w-4xl xl:max-w-5xl mx-auto mt-6 pb-6">
           <LegalFooter />
         </div>
       </div>

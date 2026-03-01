@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect,useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
-import { saveRoomSession } from '../utils/roomSession'
+import { loadRoomSession, saveRoomSession, clearRoomSession } from '../utils/roomSession'
 import LegalFooter from '../components/LegalFooter'
 import Navbar from '../components/Navbar.jsx'
 import GamePopup from '../components/GamePopup'
@@ -53,6 +53,40 @@ const Lobby = ({ user, onLogout }) => {
       }
     }
   }
+
+  // On mount, check if the player has an active room/game session.
+  // If the room still exists and the game is in progress, redirect them back.
+  useEffect(() => {
+    const checkActiveSession = async () => {
+      const savedRoom = loadRoomSession()
+      if (!savedRoom?.roomId || !savedRoom?.sessionId) return
+
+      try {
+        const res = await api.get(`/room/${savedRoom.roomId}`)
+        const room = res?.data
+        if (!room) return
+
+        // Check if this player is still in the room
+        const players = room?.players || []
+        const stillInRoom = players.some(p => p.sessionId === savedRoom.sessionId)
+        if (!stillInRoom) {
+          clearRoomSession()
+          return
+        }
+
+        const phase = room?.phase
+        // If the room is in any active phase (not ended), redirect player back
+        if (phase && phase !== 'GameEnded') {
+          navigate(`/room/${savedRoom.roomId}`, { state: savedRoom })
+        }
+      } catch {
+        // Room no longer exists — clear stale session
+        clearRoomSession()
+      }
+    }
+
+    checkActiveSession()
+  }, [])
 
   const firstLoadRef = useRef(true);
 

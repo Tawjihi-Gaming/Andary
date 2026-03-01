@@ -309,6 +309,26 @@ const GameRoom = ({ user }) => {
                 })
 
                 connection.on('GameStateSync', (state) => {
+                    // If the game has already started (phase is not Lobby),
+                    // redirect the player to the game page instead of staying in the waiting room.
+                    if (state?.phase && state.phase !== 'Lobby') {
+                        console.log('Game already in progress — redirecting to game page. Phase:', state.phase)
+                        saveGameSessionSnapshot({ roomId, sessionId, user, state })
+                        const syncedTimer = state?.answerTimeSeconds || timer
+                        navigate(`/game/${roomId}`, {
+                            state: {
+                                ...roomState,
+                                user,
+                                roomId,
+                                code,
+                                sessionId,
+                                timer: syncedTimer,
+                                answerTimeSeconds: syncedTimer,
+                                gameState: state,
+                            }
+                        })
+                        return
+                    }
                     if (state?.players) {
                         setPlayers(state.players.map(normalizePlayer))
                     }

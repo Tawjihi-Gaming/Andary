@@ -144,7 +144,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
       showMessage(t('profile.usernameMinLength'), 'error')
       return
     }
-    if (trimmed.length > 50)
+    if (trimmed.length > 20)
     {
       showMessage(t('profile.usernameMaxLength'), 'error')
       return

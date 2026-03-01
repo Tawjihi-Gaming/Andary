@@ -61,7 +61,7 @@
     "resetPasswordMinLength": "密码至少需要6个字符。",
     "resetPasswordMaxLength": "密码不能超过100个字符。",
     "resetPasswordMismatch": "两次输入的密码不一致。",
-    "passwordPolicy": "密码必须至少6个字符，且不能超过100个字符。",
+    "passwordPolicy": "密码必须至少6个字符。",
     "emailInUse": "❌ 电子邮箱已被使用。请使用不同的邮箱。",
     "loginError": "登录失败。请检查凭据并重试。"
   },

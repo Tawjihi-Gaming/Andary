@@ -61,7 +61,7 @@
     "resetPasswordMinLength": "Password must be at least 6 characters.",
     "resetPasswordMaxLength": "Password must not exceed 100 characters.",
     "resetPasswordMismatch": "Passwords do not match.",
-    "passwordPolicy": "Password must be 6–100 characters.",
+    "passwordPolicy": "Password must be 6 characters at least.",
     "emailInUse": "❌ Email is already in use. Please use a different email.",
     "loginError": "Failed to log in. Please check your credentials and try again."
   },

@@ -385,7 +385,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   <input
                     type="text"
                     value={username}
-                    maxLength={50}
+                    maxLength={20}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
                     placeholder={t('profile.enterNewUsername')}

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Backend.Extensions
 {
@@ -6,6 +7,11 @@ namespace Backend.Extensions
     {
         public static WebApplication UseAppPipeline(this WebApplication app)
         {
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+
             app.UseExceptionHandler(errorApp =>
             {
                 errorApp.Run(async context =>
@@ -33,6 +39,8 @@ namespace Backend.Extensions
                     }
                 });
             });
+
+            app.UseRateLimiter();
 
             app.UseAuthentication();
             app.UseAuthorization();

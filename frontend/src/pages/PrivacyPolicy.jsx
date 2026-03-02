@@ -92,12 +92,6 @@ const PrivacyPolicy = () => {
                 <li>{t('privacy.rightsItem3')}</li>
               </ul>
             </section>
-
-            {/* Contact */}
-            {/* <section>
-              <h2 className="text-lg sm:text-xl font-bold text-game-yellow mb-2">{t('privacy.contactTitle')}</h2>
-              <p>{t('privacy.contactText')}</p>
-            </section> */}
           </div>
         </div>
       </div>

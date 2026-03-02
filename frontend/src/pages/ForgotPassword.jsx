@@ -94,6 +94,7 @@ const ForgotPassword = () => {
               placeholder={t('auth.email')}
               value={email}
               required
+              maxLength={50}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-cyan focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}

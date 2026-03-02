@@ -4,6 +4,7 @@ import api from '../api/axios'
 import { editPlayer } from '../api/auth'
 import AvatarPicker, { AVATARS } from '../components/AvatarPicker'
 import LegalFooter from '../components/LegalFooter'
+import PasswordInput from '../components/PasswordInput'
 import Navbar from '../components/Navbar'
 
 const XP_PER_LEVEL = 100
@@ -133,15 +134,26 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
   // Update username
   const handleUpdateUsername = async () => {
-    if (!username.trim())
+    const trimmed = username.trim()
+    if (!trimmed)
     {
+      return
+    }
+    if (trimmed.length < 3)
+    {
+      showMessage(t('profile.usernameMinLength'), 'error')
+      return
+    }
+    if (trimmed.length > 20)
+    {
+      showMessage(t('profile.usernameMaxLength'), 'error')
       return
     }
     setLoading(true)
     try
     {
-      await editPlayer({ username })
-      onUpdateUser?.({ ...user, username })
+      await editPlayer({ username: trimmed })
+      onUpdateUser?.({ ...user, username: trimmed })
       showMessage(t('profile.usernameUpdated'))
       setEditingField(null)
     }
@@ -160,15 +172,21 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
 
   // Update email
   const handleUpdateEmail = async () => {
-    if (!email.trim())
+    const trimmed = email.trim()
+    if (!trimmed)
     {
+      return
+    }
+    if (trimmed.length > 50)
+    {
+      showMessage(t('profile.emailMaxLength'), 'error')
       return
     }
     setLoading(true)
     try
     {
-      await editPlayer({ email })
-      onUpdateUser?.({ ...user, email })
+      await editPlayer({ email: trimmed })
+      onUpdateUser?.({ ...user, email: trimmed })
       showMessage(t('profile.emailUpdated'))
       setEditingField(null)
     }
@@ -224,6 +242,11 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
     if (newPassword.length < 6)
     {
       showMessage(t('profile.passwordMinLength'), 'error')
+      return
+    }
+    if (newPassword.length > 100)
+    {
+      showMessage(t('profile.passwordMaxLength'), 'error')
       return
     }
     setLoading(true)
@@ -362,6 +385,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   <input
                     type="text"
                     value={username}
+                    maxLength={20}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
                     placeholder={t('profile.enterNewUsername')}
@@ -405,6 +429,7 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                   <input
                     type="email"
                     value={email}
+                    maxLength={50}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
                     placeholder={t('profile.enterNewEmail')}
@@ -451,20 +476,23 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
                 <label className="text-white/50 text-xs uppercase tracking-wider mb-1 block">{t('profile.passwordLabel')}</label>
                 {editingField === 'password' ? (
                   <div className="flex flex-col gap-3">
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
+                      className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 pe-12 outline-none border border-white/20 focus:border-game-yellow transition-colors"
                       placeholder={t('profile.newPassword')}
+                      minLength={6}
+                      maxLength={100}
                     />
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 outline-none border border-white/20 focus:border-game-yellow transition-colors"
+                      className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 pe-12 outline-none border border-white/20 focus:border-game-yellow transition-colors"
                       placeholder={t('profile.confirmPassword')}
+                      minLength={6}
+                      maxLength={100}
                     />
+                    <p className="text-white/50 text-xs">{t('auth.passwordPolicy')}</p>
                     <div className="flex gap-2">
                       <button
                         onClick={handleUpdatePassword}
@@ -540,7 +568,6 @@ const Profile = ({ user, onLogout, onUpdateUser }) => {
             </div>
           )}
 
-          {/* LOGOUT BUTTON */}
         </div>
         <LegalFooter />
       </div>

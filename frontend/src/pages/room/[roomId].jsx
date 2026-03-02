@@ -198,11 +198,6 @@ const GameRoom = ({ user }) => {
                 connection = await startConnection()
                 setConnectionStatus('connected')
 
-                // Player joined notification
-                // connection.on('PlayerConnected', (playerName) => {
-                //     console.log('Player joined:', playerName)
-                // })
-
                 // Lobby state updated (player list with ready status)
                 connection.on('LobbyUpdated', (lobbyState) => {
                     console.log('Lobby updated:', lobbyState)

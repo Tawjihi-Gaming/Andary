@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../api/axios'
+import { login, signup, getGoogleLoginUrl } from '../api/auth'
 import AvatarPicker, { AVATARS } from './AvatarPicker'
-import LegalFooter from './LegalFooter'
+import PasswordInput from './PasswordInput'
 
 const createClientKey = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -61,7 +61,7 @@ const Auth = ({ onLogin }) => {
 
     try
     {
-      const res = await api.get('/auth/google-login')
+      const res = await getGoogleLoginUrl()
       window.location.href = res.data.url
     }
     catch (error)
@@ -119,12 +119,12 @@ const Auth = ({ onLogin }) => {
           setLoading(false)
           return
         }
-        await api.post('/auth/signup', {
-          username: displayName.trim(),
+        await signup(
+          displayName.trim(),
           email,
           password,
-          avatarImageName: selectedAvatar.emoji,
-        })
+          selectedAvatar.emoji,
+        )
         showMessage(t('auth.accountCreated'), 'success')
       }
       else
@@ -132,10 +132,7 @@ const Auth = ({ onLogin }) => {
         /*
         Login API
         */
-        const response = await api.post('/auth/login', {
-          email,
-          password
-        })
+        const response = await login(email, password)
         showMessage(t('auth.loginSuccess'), 'success')
         // Build user object from the backend response
         const userData = {
@@ -143,6 +140,7 @@ const Auth = ({ onLogin }) => {
           username: response.data.username,
           email: response.data.email || email,
           avatar: response.data.avatarImageName || '👤',
+          xp: response.data.xp || 0,
           isGuest: false
         }
         setTimeout(() => onLogin?.(userData), 1000)
@@ -150,9 +148,12 @@ const Auth = ({ onLogin }) => {
     }
     catch (error)
     {
-      console.error('Auth error:', error)
-      const errorMsg = error.response?.data?.msg || t('auth.authError')
-      showMessage(`❌ ${errorMsg}`, 'error')
+      if(error.response?.data?.msg === 'Email already used' || error.response?.data?.msg === 'Email is already in use') {
+        showMessage(t('auth.emailInUse'), 'error')
+      }
+      else{
+        showMessage(t('auth.loginError'), 'error')
+      }
     }
     finally
     {
@@ -161,7 +162,7 @@ const Auth = ({ onLogin }) => {
   }
 
   return (
-    <div className="auth-card app-glass-card-strong backdrop-blur-xl rounded-3xl p-2 sm:p-6 w-full max-w-md shadow-2xl">
+    <div className="auth-card app-glass-card-strong backdrop-blur-xl rounded-3xl p-2 sm:p-6 xl:p-8 w-full max-w-md lg:max-w-lg shadow-2xl">
       {/* Toast Message */}
       {message && (
         <div
@@ -187,7 +188,7 @@ const Auth = ({ onLogin }) => {
         <button
           onClick={() => setActiveTab('guest')}
           className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-bold text-sm sm:text-base transition-all duration-300 ${
-            activeTab === 'guest' ? 'tab-active' : 'tab-inactive hover:bg-white/20'
+            activeTab === 'guest' ? 'tab-active' : 'tab-inactive hover:bg-white/20 hover:text-white'
           }`}
         >
           {t('auth.playAsGuest')}
@@ -195,7 +196,7 @@ const Auth = ({ onLogin }) => {
         <button
           onClick={() => setActiveTab('signin')}
           className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-bold text-sm sm:text-base transition-all duration-300 ${
-            activeTab === 'signin' ? 'tab-active' : 'tab-inactive hover:bg-white/20'
+            activeTab === 'signin' ? 'tab-active' : 'tab-inactive hover:bg-white/20 hover:text-white'
           }`}
         >
           {t('auth.signIn')}
@@ -243,7 +244,7 @@ const Auth = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4"
+            className="btn-game w-full bg-game-yellow text-gray-900 hover:text-black font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4"
           >
             {t('auth.startPlaying')}
           </button>
@@ -281,6 +282,7 @@ const Auth = ({ onLogin }) => {
               placeholder={t('auth.email')}
               value={email}
               required
+              maxLength={50}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-cyan focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
@@ -290,20 +292,19 @@ const Auth = ({ onLogin }) => {
             </svg>
           </div>
 
-          <div className="relative">
-            <input
-              type="password"
+          <PasswordInput
               placeholder={t('auth.password')}
               value={password}
               required
+              minLength={6}
+              maxLength={100}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
-            <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
+          {isSignUp && (
+            <p className="text-white/50 text-xs -mt-2">{t('auth.passwordPolicy')}</p>
+          )}
 
           {!isSignUp && (
             <div className="text-end -mt-1">
@@ -341,7 +342,7 @@ const Auth = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="btn-game w-full bg-game-yellow text-gray-900 hover:text-black font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? t('common.processing') : (isSignUp ? t('auth.createAccount') : t('auth.login'))}
@@ -359,7 +360,7 @@ const Auth = ({ onLogin }) => {
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="flex-1 bg-white hover:bg-gray-300 text-gray-800 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 font-medium shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 bg-white hover:bg-gray-300 text-gray-800 hover:text-gray-900 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 font-medium shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (
@@ -379,9 +380,6 @@ const Auth = ({ onLogin }) => {
           </div>
         </form>
       )}
-      <div className="text-center text-sm text-white/50">
-          <LegalFooter />
-      </div>
     </div>
   )
 }

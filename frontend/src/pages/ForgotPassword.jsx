@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../api/axios'
+import { forgotPassword as forgotPasswordApi } from '../api/auth'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const ForgotPassword = () => {
-  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'ar'
 
@@ -42,7 +41,7 @@ const ForgotPassword = () => {
 
     setLoading(true)
     try {
-      const response = await api.post('/auth/forgot-password', { email: email.trim() })
+      const response = await forgotPasswordApi(email.trim())
       showMessage(`✅ ${getForgotPasswordMessage(response.data?.msg)}`, 'success')
       setEmail('')
     }
@@ -63,7 +62,7 @@ const ForgotPassword = () => {
         <LanguageSwitcher />
       </div>
 
-      <div className="w-full max-w-md app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 shadow-2xl z-10">
+      <div className="w-full max-w-md lg:max-w-lg app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 xl:p-8 shadow-2xl z-10">
         <h1 className="text-2xl sm:text-3xl font-extrabold m-1 text-white text-center mb-2" style={{ textShadow: '3px 3px 0 #2563EB' }}>
           {t('auth.forgotPasswordTitle')}
         </h1>
@@ -95,6 +94,7 @@ const ForgotPassword = () => {
               placeholder={t('auth.email')}
               value={email}
               required
+              maxLength={50}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-cyan focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
@@ -106,7 +106,7 @@ const ForgotPassword = () => {
 
           <button
             type="submit"
-            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="btn-game w-full bg-game-yellow text-gray-900 hover:text-black font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? t('common.processing') : t('auth.sendResetLink')}

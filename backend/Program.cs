@@ -21,6 +21,10 @@ builder.Services.AddAppDatabase();
 builder.Services.AddAppServices();
 #endregion
 
+#region Rate Limiting
+builder.Services.AddAppRateLimiting(builder.Configuration);
+#endregion
+
 #region App
 var app = builder.Build();
 #endregion

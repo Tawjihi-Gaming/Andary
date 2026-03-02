@@ -4,7 +4,7 @@ import { GAME_HUB_URL } from './config'
 let connection = null
 
 // Create and configure the SignalR connection
-export const createConnection = () => {
+const createConnection = () => {
   if (connection) return connection
 
   connection = new signalR.HubConnectionBuilder()
@@ -85,4 +85,4 @@ export const stopConnection = async () => {
 // Get the current connection
 export const getConnection = () => connection
 
-export default { createConnection, startConnection, stopConnection, getConnection }
+

@@ -38,6 +38,39 @@ public class RoomController : ControllerBase
         if (string.IsNullOrEmpty(request.Name))
             return BadRequest(new { error = "Room name is required." });
 
+        if (request.Name.Length > 10)
+            return BadRequest(new { error = "Room name cannot exceed 10 characters." });
+        var canonicalSelectedTopics = new List<string>();
+        if (request.SelectedTopics != null)
+        {
+            if (request.SelectedTopics.Count > 7)
+                return BadRequest(new { error = "A room can have at most 7 topics." });
+
+            var availableTopics = _questionsService.GetTopics();
+            var uniqueRequestedTopics = request.SelectedTopics
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Select(t => t.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var requestedTopic in uniqueRequestedTopics)
+            {
+                var matchedTopic = availableTopics.FirstOrDefault(t =>
+                    string.Equals(t?.Trim(), requestedTopic, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedTopic == null)
+                {
+                    return BadRequest(new
+                    {
+                        error = "One or more selected topics are invalid.",
+                        invalidTopic = requestedTopic
+                    });
+                }
+
+                canonicalSelectedTopics.Add(matchedTopic);
+            }
+        }
+
         RoomType type = request.IsPrivate ? RoomType.Private : RoomType.Public;
 
         // Create the owner's SessionPlayer
@@ -64,14 +97,8 @@ public class RoomController : ControllerBase
         var (room, owner) = _game.CreateRoom(type, request.Questions, request.Name, creator, answerTimeSeconds);
 
         // Add topics selected during room creation (needed for StartGame)
-        if (request.SelectedTopics != null)
-        {
-            foreach (var topic in request.SelectedTopics.Take(7)) // max 7 topics per room
-            {
-                if (!string.IsNullOrWhiteSpace(topic))
-                    _game.AddTopic(room, topic.Trim());
-            }
-        }
+        foreach (var topic in canonicalSelectedTopics)
+            _game.AddTopic(room, topic);
 
         return Ok(new
         {
@@ -274,42 +301,7 @@ public class RoomController : ControllerBase
             });
         }
     }
-
-	[HttpGet("player-game-history")]
-    public IActionResult GetPlayerGameHistory([FromQuery] int playerId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
-    {
-        if (playerId <= 0 || pageNumber <= 0 || pageSize <= 0)
-        {
-            return BadRequest(new { error = "Invalid player ID, page number, or page size." });
-        }
-
-        int startRow = (pageNumber - 1) * pageSize;
-
-        var gameHistories = _context.GameParticipants
-            .Where(gp => gp.PlayerId == playerId)
-            .Include(gp => gp.GameSession)
-            .OrderByDescending(gp => gp.GameSession.CreatedAt)
-            .Skip(startRow)
-            .Take(pageSize)
-            .Select(gp => new
-            {
-                gp.GameSessionId,
-                gp.FinalScore,
-                gp.FinalRank,
-                EndDate = gp.GameSession.FinishedAt,
-                gp.GameSession.TotalRounds
-            })
-            .ToList();
-
-        if (!gameHistories.Any())
-        {
-            return NotFound(new { error = "No game history found for the specified player." });
-        }
-
-        return Ok(gameHistories);
-    }
 }
-
 // Request DTOs
 public class CreateRoomRequest
 {

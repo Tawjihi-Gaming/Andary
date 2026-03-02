@@ -18,7 +18,7 @@ function LoginPage({ onLogin }) {
 
   return (
     <>
-      <div className="min-h-screen app-page-bg flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen app-page-bg flex flex-col items-center justify-center p-4 relative overflow-auto">
       {/* Language Switcher */}
         <div dir="ltr" className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
           <LanguageSwitcher />
@@ -56,7 +56,7 @@ function LoginPage({ onLogin }) {
           ))}
         </div>
       
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-16 w-full max-w-6xl z-10">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-16 xl:gap-24 w-full max-w-6xl xl:max-w-7xl z-10 flex-1">
           {/* Logo - Right Side */}
           <div className="flex flex-col items-center gap-8">
             <Logo/>
@@ -65,7 +65,10 @@ function LoginPage({ onLogin }) {
           {/* Auth and Login - Left Side */}
           <Auth onLogin={onLogin} />
         </div>
-       
+
+        <div className="w-full z-10 shrink-0">
+          <LegalFooter />
+        </div>
       </div>
     </>
   )

@@ -60,11 +60,11 @@ const GameRoom = ({ user }) => {
 
     const [connectionStatus, setConnectionStatus] = useState('connecting')
     const [players, setPlayers] = useState([])
-    const [gameState, setGameState] = useState(null)
     const [roomOwnerId, setRoomOwnerId] = useState(roomState.ownerId)
     const [roomOwnerName, setRoomOwnerName] = useState(roomState.ownerName)
     const [isReady, setIsReady] = useState(false)
     const [isCopied, setIsCopied] = useState(false)
+    const [roomError, setRoomError] = useState('')
     const [closedRoomPopup, setClosedRoomPopup] = useState({
         open: false,
         message: '',
@@ -198,11 +198,6 @@ const GameRoom = ({ user }) => {
                 connection = await startConnection()
                 setConnectionStatus('connected')
 
-                // Player joined notification
-                // connection.on('PlayerConnected', (playerName) => {
-                //     console.log('Player joined:', playerName)
-                // })
-
                 // Lobby state updated (player list with ready status)
                 connection.on('LobbyUpdated', (lobbyState) => {
                     console.log('Lobby updated:', lobbyState)
@@ -221,7 +216,6 @@ const GameRoom = ({ user }) => {
                 // Game started
                 connection.on('GameStarted', (state) => {
                     console.log('Game started:', state)
-                    setGameState(state)
                     saveGameSessionSnapshot({ roomId, sessionId, user, state })
                     const syncedTimer = state?.answerTimeSeconds || timer
                     navigate(`/game/${roomId}`, {
@@ -237,7 +231,6 @@ const GameRoom = ({ user }) => {
                 // Choose round topic
                 connection.on('ChooseRoundTopic', (state) => {
                     console.log('Choose round topic:', state)
-                    setGameState(state)
                     saveGameSessionSnapshot({ roomId, sessionId, user, state })
                     const syncedTimer = state?.answerTimeSeconds || timer
                     navigate(`/game/${roomId}`, {
@@ -258,19 +251,16 @@ const GameRoom = ({ user }) => {
                 connection.on('ShowChoices', (payload) => {
                     const choices = Array.isArray(payload) ? payload : (payload?.choices || [])
                     console.log('Answer choices:', choices)
-                    setGameState(prev => ({ ...prev, choices }))
                 })
 
                 // Round ended
                 connection.on('RoundEnded', (state) => {
                     console.log('Round ended:', state)
-                    setGameState(state)
                 })
 
                 // Game ended
                 connection.on('GameEnded', (state) => {
                     console.log('Game ended:', state)
-                    setGameState(state)
                 })
 
                 // Ownership transferred
@@ -297,7 +287,6 @@ const GameRoom = ({ user }) => {
                 // Room state
                 connection.on('RoomState', (state) => {
                     console.log('Room state received:', state)
-                    setGameState(state)
                     if (state?.ownerSessionId) {
                         setRoomOwnerId(state.ownerSessionId)
                     }
@@ -315,9 +304,41 @@ const GameRoom = ({ user }) => {
                 })
 
                 connection.on('GameStateSync', (state) => {
+                    // If the game has already started (phase is not Lobby),
+                    // redirect the player to the game page instead of staying in the waiting room.
+                    if (state?.phase && state.phase !== 'Lobby') {
+                        console.log('Game already in progress — redirecting to game page. Phase:', state.phase)
+                        saveGameSessionSnapshot({ roomId, sessionId, user, state })
+                        const syncedTimer = state?.answerTimeSeconds || timer
+                        navigate(`/game/${roomId}`, {
+                            state: {
+                                ...roomState,
+                                user,
+                                roomId,
+                                code,
+                                sessionId,
+                                timer: syncedTimer,
+                                answerTimeSeconds: syncedTimer,
+                                gameState: state,
+                            }
+                        })
+                        return
+                    }
                     if (state?.players) {
                         setPlayers(state.players.map(normalizePlayer))
                     }
+                })
+
+                connection.on('TopicAddFailed', () => {
+                    setRoomError(t('room.topicAddFailed'))
+                })
+
+                connection.on('GameError', () => {
+                    setRoomError(t('room.gameStartError'))
+                })
+
+                connection.on('TopicSelectionFailed', () => {
+                    setRoomError(t('room.topicSelectionFailed'))
                 })
 
                 // Room closed
@@ -325,8 +346,8 @@ const GameRoom = ({ user }) => {
                     console.log('Room closed:', data)
                     setClosedRoomPopup({
                         open: true,
-                        message: data?.message || t('room.closedFallbackMessage'),
-                        reason: data?.reason || '',
+                        message: t('room.closedFallbackMessage'),
+                        reason: data?.reason ? t('room.allPlayersLeft') : '',
                     })
                 })
 
@@ -372,15 +393,18 @@ const GameRoom = ({ user }) => {
                 conn.off('PlayerDisconnected')
                 conn.off('RoomState')
                 conn.off('GameStateSync')
+                conn.off('TopicAddFailed')
+                conn.off('GameError')
+                conn.off('TopicSelectionFailed')
                 conn.off('RoomClosed')
             }
         }
     }, [roomId, sessionId])
    
     return (
-        <div className="min-h-screen app-page-bg relative overflow-hidden flex items-center justify-center p-3 sm:p-6">
-            <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 w-full sm:w-3/4 max-w-6xl shadow-2xl">
-                <h1 className="text-xl sm:text-3xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
+        <div className="min-h-screen app-page-bg relative overflow-hidden flex items-center justify-center p-3 sm:p-6 lg:p-8">
+            <div className="app-glass-card backdrop-blur-2xl rounded-3xl p-4 sm:p-8 xl:p-10 w-full sm:w-3/4 max-w-6xl 2xl:max-w-7xl shadow-2xl">
+                <h1 className="text-xl sm:text-3xl xl:text-4xl font-extrabold text-white mb-2 text-center">{roomName}</h1>
                 <p className="text-white/80 text-center mb-4 text-xs sm:text-sm">
                     {t('room.type')} {roomTypeLabel}
                 </p>
@@ -401,10 +425,19 @@ const GameRoom = ({ user }) => {
                     </span>
                 </div>
 
+                {/* Room Error */}
+                {roomError && (
+                    <div className="mb-4 sm:mb-6 flex justify-center">
+                        <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                            ❌ {roomError}
+                        </span>
+                    </div>
+                )}
+
                 {/* Players List */}
                 <div className="mb-4 sm:mb-6">
-                    <h3 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4 text-center">{t('room.playersCount', { count: players.length })}</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4 max-h-64 overflow-y-auto">
+                    <h3 className="text-lg sm:text-2xl xl:text-3xl font-bold text-white mb-3 sm:mb-4 text-center">{t('room.playersCount', { count: players.length })}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 lg:gap-5 max-h-64 lg:max-h-80 overflow-y-auto">
                         {players.map((player) => (
                             <div 
                                 key={player.sessionId}
@@ -417,7 +450,7 @@ const GameRoom = ({ user }) => {
                                 } transition-all duration-300`}
                             >
                                 <div className="flex flex-col items-center gap-1 sm:gap-3">
-                                    <span className="text-4xl sm:text-6xl">{player?.avatar || '👤'}</span>
+                                    <span className="text-4xl sm:text-6xl xl:text-7xl">{player?.avatar || '👤'}</span>
                                     <p className="text-white text-xs sm:text-base font-semibold truncate w-full text-center">
                                         {player.name}
                                         {player.sessionId === roomOwnerId && ' 👑'}
@@ -429,12 +462,22 @@ const GameRoom = ({ user }) => {
                             </div>
                         ))}
                     </div>
+                    {players.length < 2 && (
+                        <p className="text-yellow-400/80 text-xs sm:text-sm text-center mt-3 animate-pulse">
+                            ⚠️ {t('room.minimumPlayers')}
+                        </p>
+                    )}
+                    {players.length >= 6 && (
+                        <p className="text-red-400/80 text-xs sm:text-sm text-center mt-3 animate-pulse">
+                            🚫 {t('room.roomIsFull')}
+                        </p>
+                    )}
                 </div>
 
                 {canCopyCode && (
                     <button
                         onClick={handleCopyCode}
-                        className="mt-4 cursor-pointer sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        className="mt-4 cursor-pointer sm:mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:text-yellow-100 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                     >
                         {isCopied ? (
                             <>
@@ -462,7 +505,7 @@ const GameRoom = ({ user }) => {
                                 disabled={!allPlayersReady}
                                 className={`mt-3 sm:mt-4 w-full font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 ${
                                     allPlayersReady
-                                        ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                                        ? 'bg-blue-500 hover:bg-blue-600 text-white hover:text-yellow-100 cursor-pointer'
                                         : 'bg-gray-500/30 text-white/40 cursor-not-allowed'
                                 }`}
                             >
@@ -477,7 +520,7 @@ const GameRoom = ({ user }) => {
                             {!isReady ? (
                                 <button
                                     onClick={handleReadyUp}
-                                    className="mt-3 sm:mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
+                                    className="mt-3 cursor-pointer sm:mt-4 w-full bg-green-500 hover:bg-green-600 text-white hover:text-yellow-100 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300"
                                 >
                                     {t('common.ready')}
                                 </button>
@@ -489,7 +532,7 @@ const GameRoom = ({ user }) => {
                                     </div>
                                     <button
                                         onClick={handleUnready}
-                                        className="mt-3 sm:mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-2 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-red-500/30"
+                                        className="mt-3 cursor-pointer sm:mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 font-bold py-2 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-red-500/30"
                                     >
                                         {t('room.cancelReady')}
                                     </button>
@@ -503,7 +546,7 @@ const GameRoom = ({ user }) => {
                 {/* Back Button */}
                 <button
                     onClick={handleBackToLobby}
-                    className="mt-4 cursor-pointer sm:mt-6 w-full bg-white/5 hover:bg-white/10 text-white/90 font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+                    className="mt-4 cursor-pointer sm:mt-6 w-full bg-white/5 hover:bg-white/10 text-white/90 hover:text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
                 >
                     {t('room.backToLobby')}
                 </button>

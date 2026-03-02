@@ -2,10 +2,28 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect,useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
-import { saveRoomSession } from '../utils/roomSession'
+import { loadRoomSession, saveRoomSession, clearRoomSession } from '../utils/roomSession'
 import LegalFooter from '../components/LegalFooter'
 import Navbar from '../components/Navbar.jsx'
 import GamePopup from '../components/GamePopup'
+
+const lobbyErrorMap = {
+  'Player name is required.': 'lobby.playerNameRequired',
+  'Player not found.': 'lobby.playerNotFound',
+  'Private rooms can only be joined using the room code.': 'lobby.privateRoomCodeOnly',
+  'Provide a room code or room ID.': 'lobby.provideCodeOrId',
+  'This account is already in the room.': 'lobby.duplicateAccount',
+  'This guest session is already in the room.': 'lobby.duplicateGuest',
+  'Unable to join room after the game has started.': 'lobby.gameAlreadyStarted',
+  'Invalid room code.': 'lobby.roomCodeError',
+  'Room not found.': 'lobby.roomNotFound',
+}
+
+const mapLobbyError = (backendMsg, fallbackKey) => {
+  if (!backendMsg) return fallbackKey
+  if (backendMsg.toLowerCase().includes('full')) return 'lobby.roomFullError'
+  return lobbyErrorMap[backendMsg] || fallbackKey
+}
 
 const Lobby = ({ user, onLogout }) => {
   const navigate = useNavigate()
@@ -35,6 +53,40 @@ const Lobby = ({ user, onLogout }) => {
       }
     }
   }
+
+  // On mount, check if the player has an active room/game session.
+  // If the room still exists and the game is in progress, redirect them back.
+  useEffect(() => {
+    const checkActiveSession = async () => {
+      const savedRoom = loadRoomSession()
+      if (!savedRoom?.roomId || !savedRoom?.sessionId) return
+
+      try {
+        const res = await api.get(`/room/${savedRoom.roomId}`)
+        const room = res?.data
+        if (!room) return
+
+        // Check if this player is still in the room
+        const players = room?.players || []
+        const stillInRoom = players.some(p => p.sessionId === savedRoom.sessionId)
+        if (!stillInRoom) {
+          clearRoomSession()
+          return
+        }
+
+        const phase = room?.phase
+        // If the room is in any active phase (not ended), redirect player back
+        if (phase && phase !== 'GameEnded') {
+          navigate(`/room/${savedRoom.roomId}`, { state: savedRoom })
+        }
+      } catch {
+        // Room no longer exists — clear stale session
+        clearRoomSession()
+      }
+    }
+
+    checkActiveSession()
+  }, [])
 
   const firstLoadRef = useRef(true);
 
@@ -125,10 +177,9 @@ const Lobby = ({ user, onLogout }) => {
     } catch (err) {
       if (err?.response?.status === 404) {
         setJoinError(t('lobby.roomNotFound'))
-      } else if (err?.response?.data?.error?.toLowerCase()?.includes('full')) {
-        setJoinError(t('lobby.roomFullError'))
       } else {
-        setJoinError(err?.response?.data?.error || t('lobby.unableToJoin'))
+        const key = mapLobbyError(err?.response?.data?.error, 'lobby.unableToJoin')
+        setJoinError(t(key))
       }
     }
   }
@@ -190,14 +241,11 @@ const Lobby = ({ user, onLogout }) => {
         })
       } catch (err) {
         //console.error('Error joining room:', err)
-        if (err?.response?.data?.error?.toLowerCase()?.includes('full')) {
-          setJoinError(t('lobby.roomFullError'))
-        } else if (err?.response?.status === 404) {
+        if (err?.response?.status === 404) {
           setJoinError(t('lobby.roomNotFound'))
-        } else if (err?.response?.data?.error?.toLowerCase()?.includes('code')) {
-          setJoinError(t('lobby.roomCodeError'))
         } else {
-          setJoinError(err?.response?.data?.error || t('lobby.unableToJoin'))
+          const key = mapLobbyError(err?.response?.data?.error, 'lobby.unableToJoin')
+          setJoinError(t(key))
         }
       }
     }
@@ -209,30 +257,30 @@ const Lobby = ({ user, onLogout }) => {
       {/* Navbar */}
       <Navbar user={user} onLogout={onLogout} />
       {/* main content */}
-      <div className="relative z-10 max-w-7xl mx-auto p-3 sm:p-6">
+      <div className="relative z-10 max-w-7xl mx-auto p-3 sm:p-6 lg:p-8 2xl:max-w-[1600px]">
         {/* welcome section */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-2">
+        <div className="mb-6 sm:mb-8 lg:mb-10">
+          <h2 className="text-2xl sm:text-4xl xl:text-5xl font-extrabold text-white mb-2">
             {t('lobby.welcome')} <span className="text-game-yellow">{user?.username || 'Player'}</span> 👋
           </h2>
-          <p className="text-white/50 text-base sm:text-lg">{t('lobby.subtitle')}</p>
+          <p className="text-white/50 text-base sm:text-lg xl:text-xl">{t('lobby.subtitle')}</p>
         </div>
 
         {/* action cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10 ">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 mb-10 ">
           {/* create room card */}
           <button
             onClick={handleCreateRoom}
-            className="group relative bg-linear-to-br from-game-yellow/20 to-game-orange/20 hover:from-game-yellow/30 hover:to-game-orange/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl border border-game-yellow/30 hover:border-game-yellow/50 transition-all cursor-pointer duration-300 text-start overflow-hidden"
+            className="group relative bg-linear-to-br from-game-yellow/20 to-game-orange/20 hover:from-game-yellow/30 hover:to-game-orange/30 backdrop-blur-xl p-4 sm:p-6 xl:p-8 rounded-2xl border border-game-yellow/30 hover:border-game-yellow/50 transition-all cursor-pointer duration-300 text-start overflow-hidden"
           >
             <div className="absolute top-0 end-0 w-32 h-32 bg-game-yellow/10 rounded-full blur-2xl -translate-y-8 ltr:translate-x-8 rtl:-translate-x-8 group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="relative flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-linear-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-110 transition-transform">
-                <span className="text-2xl sm:text-3xl pt-2">➕</span>
+            <div className="relative flex items-center gap-3 sm:gap-4 xl:gap-5">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 xl:w-20 xl:h-20 bg-linear-to-br from-game-yellow to-game-orange rounded-2xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-110 transition-transform">
+                <span className="text-2xl sm:text-3xl xl:text-4xl pt-2">➕</span>
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{t('lobby.createRoom')}</h3>
-                <p className="text-white/50 text-xs sm:text-sm">{t('lobby.createRoomSub')}</p>
+                <h3 className="text-lg sm:text-xl xl:text-2xl font-bold text-white group-hover:text-game-yellow mb-1 transition-colors">{t('lobby.createRoom')}</h3>
+                <p className="text-white/50 group-hover:text-white/70 text-xs sm:text-sm xl:text-base transition-colors">{t('lobby.createRoomSub')}</p>
               </div>
             </div>
           </button>
@@ -240,16 +288,16 @@ const Lobby = ({ user, onLogout }) => {
           {/* join by code card */}
           <button
             onClick={handleJoinByCode}
-            className="group relative bg-linear-to-br from-game-cyan/20 to-game-blue/20 hover:from-game-cyan/30 hover:to-game-blue/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl cursor-pointer border border-game-cyan/30 hover:border-game-cyan/50 transition-all duration-300 text-start overflow-hidden"
+            className="group relative bg-linear-to-br from-game-cyan/20 to-game-blue/20 hover:from-game-cyan/30 hover:to-game-blue/30 backdrop-blur-xl p-4 sm:p-6 xl:p-8 rounded-2xl cursor-pointer border border-game-cyan/30 hover:border-game-cyan/50 transition-all duration-300 text-start overflow-hidden"
           >
             <div className="absolute top-0 end-0 w-32 h-32 bg-game-cyan/10 rounded-full blur-2xl -translate-y-8 ltr:translate-x-8 rtl:-translate-x-8 group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="relative flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-linear-to-br from-game-cyan to-game-blue rounded-2xl flex items-center justify-center shadow-lg shadow-game-cyan/20 group-hover:scale-110 transition-transform">
-                <span className="text-2xl sm:text-3xl pt-2">🔗</span>
+            <div className="relative flex items-center gap-3 sm:gap-4 xl:gap-5">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 xl:w-20 xl:h-20 bg-linear-to-br from-game-cyan to-game-blue rounded-2xl flex items-center justify-center shadow-lg shadow-game-cyan/20 group-hover:scale-110 transition-transform">
+                <span className="text-2xl sm:text-3xl xl:text-4xl pt-2">🔗</span>
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{t('lobby.joinByCode')}</h3>
-                <p className="text-white/50 text-xs sm:text-sm">{t('lobby.joinByCodeSub')}</p>
+                <h3 className="text-lg sm:text-xl xl:text-2xl font-bold text-white group-hover:text-game-cyan mb-1 transition-colors">{t('lobby.joinByCode')}</h3>
+                <p className="text-white/50 group-hover:text-white/70 text-xs sm:text-sm xl:text-base transition-colors">{t('lobby.joinByCodeSub')}</p>
               </div>
             </div>
           </button>
@@ -263,9 +311,9 @@ const Lobby = ({ user, onLogout }) => {
             </div>
           )}
           <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 sm:gap-3">
+            <h2 className="text-xl sm:text-2xl xl:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
               {t('lobby.availableRooms')}
-              <span className="text-sm font-medium bg-white/10 text-white/60 px-3 py-1 rounded-full">{lobbies.length} {t('lobby.lobbies')}</span>
+              <span className="text-sm xl:text-base font-medium bg-white/10 text-white/60 px-3 py-1 rounded-full">{lobbies.length} {t('lobby.lobbies')}</span>
             </h2>
           </div>
 
@@ -274,7 +322,7 @@ const Lobby = ({ user, onLogout }) => {
               {t('lobby.loadingRooms')}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5">
               {lobbies.map((lobby) => {
                 const isFull = lobby.players >= lobby.maxPlayers
                 const fillPercent = lobby.maxPlayers > 0 ? (lobby.players / lobby.maxPlayers) * 100 : 0
@@ -282,7 +330,7 @@ const Lobby = ({ user, onLogout }) => {
                 return (
                   <div
                     key={lobby.roomId || lobby.id}
-                    className="group bg-white/5 backdrop-blur-lg rounded-2xl p-4 sm:p-5 border border-white/10 hover:border-white/25 hover:bg-white/8 transition-all duration-300"
+                    className="group bg-white/5 backdrop-blur-lg rounded-2xl p-4 sm:p-5 xl:p-6 border border-white/10 hover:border-white/25 hover:bg-white/8 transition-all duration-300"
                   >
                     {/* header */}
                     <div className="flex items-start justify-between mb-4">
@@ -344,7 +392,7 @@ const Lobby = ({ user, onLogout }) => {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6">
+      <div className="relative z-10 max-w-7xl 2xl:max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8">
         <LegalFooter />
       </div>
 
@@ -382,14 +430,14 @@ const Lobby = ({ user, onLogout }) => {
                   setShowJoinModal(false)
                   setRoomCode('')
                 }}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white/70 font-bold py-3.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold py-3.5 rounded-2xl transition-all duration-300 border border-white/10 hover:border-white/20"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleJoinSubmit}
                 disabled={!roomCode.trim()}
-                className="flex-1 bg-linear-to-r from-game-cyan to-game-blue hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-game-cyan/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                className="flex-1 bg-linear-to-r from-game-cyan to-game-blue hover:from-cyan-400 hover:to-blue-500 text-white hover:text-yellow-100 font-bold py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-game-cyan/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {t('common.join')}
               </button>

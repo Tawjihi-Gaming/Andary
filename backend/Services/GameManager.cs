@@ -31,10 +31,22 @@ public class LeaveRoomResult
     public string? NewOwnerName { get; set; }
 }
 
+// Per-player XP data returned by SaveGameSession for targeted delivery.
+public class XpAwardResult
+{
+    public string ConnectionId { get; set; } = "";
+    public int PlayerId { get; set; }
+    public int XpAwarded { get; set; }
+    public int TotalXp { get; set; }
+    public int FinalScore { get; set; }
+    public int FinalRank { get; set; }
+}
+
 public class GameManager
 {
     public const int OwnerDisconnectGraceSeconds = 10;
     public const int PlayerDisconnectGraceSeconds = 10;
+    private const double XpRankAlpha = 0.5;
     private const int TopicSelectionSeconds = 15;
     private const int ChoosingAnswerSeconds = 15;
     private const int LeaderboardSeconds = 5;
@@ -354,12 +366,17 @@ public class GameManager
     {
         if (room.Phase != GamePhase.Lobby)
             return false;
-        if (room.SelectedTopics.Count >= 7)
-            return false;
-        if (room.SelectedTopics.Contains(topic))
+        if (string.IsNullOrWhiteSpace(topic))
             return false;
 
-        room.SelectedTopics.Add(topic);
+        var normalizedTopic = topic.Trim();
+        if (room.SelectedTopics.Count >= 7)
+            return false;
+        if (room.SelectedTopics.Any(t =>
+            string.Equals(t?.Trim(), normalizedTopic, StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        room.SelectedTopics.Add(normalizedTopic);
         return true;
     }
 
@@ -369,7 +386,13 @@ public class GameManager
         if (room.Phase != GamePhase.Lobby)
             return false;
 
-        return room.SelectedTopics.Remove(topic);
+        var matchedTopic = room.SelectedTopics.FirstOrDefault(t =>
+            string.Equals(t?.Trim(), topic?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        if (matchedTopic == null)
+            return false;
+
+        return room.SelectedTopics.Remove(matchedTopic);
     }
 
     //start game — fetches questions from all selected topics
@@ -458,8 +481,6 @@ public class GameManager
     //start game — now uses all selected topics to filter questions
     public void StartGame(Room room, List<Question> questions)
     {
-        NotifyLobbiesChanged();
-
         room.Questions = questions;
         room.CurrentQuestionIndex = 0;
         room.TopicChooserIndex = Random.Shared.Next(room.Players.Count);
@@ -479,6 +500,7 @@ public class GameManager
             {
                 room.Phase = GamePhase.GameEnded;
                 RefreshPhaseDeadline(room);
+                NotifyLobbiesChanged();
                 return;
             }
 
@@ -492,6 +514,7 @@ public class GameManager
         }
 
         RefreshPhaseDeadline(room);
+        NotifyLobbiesChanged();
     }
 
     // Player selects the topic for the current round (only when multiple topics exist)
@@ -694,6 +717,13 @@ public class GameManager
         room.FakeAnswers.Clear();
         room.ChosenAnswers.Clear();
 
+        // Reset per-round gameplay flags for all players
+        foreach (var player in room.Players)
+        {
+            player.HasSubmittedFake = false;
+            player.HasChosenAnswer = false;
+        }
+
         // Randomly select next topic chooser (different from current when possible)
         if (room.Players.Count > 1)
         {
@@ -791,10 +821,10 @@ public class GameManager
     }
 
     // Save game session and participants to database.
-    // Only saves GameParticipant records for logged-in players (those with a PlayerId).
-    // Anonymous/guest players' scores are shown in-game but not persisted.
-    public async Task SaveGameSession(Room room)
+    // Returns per-player XP data for logged-in players so the hub can send targeted messages.
+    public async Task<List<XpAwardResult>> SaveGameSession(Room room)
     {
+        var xpResults = new List<XpAwardResult>();
         AppDbContext context;
         IServiceScope? scope = null;
 
@@ -834,11 +864,25 @@ public class GameManager
                 };
                 context.GameParticipants.Add(participant);
 
-                // Update the player's total XP in the database
+                // Calculate and persist XP
                 var dbPlayer = await context.Players.FindAsync(rankedPlayer.SessionPlayer.PlayerId.Value);
                 if (dbPlayer != null)
                 {
-                    dbPlayer.Xp += rankedPlayer.SessionPlayer.Score;
+                    var xpAward = CalculateXpAward(
+                        rankedPlayer.SessionPlayer.Score,
+                        rankedPlayers.Count,
+                        rankedPlayer.Rank);
+                    dbPlayer.Xp += xpAward;
+
+                    xpResults.Add(new XpAwardResult
+                    {
+                        ConnectionId = rankedPlayer.SessionPlayer.ConnectionId,
+                        PlayerId = rankedPlayer.SessionPlayer.PlayerId.Value,
+                        XpAwarded = xpAward,
+                        TotalXp = dbPlayer.Xp,
+                        FinalScore = rankedPlayer.SessionPlayer.Score,
+                        FinalRank = rankedPlayer.Rank
+                    });
                 }
             }
 
@@ -848,6 +892,21 @@ public class GameManager
         {
             scope?.Dispose();
         }
+
+        return xpResults;
+    }
+
+    private static int CalculateXpAward(int scorePoints, int totalPlayers, int rank)
+    {
+        if (scorePoints <= 0)
+            return 0;
+
+        if (totalPlayers <= 1)
+            return scorePoints;
+
+        var rankFactor = (double)(totalPlayers - rank) / (totalPlayers - 1);
+        var xp = scorePoints * (1 + XpRankAlpha * rankFactor);
+        return (int)Math.Round(xp, MidpointRounding.AwayFromZero);
     }
 
 }

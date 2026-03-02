@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../api/axios'
+import { resetPassword as resetPasswordApi } from '../api/auth'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import PasswordInput from '../components/PasswordInput'
 
 const ResetPassword = () => {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'ar'
@@ -54,6 +54,11 @@ const ResetPassword = () => {
       return
     }
 
+    if (newPassword.length > 100) {
+      showMessage(`❌ ${t('auth.resetPasswordMaxLength')}`, 'error')
+      return
+    }
+
     if (newPassword !== confirmPassword) {
       showMessage(`❌ ${t('auth.resetPasswordMismatch')}`, 'error')
       return
@@ -61,10 +66,7 @@ const ResetPassword = () => {
 
     setLoading(true)
     try {
-      const response = await api.post('/auth/reset-password', {
-        token,
-        newPassword,
-      })
+      const response = await resetPasswordApi(token, newPassword)
       showMessage(`✅ ${getResetPasswordMessage(response.data?.msg)}`, 'success')
       setNewPassword('')
       setConfirmPassword('')
@@ -86,7 +88,7 @@ const ResetPassword = () => {
         <LanguageSwitcher />
       </div>
 
-      <div className="w-full max-w-md app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 shadow-2xl z-10">
+      <div className="w-full max-w-md lg:max-w-lg app-glass-card-strong backdrop-blur-xl rounded-3xl p-4 sm:p-6 xl:p-8 shadow-2xl z-10">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white m-1 text-center mb-2" style={{ textShadow: '3px 3px 0 #2563EB' }}>
           {t('auth.resetPasswordTitle')}
         </h1>
@@ -117,42 +119,34 @@ const ResetPassword = () => {
           </div>
         )}
 
+        <p className="text-white/50 text-xs text-center mb-4">{t('auth.passwordPolicy')}</p>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <input
-              type="password"
+          <PasswordInput
               placeholder={t('auth.newPassword')}
               value={newPassword}
               required
               minLength={6}
+              maxLength={100}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
-            <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
 
-          <div className="relative">
-            <input
-              type="password"
+          <PasswordInput
               placeholder={t('auth.confirmNewPassword')}
               value={confirmPassword}
               required
               minLength={6}
+              maxLength={100}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full bg-white/10 text-white placeholder:text-white/50 rounded-xl py-3 sm:py-4 px-4 sm:px-5 pe-12 border-2 border-white/20 focus:!border-game-blue focus:!bg-white/20 transition-all duration-200"
               dir={isRTL ? 'rtl' : 'ltr'}
             />
-            <svg className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-game-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
 
           <button
             type="submit"
-            className="btn-game w-full bg-game-yellow text-gray-900 font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="btn-game w-full bg-game-yellow text-gray-900 hover:text-black font-bold text-base sm:text-lg py-3 sm:py-4 rounded-xl shadow-[0_4px_0_#D97706] border-0 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading || !token}
           >
             {loading ? t('common.processing') : t('auth.resetPasswordButton')}

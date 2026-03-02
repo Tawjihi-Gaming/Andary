@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import LoginPage from './pages/LogginPage.jsx'
@@ -12,7 +12,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
 import TermsOfService from './pages/TermsOfService.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
-import api from './api/axios'
+import { logout as apiLogout, getMe } from './api/auth'
 import ThemeSwitcher from './components/ThemeSwitcher'
 
 const createClientKey = () => {
@@ -73,7 +73,7 @@ function App() {
             window.history.replaceState({}, '', window.location.pathname)
           }
 
-          const res = await api.get('/auth/me')
+          const res = await getMe()
           const userData = {
             id: res.data.id,
             username: res.data.username,
@@ -130,6 +130,7 @@ function App() {
       ...userData,
       avatar: userData.avatar || userData.avatarImageName || '👤',
       avatarImageName: userData.avatarImageName || userData.avatar || '',
+      xp: userData.xp  || 0,
       clientKey: userData.clientKey || createClientKey(),
     }
     localStorage.setItem('isAuthenticated', 'true')
@@ -138,7 +139,12 @@ function App() {
     setIsAuthenticated(true)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiLogout()
+    } catch {
+      // If logout fails (e.g. already expired), still clear local state
+    }
     localStorage.removeItem('isAuthenticated')
     localStorage.removeItem('userData')
     setUser(null)
@@ -245,12 +251,20 @@ function App() {
           path="/game/:roomId" 
           element={
             isAuthenticated ? 
-              <Game user={user} /> :
+              <Game user={user} onUpdateUser={handleUpdateUser} /> :
               <Navigate to="/" replace />
           } 
         />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route 
+          path="*" 
+          element={
+            isAuthenticated ? 
+              <Navigate to="/lobby" replace /> : 
+              <Navigate to="/" replace />
+          } 
+        />
       </Routes>
     </BrowserRouter>
   )

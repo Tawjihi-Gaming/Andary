@@ -85,7 +85,10 @@ const CreateRoom = ({ user, onLogout }) => {
       setError(t('createRoom.maxTopicsError'))
       return
     }
-
+    if (roomName.trim().length > 10) {
+      setError(t('room.roomNameTooLong'))
+      return
+    }
     try {
       const response = await api.post('/room/create', { 
         name: roomName,

@@ -201,7 +201,8 @@
     "allPlayersLeft": "所有玩家已离开。",
     "topicAddFailed": "添加主题失败。请重试。",
     "gameStartError": "无法开始游戏。所选主题没有可用的题目。",
-    "topicSelectionFailed": "无法选择此主题。请确保轮到你并且有可用的题目。"
+    "topicSelectionFailed": "无法选择此主题。请确保轮到你并且有可用的题目。",
+    "roomNameTooLong": "❌ 房间名称不能超过10个字符。"
   },
 
   "game": {

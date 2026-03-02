@@ -38,6 +38,8 @@ public class RoomController : ControllerBase
         if (string.IsNullOrEmpty(request.Name))
             return BadRequest(new { error = "Room name is required." });
 
+        if (request.Name.Length > 10)
+            return BadRequest(new { error = "Room name cannot exceed 10 characters." });
         var canonicalSelectedTopics = new List<string>();
         if (request.SelectedTopics != null)
         {

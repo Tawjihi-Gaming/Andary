@@ -201,7 +201,8 @@
     "allPlayersLeft": "All players left.",
     "topicAddFailed": "Failed to add topic. Please try again.",
     "gameStartError": "Unable to start the game. No questions available for the selected topics.",
-    "topicSelectionFailed": "Unable to select this topic. Ensure it is your turn and questions exist."
+    "topicSelectionFailed": "Unable to select this topic. Ensure it is your turn and questions exist.",
+    "roomNameTooLong": "❌ Room name cannot exceed 10 characters."
   },
 
   "game": {

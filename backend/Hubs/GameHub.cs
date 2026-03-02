@@ -206,12 +206,17 @@ public class GameHub : Hub
             await AdvanceAfterRanking(roomId, room, cancellationToken);
     }
 
-    private async Task BroadcastLeaveResult(string roomId, LeaveRoomResult leaveResult, bool disconnected)
+    private Task BroadcastLeaveResult(string roomId, LeaveRoomResult leaveResult, bool disconnected)
+    {
+        return BroadcastLeaveResultCore(roomId, leaveResult, disconnected, _hubContext.Clients);
+    }
+
+    private async Task BroadcastLeaveResultCore(string roomId, LeaveRoomResult leaveResult, bool disconnected, IHubClients clients)
     {
         if (!leaveResult.PlayerRemoved)
             return;
 
-        await Clients.Group(roomId).SendAsync(
+        await clients.Group(roomId).SendAsync(
             disconnected ? "PlayerDisconnected" : "PlayerLeft",
             new
             {
@@ -222,7 +227,7 @@ public class GameHub : Hub
         if (leaveResult.RoomClosed)
         {
             CancelPhaseTimer(roomId);
-            await Clients.Group(roomId).SendAsync("RoomClosed", new
+            await clients.Group(roomId).SendAsync("RoomClosed", new
             {
                 message = "The room has been closed.",
                 reason = "All players left."
@@ -236,7 +241,7 @@ public class GameHub : Hub
             !string.IsNullOrWhiteSpace(leaveResult.NewOwnerSessionId) &&
             string.Equals(roomAfterLeave.OwnerSessionId, leaveResult.NewOwnerSessionId, StringComparison.Ordinal))
         {
-            await Clients.Group(roomId).SendAsync("OwnershipTransferred", new
+            await clients.Group(roomId).SendAsync("OwnershipTransferred", new
             {
                 newOwnerSessionId = leaveResult.NewOwnerSessionId,
                 newOwnerName = leaveResult.NewOwnerName
@@ -244,15 +249,27 @@ public class GameHub : Hub
         }
 
         if (_game.TryGetRoom(roomId, out var updatedRoom) && updatedRoom != null)
-            await BroadcastPostLeaveState(roomId, updatedRoom);
+            await BroadcastPostLeaveStateCore(roomId, updatedRoom, clients);
     }
 
-    private async Task BroadcastPostLeaveState(string roomId, Room room)
+    private Task BroadcastPostLeaveState(string roomId, Room room)
+    {
+        return BroadcastPostLeaveStateCore(roomId, room, _hubContext.Clients);
+    }
+
+    private async Task BroadcastPostLeaveStateCore(string roomId, Room room, IHubClients clients)
     {
         if (room.Phase == GamePhase.Lobby)
         {
             CancelPhaseTimer(roomId);
-            await BroadcastLobbyState(roomId, room);
+            var lobbyState = room.Players.Select(p => new
+            {
+                sessionId = p.SessionId,
+                name = p.DisplayName,
+                avatarImageName = p.AvatarImageName,
+                isReady = p.IsReady
+            });
+            await clients.Group(roomId).SendAsync("LobbyUpdated", lobbyState);
             return;
         }
 
@@ -265,7 +282,7 @@ public class GameHub : Hub
             var xpResults = await _game.SaveGameSession(room);
             await SendXpAwarded(xpResults);
             var endedState = _game.GetGameState(room);
-            await Clients.Group(roomId).SendAsync("GameEnded", endedState);
+            await clients.Group(roomId).SendAsync("GameEnded", endedState);
             return;
         }
 
@@ -286,7 +303,7 @@ public class GameHub : Hub
             room.Phase = GamePhase.ShowingRanking;
             _game.RefreshPhaseDeadline(room);
             var roundState = _game.GetGameState(room);
-            await Clients.Group(roomId).SendAsync("RoundEnded", roundState);
+            await clients.Group(roomId).SendAsync("RoundEnded", roundState);
             SyncPhaseTimer(roomId, room);
             return;
         }
@@ -294,9 +311,9 @@ public class GameHub : Hub
         var gameState = _game.GetGameState(room);
         SyncPhaseTimer(roomId, room);
         if (room.Phase == GamePhase.ChoosingRoundTopic)
-            await Clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState);
+            await clients.Group(roomId).SendAsync("ChooseRoundTopic", gameState);
         else
-            await Clients.Group(roomId).SendAsync("GameStateSync", gameState);
+            await clients.Group(roomId).SendAsync("GameStateSync", gameState);
     }
 
     // Called by each player after joining a room (via REST API) to register
@@ -349,7 +366,9 @@ public class GameHub : Hub
 
             if (_game.MarkDisconnected(roomId, sessionId, out var disconnectedName, out var graceSeconds))
             {
-                await Clients.Group(roomId).SendAsync("PlayerDisconnected", new
+                // Use _hubContext for the notification — the disconnecting connection
+                // has already been removed from SignalR groups by the time this runs.
+                await _hubContext.Clients.Group(roomId).SendAsync("PlayerDisconnected", new
                 {
                     sessionId,
                     name = disconnectedName,
@@ -357,9 +376,23 @@ public class GameHub : Hub
                     graceSeconds
                 });
 
-                await Task.Delay(TimeSpan.FromSeconds(graceSeconds));
-                var leaveResult = _game.LeaveRoomIfDisconnectExpired(roomId, sessionId);
-                await BroadcastLeaveResult(roomId, leaveResult, disconnected: true);
+                // Fire-and-forget the delayed cleanup using _hubContext (independent
+                // of the Hub instance lifecycle). This mirrors SyncPhaseTimer's pattern.
+                var hubClients = _hubContext.Clients;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(graceSeconds));
+                        var leaveResult = _game.LeaveRoomIfDisconnectExpired(roomId, sessionId);
+                        await BroadcastLeaveResultCore(roomId, leaveResult, disconnected: true, hubClients);
+                    }
+                    catch (Exception)
+                    {
+                        // Ensure cleanup still happens even if broadcast fails.
+                        _game.LeaveRoomIfDisconnectExpired(roomId, sessionId);
+                    }
+                });
             }
         }
 

@@ -35,3 +35,7 @@ export const resetPassword = (token, newPassword) =>
 /** Get the Google OAuth redirect URL from the backend. */
 export const getGoogleLoginUrl = () =>
   api.get('/auth/google-login')
+
+/** Exchange a one-time OAuth code for auth cookies. */
+export const exchangeCode = (code) =>
+  api.post('/auth/exchange-code', { code })

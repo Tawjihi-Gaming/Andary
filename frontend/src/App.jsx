@@ -12,7 +12,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
 import TermsOfService from './pages/TermsOfService.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
-import { logout as apiLogout, getMe } from './api/auth'
+import { logout as apiLogout, getMe, exchangeCode } from './api/auth'
 import ThemeSwitcher from './components/ThemeSwitcher'
 
 const createClientKey = () => {
@@ -69,7 +69,7 @@ function App() {
       const exchangeAndFetch = async () => {
         try {
           if (oauthCode) {
-            await api.post('/auth/exchange-code', { code: oauthCode })
+            await exchangeCode(oauthCode)
             window.history.replaceState({}, '', window.location.pathname)
           }
 
@@ -99,7 +99,7 @@ function App() {
     if (isAuthenticated) {
       const validateSession = async () => {
         try {
-          const res = await api.get('/auth/me')
+          const res = await getMe()
           // Refresh cached user data with server truth
           const freshUser = {
             id: res.data.id,

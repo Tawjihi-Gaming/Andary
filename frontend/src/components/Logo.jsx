@@ -1,3 +1,5 @@
+import { ReactSVG } from 'react-svg';
+
 const Logo = () => {
   return (
     <div className="logo-bounce flex flex-col items-center">
@@ -8,30 +10,13 @@ const Logo = () => {
         
         {/* Custom graduation cap design */}
         <div className="relative z-10 w-20 h-20 sm:w-32 sm:h-32 xl:w-40 xl:h-40 flex items-center justify-center">
-          {/* Graduation cap SVG */}
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.4))' }}>
-            {/* Cap top (mortarboard) */}
-            <polygon points="50,15 95,35 50,55 5,35" fill="url(#capGradient)" stroke="#1E3A8A" strokeWidth="2"/>
-            {/* Cap base */}
-            <ellipse cx="50" cy="55" rx="25" ry="8" fill="#1E3A8A"/>
-            <rect x="25" y="55" width="50" height="25" fill="#1E3A8A"/>
-            <ellipse cx="50" cy="80" rx="25" ry="8" fill="#0F172A"/>
-            {/* Button */}
-            <circle cx="50" cy="35" r="5" fill="#FBBF24" stroke="#F59E0B" strokeWidth="1"/>
-            {/* Tassel */}
-            <path d="M50,35 Q65,45 68,65 Q70,80 62,90" fill="none" stroke="#FBBF24" strokeWidth="3" strokeLinecap="round"/>
-            <rect x="58" y="85" width="10" height="12" rx="2" fill="#FBBF24"/>
-            <line x1="60" y1="90" x2="60" y2="97" stroke="#F59E0B" strokeWidth="1"/>
-            <line x1="63" y1="90" x2="63" y2="97" stroke="#F59E0B" strokeWidth="1"/>
-            <line x1="66" y1="90" x2="66" y2="97" stroke="#F59E0B" strokeWidth="1"/>
-            {/* Gradient definition */}
-            <defs>
-              <linearGradient id="capGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#2563EB"/>
-                <stop offset="100%" stopColor="#1E3A8A"/>
-              </linearGradient>
-            </defs>
-          </svg>
+          {/* Graduation cap*/}
+          <ReactSVG
+            src="/logo.svg"
+            beforeInjection={svg => {
+              svg.setAttribute('class', 'w-full h-full drop-shadow-2xl');
+            }}
+          />
         </div>
         
         {/* Bright decorative elements */}

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import LanguageSwitcher from "./LanguageSwitcher";
 import api from '../api/axios'
 import GamePopup from './GamePopup'
+import { ReactSVG } from 'react-svg';
 
 
 const Navbar = ({ user, onLogout }) => {
@@ -57,7 +58,13 @@ const Navbar = ({ user, onLogout }) => {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/lobby')}>
               <div className="w-10 h-10 sm:w-12 sm:h-12 xl:w-14 xl:h-14 bg-linear-to-br from-game-yellow to-game-orange rounded-xl flex items-center justify-center shadow-lg shadow-game-yellow/20 group-hover:scale-105 transition-transform">
-                <span className="text-xl sm:text-2xl xl:text-3xl pt-1 sm:pt-2">🎓</span>
+                {/* <span className="text-xl sm:text-2xl xl:text-3xl pt-1 sm:pt-2">🎓</span> */}
+                <ReactSVG
+                  src="/logo.svg"
+                  beforeInjection={svg => {
+                    svg.setAttribute('class', 'w-full h-full drop-shadow-2xl');
+                  }}
+                />
               </div>
               <h1 className="text-xl sm:text-2xl xl:text-3xl font-extrabold text-white">
                 Andary

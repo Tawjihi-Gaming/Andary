@@ -8,7 +8,7 @@ services:
     networks:
       - web-net
     env_file:
-      - backend/.env.docker
+      - backend/.env
     depends_on:
       db:
         condition: service_healthy

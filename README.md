@@ -282,106 +282,9 @@ npm run dev
 
 ## Database Schema
 
-### Visual Representation
+### [Visual Representation](https://dbdiagram.io/d/69835df1bd82f5fce2a47c96)
 
-```mermaid
-    Player ||--o| AuthLocal : "has (1:1)"
-    Player ||--o{ AuthOAuth : "has (1:N)"
-    Player ||--o{ GameParticipant : "participates in"
-    Player ||--o{ PasswordResetToken : "has"
-    Player ||--o{ FriendRequest : "sends"
-    Player ||--o{ FriendRequest : "receives"
-    Player ||--o{ Friend : "friendships"
 
-    GameSession ||--o{ GameParticipant : "has participants"
-
-    Topic ||--o{ Question : "contains"
-
-    Player {
-        int Id PK
-        string Username
-        int Xp
-        string AvatarImageName
-        datetime CreatedAt
-        string RefreshToken
-        datetime RefreshTokenExpiryTime
-    }
-
-    AuthLocal {
-        int Id PK
-        int PlayerId FK
-        string Email "unique"
-        string PasswordHash
-        datetime CreatedAt
-    }
-
-    AuthOAuth {
-        int Id PK
-        int PlayerId FK
-        string Provider
-        string ProviderUserId
-        string Email
-        datetime CreatedAt
-    }
-
-    GameSession {
-        int Id PK
-        datetime FinishedAt
-        int TotalRounds
-        string GameConfigSnapshot
-        datetime CreatedAt
-    }
-
-    GameParticipant {
-        int Id PK
-        int GameSessionId FK
-        int PlayerId FK
-        int FinalScore
-        int FinalRank
-    }
-
-    Topic {
-        int Id PK
-        string Name
-        datetime CreatedAt
-    }
-
-    Question {
-        int Id PK
-        int TopicId FK
-        string QuestionText
-        string CorrectAnswer
-        string Explanation
-        string TopicName
-        string Modifier
-        datetime CreatedAt
-    }
-
-    PasswordResetToken {
-        int Id PK
-        int PlayerId FK
-        string TokenHash
-        datetime ExpiryDate
-        bool IsUsed
-        datetime CreatedAt
-    }
-
-    FriendRequest {
-        int Id PK
-        int SenderId FK
-        int ReceiverId FK
-        string Status
-        datetime CreatedAt
-        datetime RespondedAt
-    }
-
-    Friend {
-        int Id PK
-        int Player1Id FK
-        int Player2Id FK
-        datetime CreatedAt
-    }
-```
 
 ### Tables and Relationships
 
@@ -441,7 +344,7 @@ npm run dev
 | 16 | **Dark / Light Theme** | Toggleable theme persisted in localStorage | malja-fa |
 | 17 | **Dockerized Deployment** | Multi-container setup with Docker Compose, Nginx reverse proxy, HTTPS | aatieh |
 | 18 | **Question Seeding** | Database seeded with Tawjihi curriculum questions from JSON files | aatieh |
-| 19 | **Guest Play** | Anonymous users can join rooms without an account (deduplication via client key) | aatieh, rsham, malja-fa |
+| 19 | **Guest Play** | Anonymous users can join rooms without an account (deduplication via client key) | aatieh, rsham, malja-fa, sbibers |
 
 ---
 
@@ -462,16 +365,15 @@ npm run dev
 | Game statistics and match history | Minor | Letting players review past performance encourages continued engagement and learning. | `GameSession` and `GameParticipant` tables store final scores and ranks; the `HistoryController` provides a paginated API for retrieving a player's past games. | dikhalil, sbibers |
 | Implement remote authentication with OAuth 2.0 | Minor | Provides a frictionless login option and reduces sign-up abandonment. | Google OAuth 2.0 flow — the backend exchanges the authorization code for tokens, retrieves user info, and creates or links an `AuthOAuth` record to the player. | dikhalil, sbibers |
 | Implement a complete web-based game where users can play against each other. | Major | The core purpose of the project is a competitive trivia game playable entirely in the browser. | Full game loop: room creation → lobby → topic selection → question display → fake answer submission → answer voting → scoring → leaderboard → next round or game end — all managed by `GameManager` and `GameHub`. | malja-fa, rsham |
-| Remote players — Enable two players on separate computers to play the same game in real-time. | Major | The game's value comes from playing with friends remotely, not just locally. | Players join the same room via a public lobby list or a 6-digit private code; all game state is synchronized through SignalR group broadcasts so each player sees the same phases simultaneously. | malja-fa, rsham |
 | Multiplayer game (more than two players). | Major | A trivia bluffing game is more fun and competitive with a larger group. | Rooms support 2–6 players; the topic-chooser rotates among all players, scoring accounts for multiple fake answers, and the leaderboard ranks all participants. | malja-fa, rsham |
 | Game customization options. | Minor | Letting the room owner tailor settings increases replayability and fits different study needs. | Room creators can choose public/private type, select up to 7 curriculum topics, set the number of questions, and configure the answer timer (10–120 seconds). | aatieh, malja-fa, rsham |
 Guest play without account creation | Minor | Lowering the barrier to entry lets students try the game instantly without committing to sign-up, increasing adoption. | Anonymous users can join rooms, and play full games — but XP and history are not persisted. | aatieh, rsham, malja-fa, sbibers |
 
 ### Point Calculation
 
-- Total Major modules → 2 × 6 = **12** pts
+- Total Major modules → 2 × 5 = **10** pts
 - Total Minor modules → 1 × 9 = **9** pts
-- **Total: 12 + 9 = 21 pts**
+- **Total: 10 + 9 = 19 pts**
 
 ## Individual Contributions
 

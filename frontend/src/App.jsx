@@ -97,6 +97,13 @@ function App() {
 
     // --- Returning authenticated user: validate session before rendering ---
     if (isAuthenticated) {
+      // Guests have no JWT — skip server validation and just use cached data
+      const savedUser = JSON.parse(localStorage.getItem('userData') || 'null')
+      if (savedUser?.isGuest) {
+        setLoading(false)
+        return
+      }
+
       const validateSession = async () => {
         try {
           const res = await getMe()
@@ -140,10 +147,13 @@ function App() {
   }
 
   const handleLogout = async () => {
-    try {
-      await apiLogout()
-    } catch {
-      // If logout fails (e.g. already expired), still clear local state
+    // Guests have no server session — skip the API call
+    if (!user?.isGuest) {
+      try {
+        await apiLogout()
+      } catch {
+        // If logout fails (e.g. already expired), still clear local state
+      }
     }
     localStorage.removeItem('isAuthenticated')
     localStorage.removeItem('userData')

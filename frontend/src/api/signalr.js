@@ -3,11 +3,9 @@ import { GAME_HUB_URL } from './config'
 
 let connection = null
 
-// ✅ 1. Explicit wss:// instead of relative URL
+// ✅ 1. Use configured GAME_HUB_URL (supports env-based deployment URLs)
 const getHubUrl = () => {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = window.location.host
-  return `${protocol}//${host}/gamehub`
+  return GAME_HUB_URL
 }
 
 // Create and configure the SignalR connection
